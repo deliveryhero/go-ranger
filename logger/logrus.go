@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
-	logrus "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 //LoggerInterface ...

@@ -14,6 +14,7 @@ type ResponseWriter struct {
 type HealthCheckResponse struct {
 	HTTPStatus int    `json:"http_status"`
 	Version    string `json:"version"`
+	Services   string `json:"services"`
 }
 
 // ErrorResponse struct

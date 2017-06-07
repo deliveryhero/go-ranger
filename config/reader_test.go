@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewRemoteConfigReader(t *testing.T) {
-	configReader := newRemoteConfigReader(http.NewAPIClient(int64(5)), "http://url")
+	configReader := newRemoteConfigReader(http.NewAPIClient(5), "http://url")
 
 	if configReader.GetConfigPath() != "http://url" {
 		t.Error("invalid url set to configReader")
@@ -20,4 +20,16 @@ func TestNewLocalConfigReader(t *testing.T) {
 	if configReader.GetConfigPath() != "/my/path" {
 		t.Error("invalid url set to configReader")
 	}
+}
+
+func TestParseLocalConfig(t *testing.T) {
+	t.Error("@todo TestParseLocalConfig")
+}
+
+func TestParseRemoteConfig(t *testing.T) {
+	t.Error("@todo TestParseLocalConfig")
+}
+
+func TestParseConfig_InvalidConfig(t *testing.T) {
+	t.Error("@todo TestParseConfig_InvalidConfig")
 }

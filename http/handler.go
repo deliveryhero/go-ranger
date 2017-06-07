@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	httprouter "github.com/julienschmidt/httprouter"
@@ -29,13 +30,18 @@ func HealthCheckHandlerLB() httprouter.Handle {
 }
 
 // HealthCheckHandler to check the service and external dependencies
-func HealthCheckHandler() httprouter.Handle {
+func HealthCheckHandler(services ...interface{}) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+		// @todo receive this as param
+		version := "0.0.0"
+
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		json.NewEncoder(w).Encode(
 			HealthCheckResponse{
 				HTTPStatus: http.StatusOK,
-				Version:    "0.0.0", // @todo get version from somewhere
+				Version:    version,
+				Services:   fmt.Sprintf("%+v", services...),
 			})
 
 	}

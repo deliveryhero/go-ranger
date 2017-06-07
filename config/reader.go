@@ -8,10 +8,18 @@ import (
 	"github.com/fesposito/go-ranger/http"
 )
 
+// @todo accept different timeouts
 const (
-	// @todo accept different timeouts
 	defaultTimeout = 5
 )
+
+// @todo parse yaml filo into this configs
+type config struct {
+	AppName           string
+	APIRequestTimeout int
+	HTTPAddress       string
+	Version           string
+}
 
 // Reader is the interface for config readers
 type Reader interface {

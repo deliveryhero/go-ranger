@@ -17,7 +17,7 @@ type apiClient struct {
 }
 
 // NewAPIClient is the factory method for api clients.
-func NewAPIClient(requestTimeout int64) APIClientInterface {
+func NewAPIClient(requestTimeout int) APIClientInterface {
 	return &apiClient{
 		client: &http.Client{
 			Timeout: time.Second * time.Duration(requestTimeout),
