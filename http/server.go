@@ -1,12 +1,12 @@
 package http
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	httprouter "github.com/julienschmidt/httprouter"
+	"github.com/justinas/alice"
 	"gopkg.in/throttled/throttled.v2"
 	"gopkg.in/throttled/throttled.v2/store/memstore"
 )
@@ -33,21 +33,22 @@ func NewHTTPServer() *Server {
 	}
 }
 
-func (s *Server) withDefaultRoutes() {
-	s.Router.PanicHandler = PanicHandler(s.ResponseWriter)
-	s.Router.NotFound = NotFoundHandler(s.ResponseWriter)
+func (s *Server) WithDefaultErrorRoute() {
+	s.PanicHandler = PanicHandler(s.ResponseWriter)
+	s.NotFound = NotFoundHandler(s.ResponseWriter)
 }
 
-func (s *Server) withHealthCheck(services ...interface{}) {
-	s.Router.GET("/health/check", HealthCheckHandler(services))
-	s.Router.GET("/health/check/lb", HealthCheckHandlerLB())
+func (s *Server) WithHealthCheckFor(services ...interface{}) {
+	s.GET("/health/check", HealthCheckHandler(services))
+	s.GET("/health/check/lb", HealthCheckHandlerLB())
 }
 
-func (s *Server) withMiddleware(middleware ...http.Handler) {
+func (s *Server) WithMiddleware(middleware ...http.Handler) {
 	s.middlewares = append(s.middlewares, middleware...)
 }
 
-func (s *Server) withThrotle() {
+func (s *Server) WithThrottle(handler *http.HandlerFunc) http.Handler {
+	// @todo learn more about this memstore
 	store, err := memstore.New(65536)
 	if err != nil {
 		log.Fatal(err)
@@ -64,28 +65,15 @@ func (s *Server) withThrotle() {
 		VaryBy:      &throttled.VaryBy{Path: true},
 	}
 
-	log.Print(httpRateLimiter)
-	// @todo s.middlewares = append(s.middlewares, httpRateLimiter.RateLimit(h))
-
+	return httpRateLimiter.RateLimit(handler)
 }
 
-func (s *Server) start(addr string) {
+func (s *Server) Start(addr string) {
+	// @todo append s.middlewares
+	chain := alice.New().Then(s.Router)
 
-	//chain := alice.New(httpRateLimiter.RateLimiter).Then(myHandler)
-	//http.ListenAndServe(":8000", chain)
-
-	http.ListenAndServe(":8000", s.Router)
 	log.Print("Listening to address " + addr)
-	log.Fatal(http.ListenAndServe(addr, s.Router))
+	log.Fatal(http.ListenAndServe(addr, chain))
 }
 
-func (s *Server) addCacheToHeader(w http.ResponseWriter) http.ResponseWriter {
-	cacheSince := time.Now().Format(http.TimeFormat)
-	cacheUntil := time.Now().Add(defaultResponseCacheTimeout).Format(http.TimeFormat)
-
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%.0f", defaultResponseCacheTimeout.Seconds()))
-	w.Header().Set("Date", cacheSince)
-	w.Header().Set("Expires", cacheUntil)
-	return w
-}
+// @todo add cache headers to response
