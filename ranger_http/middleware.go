@@ -1,7 +1,6 @@
 package ranger_http
 
 import (
-	"log"
 	"net/http"
 	"time"
 )
@@ -13,7 +12,7 @@ func RequestLog(next http.Handler) http.Handler {
 		t1 := time.Now()
 		next.ServeHTTP(w, r)
 		t2 := time.Now()
-		log.Printf("[%s] %q %v\n", r.Method, r.URL.String(), t2.Sub(t1))
+		logger.Info("RequestLog", map[string]interface{}{"method": r.Method, "url": r.URL.String(), "t": t2.Sub(t1)})
 	}
 	return http.HandlerFunc(fn)
 }

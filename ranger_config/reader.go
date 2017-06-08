@@ -18,6 +18,8 @@ type config struct {
 	APIRequestTimeout int
 	HTTPAddress       string
 	Version           string
+	LogstashAddress   string
+	LogstashProtocol  string
 }
 
 // Reader is the interface for config readers

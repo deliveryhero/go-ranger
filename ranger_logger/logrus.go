@@ -24,13 +24,12 @@ type Wrapper struct {
 func NewLoggerWithLogstashHook(protocol string, addr string, appName string, data logrus.Fields) LoggerInterface {
 	log := logrus.New()
 
-	conn, err := net.Dial(protocol, addr)
-	if err != nil {
-		log.Fatal(err)
+	if conn, err := net.Dial(protocol, addr); err == nil {
+		hook := logrustash.New(conn, &logrus.JSONFormatter{})
+		log.Hooks.Add(hook)
+	} else {
+		log.Warn("unable to connect to logstash")
 	}
-
-	hook := logrustash.New(conn, &logrus.JSONFormatter{})
-	log.Hooks.Add(hook)
 
 	return &Wrapper{log}
 }

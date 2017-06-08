@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/fesposito/go-ranger/ranger_logger"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"gopkg.in/throttled/throttled.v2"
@@ -22,8 +23,13 @@ const (
 	defaultResponseCacheTimeout = time.Duration(5) * time.Minute
 )
 
+var (
+	logger ranger_logger.LoggerInterface
+)
+
 // NewHTTPServer ...
-func NewHTTPServer() *Server {
+func NewHTTPServer(l ranger_logger.LoggerInterface) *Server {
+	logger = l
 	responseWriter := ResponseWriter{}
 	router := httprouter.New()
 
@@ -53,13 +59,13 @@ func (s *Server) WithThrottle(handler *http.HandlerFunc) http.Handler {
 	// @todo learn more about this memstore
 	store, err := memstore.New(65536)
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err.Error(), nil)
 	}
 
 	quota := throttled.RateQuota{throttled.PerMin(20), 5}
 	rateLimiter, err := throttled.NewGCRARateLimiter(store, quota)
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err.Error(), nil)
 	}
 
 	httpRateLimiter := throttled.HTTPRateLimiter{
@@ -72,7 +78,7 @@ func (s *Server) WithThrottle(handler *http.HandlerFunc) http.Handler {
 
 func (s *Server) Start(addr string) {
 	chain := alice.New(s.middlewares...)
-	log.Print("Listening to address " + addr)
+	logger.Info("Listening to address:", map[string]interface{}{"addr": addr})
 	log.Fatal(http.ListenAndServe(addr, chain.Then(s.Router)))
 }
 
