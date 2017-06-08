@@ -2,17 +2,18 @@ package ranger_logger
 
 import (
 	"net"
-	"net/http"
 
 	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/sirupsen/logrus"
 )
 
+type LoggerData map[string]interface{}
+
 //LoggerInterface ...
 type LoggerInterface interface {
-	Info(message string, data logrus.Fields)
-	Warning(message string, data logrus.Fields)
-	Error(message string, data logrus.Fields)
+	Info(message string, data LoggerData)
+	Warning(message string, data LoggerData)
+	Error(message string, data LoggerData)
 }
 
 //Wrapper - Wrap a logrus logger
@@ -21,7 +22,7 @@ type Wrapper struct {
 }
 
 //NewLoggerWithLogstashHook - LoggerWrapper constructor with logstash hook
-func NewLoggerWithLogstashHook(protocol string, addr string, appName string, data logrus.Fields) LoggerInterface {
+func NewLoggerWithLogstashHook(protocol string, addr string, appName string) LoggerInterface {
 	log := logrus.New()
 
 	if conn, err := net.Dial(protocol, addr); err == nil {
@@ -35,32 +36,40 @@ func NewLoggerWithLogstashHook(protocol string, addr string, appName string, dat
 }
 
 //CreateFieldsFromRequest - Create a logrus.Fields object from a Request
-func (logger *Wrapper) CreateFieldsFromRequest(r *http.Request) logrus.Fields {
+/*func (logger *Wrapper) CreateFieldsFromRequest(r *http.Request) LoggerData {
 	return logrus.Fields{
 		"client_ip":      r.RemoteAddr,
 		"request_method": r.Method,
 		"request_uri":    r.RequestURI,
 		"request_host":   r.Host,
 	}
-}
+}*/
 
 //Info - Wrap Info from logrus logger
-func (logger *Wrapper) Info(message string, data logrus.Fields) {
-	ctx := logger.WithFields(data)
+func (logger *Wrapper) Info(message string, data LoggerData) {
+	ctx := logger.WithFields(convertToLogrusFields(data))
 
 	ctx.Info(message)
 }
 
 //Warning - Wrap Warning from logrus logger
-func (logger *Wrapper) Warning(message string, data logrus.Fields) {
-	ctx := logger.WithFields(data)
+func (logger *Wrapper) Warning(message string, data LoggerData) {
+	ctx := logger.WithFields(convertToLogrusFields(data))
 
 	ctx.Warning(message)
 }
 
 //Error - Wrap Error from logrus logger
-func (logger *Wrapper) Error(message string, data logrus.Fields) {
-	ctx := logger.WithFields(data)
+func (logger *Wrapper) Error(message string, data LoggerData) {
+	ctx := logger.WithFields(convertToLogrusFields(data))
 
 	ctx.Error(message)
+}
+
+func convertToLogrusFields(loggerData LoggerData) logrus.Fields {
+	fields := logrus.Fields{}
+	for k, v := range loggerData {
+		fields[k] = v
+	}
+	return fields
 }

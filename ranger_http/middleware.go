@@ -3,6 +3,8 @@ package ranger_http
 import (
 	"net/http"
 	"time"
+
+	ranger_logger "github.com/fesposito/go-ranger/ranger_logger"
 )
 
 func RequestLog(next http.Handler) http.Handler {
@@ -12,7 +14,7 @@ func RequestLog(next http.Handler) http.Handler {
 		t1 := time.Now()
 		next.ServeHTTP(w, r)
 		t2 := time.Now()
-		logger.Info("RequestLog", map[string]interface{}{"method": r.Method, "url": r.URL.String(), "t": t2.Sub(t1)})
+		logger.Info("RequestLog", ranger_logger.LoggerData{"method": r.Method, "url": r.URL.String(), "t": t2.Sub(t1)})
 	}
 	return http.HandlerFunc(fn)
 }

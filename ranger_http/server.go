@@ -1,7 +1,6 @@
 package ranger_http
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -76,10 +75,9 @@ func (s *Server) WithThrottle(handler *http.HandlerFunc) http.Handler {
 	return httpRateLimiter.RateLimit(handler)
 }
 
-func (s *Server) Start(addr string) {
+func (s *Server) Start() http.Handler {
 	chain := alice.New(s.middlewares...)
-	logger.Info("Listening to address:", map[string]interface{}{"addr": addr})
-	log.Fatal(http.ListenAndServe(addr, chain.Then(s.Router)))
+	return chain.Then(s.Router)
 }
 
 // @todo add cache headers to response
