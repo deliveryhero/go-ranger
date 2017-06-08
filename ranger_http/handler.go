@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	httprouter "github.com/julienschmidt/httprouter"
+	"github.com/julienschmidt/httprouter"
 )
 
 // PanicHandler is handling app panics gracefully

@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	ranger_http "github.com/fesposito/go-ranger/http"
+	ranger_http "github.com/fesposito/go-ranger/ranger_http"
 	"github.com/julienschmidt/httprouter"
 )
 
