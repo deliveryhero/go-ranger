@@ -15,7 +15,7 @@ import (
 type Server struct {
 	*httprouter.Router
 	ResponseWriter
-	middlewares []http.Handler
+	middlewares []alice.Constructor
 }
 
 const (
@@ -43,8 +43,10 @@ func (s *Server) WithHealthCheckFor(services ...interface{}) {
 	s.GET("/health/check/lb", HealthCheckHandlerLB())
 }
 
-func (s *Server) WithMiddleware(middleware ...http.Handler) {
-	s.middlewares = append(s.middlewares, middleware...)
+func (s *Server) WithMiddleware(middlewares ...func(http.Handler) http.Handler) {
+	for _, v := range middlewares {
+		s.middlewares = append(s.middlewares, v)
+	}
 }
 
 func (s *Server) WithThrottle(handler *http.HandlerFunc) http.Handler {
@@ -69,11 +71,9 @@ func (s *Server) WithThrottle(handler *http.HandlerFunc) http.Handler {
 }
 
 func (s *Server) Start(addr string) {
-	// @todo append s.middlewares
-	chain := alice.New().Then(s.Router)
-
+	chain := alice.New(s.middlewares...)
 	log.Print("Listening to address " + addr)
-	log.Fatal(http.ListenAndServe(addr, chain))
+	log.Fatal(http.ListenAndServe(addr, chain.Then(s.Router)))
 }
 
 // @todo add cache headers to response
