@@ -43,6 +43,5 @@ func HealthCheckHandler(services ...interface{}) httprouter.Handle {
 				Version:    version,
 				Services:   fmt.Sprintf("%+v", services...),
 			})
-
 	}
 }

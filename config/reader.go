@@ -8,7 +8,6 @@ import (
 	"github.com/fesposito/go-ranger/http"
 )
 
-// @todo accept different timeouts
 const (
 	defaultTimeout = 5
 )
@@ -99,6 +98,5 @@ func getLocalPath(path string) string {
 	if err != nil {
 		panic(err)
 	}
-	// @todo find a better way to parse this path
 	return strings.Replace(u.String(), "file://", "", -1)
 }
