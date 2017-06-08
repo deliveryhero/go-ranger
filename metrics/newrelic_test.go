@@ -1,4 +1,4 @@
-package metrics
+package ranger_metrics
 
 import "testing"
 

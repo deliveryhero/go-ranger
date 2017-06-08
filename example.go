@@ -5,13 +5,13 @@ import (
 	"log"
 	"net/http"
 
-	server "github.com/fesposito/go-ranger/http"
+	ranger_http "github.com/fesposito/go-ranger/http"
 	"github.com/julienschmidt/httprouter"
 )
 
 func main() {
-	s := server.NewHTTPServer()
-	s.WithMiddleware(sampleMiddleware, anotherSampleMiddleware, server.RequestLog)
+	s := ranger_http.NewHTTPServer()
+	s.WithMiddleware(sampleMiddleware, anotherSampleMiddleware, ranger_http.RequestLog)
 	s.WithDefaultErrorRoute()
 	s.WithHealthCheckFor(nil)
 

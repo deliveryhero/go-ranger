@@ -1,6 +1,6 @@
 # GO Ranger
 
-A toolkit for build standardize go apps
+A Golang toolkit/set of libs to build standardized apps
 
 ## How it works
 

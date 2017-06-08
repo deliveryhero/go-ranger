@@ -1,13 +1,13 @@
-package config
+package ranger_config
 
 import (
 	"testing"
 
-	"github.com/fesposito/go-ranger/http"
+	ranger_http "github.com/fesposito/go-ranger/http"
 )
 
 func TestNewRemoteConfigReader(t *testing.T) {
-	configReader := newRemoteConfigReader(http.NewAPIClient(5), "http://url")
+	configReader := newRemoteConfigReader(ranger_http.NewAPIClient(5), "http://url")
 
 	if configReader.GetConfigPath() != "http://url" {
 		t.Error("invalid url set to configReader")

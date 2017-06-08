@@ -1,4 +1,4 @@
-package http
+package ranger_http
 
 import (
 	"encoding/json"

@@ -1,11 +1,11 @@
-package config
+package ranger_config
 
 import (
 	"io/ioutil"
 	"net/url"
 	"strings"
 
-	"github.com/fesposito/go-ranger/http"
+	ranger_http "github.com/fesposito/go-ranger/http"
 )
 
 const (
@@ -29,7 +29,7 @@ type Reader interface {
 // apiConfigReader is the config reader implementation using an api as source
 type remoteConfigReader struct {
 	url    string
-	client http.APIClientInterface
+	client ranger_http.APIClientInterface
 }
 
 // localConfigReader reader
@@ -39,7 +39,7 @@ type localConfigReader struct {
 }
 
 // newAPIConfigReader is the factory for config readers.
-func newRemoteConfigReader(apiClient http.APIClientInterface, configPath string) Reader {
+func newRemoteConfigReader(apiClient ranger_http.APIClientInterface, configPath string) Reader {
 	return &remoteConfigReader{
 		url:    configPath,
 		client: apiClient,
@@ -82,7 +82,7 @@ func GetConfigReader(path string) Reader {
 		return newLocalConfigReader(getLocalPath(path))
 	}
 
-	return newRemoteConfigReader(http.NewAPIClient(defaultTimeout), path)
+	return newRemoteConfigReader(ranger_http.NewAPIClient(defaultTimeout), path)
 }
 
 func isReadConfigurationLocal(path string) bool {
