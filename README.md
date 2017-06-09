@@ -13,10 +13,10 @@ config
 
 http
 - Add version parameter on HealthCheckHandler
-- use logger (logrus+logstash) on RequestLog middleware
+- ~use logger (logrus+logstash) on RequestLog middleware~
 - use logger everywhere
 - add function to cache header Response
-- try to use throttled package
+- try to use throttled package in a endpoint
 
 metrics
 - create middleware for newrelic
