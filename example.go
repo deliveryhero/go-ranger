@@ -20,20 +20,21 @@ func init() {
 }
 
 func main() {
-	s := ranger_http.NewHTTPServer(logger)
+	s := ranger_http.NewHTTPServer(logger).
 
-	// you can add as many middlewares as  you want. they will be applied in the same order
-	// sampleMiddlewar -> anotherSampleMiddleware -> ranger_http.RequestLog
-	s.WithMiddleware(sampleMiddleware, anotherSampleMiddleware, ranger_http.RequestLog)
+		// you can add as many middlewares as  you want. they will be applied in the same order
+		// sampleMiddlewar -> anotherSampleMiddleware -> ranger_http.RequestLog
+		WithMiddleware(sampleMiddleware, anotherSampleMiddleware, ranger_http.RequestLog).
 
-	// with this we provide a default http 404 and 500 error.
-	// see more on response_writer.go
-	s.WithDefaultErrorRoute()
+		// with this we provide a default http 404 and 500 error.
+		// see more on response_writer.go
+		WithDefaultErrorRoute().
 
-	// basic health check endpoints
-	// /health/check/lb and /health/check
-	// any struct sent as parameter here will be printed on key: value format (see Sprintf with "%+v")
-	s.WithHealthCheckFor(nil)
+		// basic health check endpoints
+		// /health/check/lb and /health/check
+		// any struct sent as parameter here will be printed on key: value format (see Sprintf with "%+v")
+		WithHealthCheckFor(nil).
+		Build()
 
 	// add some endpoints. based on "github.com/julienschmidt/httprouter"
 	s.GET("/hello", helloEndpoint())

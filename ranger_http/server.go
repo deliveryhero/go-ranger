@@ -38,23 +38,26 @@ func NewHTTPServer(l ranger_logger.LoggerInterface) *Server {
 	}
 }
 
-func (s *Server) WithDefaultErrorRoute() {
+func (s Server) WithDefaultErrorRoute() Server {
 	s.PanicHandler = PanicHandler(s.ResponseWriter)
 	s.NotFound = NotFoundHandler(s.ResponseWriter)
+	return s
 }
 
-func (s *Server) WithHealthCheckFor(services ...interface{}) {
+func (s Server) WithHealthCheckFor(services ...interface{}) Server {
 	s.GET("/health/check", HealthCheckHandler(services))
 	s.GET("/health/check/lb", HealthCheckHandlerLB())
+	return s
 }
 
-func (s *Server) WithMiddleware(middlewares ...func(http.Handler) http.Handler) {
+func (s Server) WithMiddleware(middlewares ...func(http.Handler) http.Handler) Server {
 	for _, v := range middlewares {
 		s.middlewares = append(s.middlewares, v)
 	}
+	return s
 }
 
-func (s *Server) WithThrottle(handler *http.HandlerFunc) http.Handler {
+func (s Server) SetThrottle(handler *http.HandlerFunc) http.Handler {
 	// @todo learn more about this memstore
 	store, err := memstore.New(65536)
 	if err != nil {
@@ -75,7 +78,11 @@ func (s *Server) WithThrottle(handler *http.HandlerFunc) http.Handler {
 	return httpRateLimiter.RateLimit(handler)
 }
 
-func (s *Server) Start() http.Handler {
+func (s Server) Build() Server {
+	return s
+}
+
+func (s Server) Start() http.Handler {
 	chain := alice.New(s.middlewares...)
 	return chain.Then(s.Router)
 }
