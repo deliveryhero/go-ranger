@@ -18,7 +18,7 @@ func PanicHandler(rw ResponseWriter) func(http.ResponseWriter, *http.Request, in
 // NotFoundHandler is handling 404s
 func NotFoundHandler(rw ResponseWriter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rw.writeErrorResponse(w, http.StatusNotFound, "feedNotFound", "Resource not found")
+		rw.writeErrorResponse(w, http.StatusNotFound, "resourceNotFound", "Resource not found")
 	}
 }
 
