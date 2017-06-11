@@ -12,3 +12,5 @@ import:
   version: ~2.0.3
   subpackages:
   - store/memstore
+- package: github.com/justinas/alice
+  version: ~1.0.0
