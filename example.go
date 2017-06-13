@@ -6,17 +6,20 @@ import (
 
 	ranger_http "github.com/fesposito/go-ranger/ranger_http"
 	ranger_logger "github.com/fesposito/go-ranger/ranger_logger"
+	ranger_metrics "github.com/fesposito/go-ranger/ranger_metrics"
 	"github.com/julienschmidt/httprouter"
 )
 
 var (
 	logger ranger_logger.LoggerInterface
+	rangerMetrics ranger_metrics.MetricsInterface
 )
 
 func init() {
 	// we recommend to use ranger_logger (logrus + logstash hook)
 	// if the connection fails we will warn and keep logging to stdout
 	logger = ranger_logger.NewLoggerWithLogstashHook("tcp", "localhost:1234", "exampleApp")
+	rangerMetrics = ranger_metrics.NewNewRelic("Your App Name", "<your-key-goes-here>....................", logger)
 }
 
 func main() {
@@ -24,7 +27,7 @@ func main() {
 
 		// you can add as many middlewares as  you want. they will be applied in the same order
 		// sampleMiddlewar -> anotherSampleMiddleware -> ranger_http.RequestLog
-		WithMiddleware(sampleMiddleware, anotherSampleMiddleware, ranger_http.RequestLog).
+		WithMiddleware(rangerMetrics.Middleware, sampleMiddleware, anotherSampleMiddleware, ranger_http.RequestLog).
 
 		// with this we provide a default http 404 and 500 error.
 		// see more on response_writer.go

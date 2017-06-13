@@ -19,7 +19,7 @@ http
 - try to use throttled package in a endpoint
 
 metrics
-- create middleware for newrelic
+- ~create middleware for newrelic~
 
 tests, tests, tests. search for ```@todo```
 
