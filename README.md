@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/fesposito/go-ranger/tree/master.svg?style=svg&circle-token=65fa0b11ad255e32dbb748b9e96a0523af1e27f2)](https://circleci.com/gh/fesposito/go-ranger/tree/master)
+CircleCI [![CircleCI](https://circleci.com/gh/fesposito/go-ranger/tree/master.svg?style=svg&circle-token=65fa0b11ad255e32dbb748b9e96a0523af1e27f2)](https://circleci.com/gh/fesposito/go-ranger/tree/master)
 
 # GO Ranger
 
