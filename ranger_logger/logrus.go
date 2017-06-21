@@ -20,17 +20,12 @@ type LoggerInterface interface {
 
 //Wrapper - Wrap a logrus logger
 type Wrapper struct {
-	*logrus.Logger // see promoted methods https://www.goinggo.net/2015/09/composition-with-go.html
-}
-
-//WrapperWithFields - Wrap a logrus logger with default fields
-type WrapperWithFields struct {
-	*logrus.Logger
-	LoggerData
+	*logrus.Logger // see promoted methods https://www.goinggo.net/2015/09/composition-with-go.html,
+	AppData LoggerData     // default fields
 }
 
 //NewLoggerWithLogstashHook - LoggerWrapper constructor with logstash hook
-func NewLoggerWithLogstashHook(protocol string, addr string, appName string) LoggerInterface {
+func NewLoggerWithLogstashHook(protocol string, addr string, appName string, appData LoggerData) LoggerInterface {
 	log := logrus.New()
 
 	if conn, err := net.Dial(protocol, addr); err == nil {
@@ -40,20 +35,7 @@ func NewLoggerWithLogstashHook(protocol string, addr string, appName string) Log
 		log.Warn("unable to connect to logstash")
 	}
 
-	return &Wrapper{log}
-}
-
-func NewLoggerWithLogstashHookWithFields(protocol string, addr string, appName string, data LoggerData) LoggerInterface {
-	log := logrus.New()
-
-	if conn, err := net.Dial(protocol, addr); err == nil {
-		hook := logrustash.New(conn, &logrus.JSONFormatter{})
-		log.Hooks.Add(hook)
-	} else {
-		log.Warn("unable to connect to logstash")
-	}
-
-	return &WrapperWithFields{log, data}
+	return &Wrapper{log, appData}
 }
 
 //CreateFieldsFromRequest - Create a logrus.Fields object from a Request
@@ -68,28 +50,28 @@ func (logger *Wrapper) CreateFieldsFromRequest(r *http.Request) LoggerData {
 
 //Info - Wrap Info from logrus logger
 func (logger *Wrapper) Info(message string, data LoggerData) {
-	ctx := logger.WithFields(convertToLogrusFields(data))
+	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
 
 	ctx.Info(message)
 }
 
 //Warning - Wrap Warning from logrus logger
 func (logger *Wrapper) Warning(message string, data LoggerData) {
-	ctx := logger.WithFields(convertToLogrusFields(data))
+	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
 
 	ctx.Warning(message)
 }
 
 //Error - Wrap Error from logrus logger
 func (logger *Wrapper) Error(message string, data LoggerData) {
-	ctx := logger.WithFields(convertToLogrusFields(data))
+	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
 
 	ctx.Error(message)
 }
 
 //Panic - Wrap Panic from logrus logger
 func (logger *Wrapper) Panic(message string, data LoggerData) {
-	ctx := logger.WithFields(convertToLogrusFields(data))
+	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
 
 	ctx.Panic(message)
 }
@@ -102,39 +84,11 @@ func convertToLogrusFields(loggerData LoggerData) logrus.Fields {
 	return fields
 }
 
-//Info - Wrap Info from logrus logger
-func (logger *WrapperWithFields) Info(message string, data LoggerData) {
-	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
-
-	ctx.Info(message)
-}
-
-//Warning - Wrap Warning from logrus logger
-func (logger *WrapperWithFields) Warning(message string, data LoggerData) {
-	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
-
-	ctx.Warning(message)
-}
-
-//Error - Wrap Error from logrus logger
-func (logger *WrapperWithFields) Error(message string, data LoggerData) {
-	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
-
-	ctx.Error(message)
-}
-
-//Panic - Wrap Panic from logrus logger
-func (logger *WrapperWithFields) Panic(message string, data LoggerData) {
-	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
-
-	ctx.Panic(message)
-}
-
 //GetAllFieldsToLog – merges default fields with the given ones
-func (logger *WrapperWithFields) GetAllFieldsToLog(data LoggerData) LoggerData {
+func (logger *Wrapper) GetAllFieldsToLog(data LoggerData) LoggerData {
 	result := make(LoggerData)
 
-	for k, v := range logger.LoggerData {
+	for k, v := range logger.AppData {
 		result[k] = v
 	}
 
