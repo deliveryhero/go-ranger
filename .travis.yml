@@ -8,4 +8,3 @@ install:
 script:
   - $GOPATH/bin/glide install
   - go test $($GOPATH/bin/glide novendor)
-  
