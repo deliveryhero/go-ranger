@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/fesposito/go-ranger/ranger_http"
+	"github.com/foodora/go-ranger/ranger_http"
 )
 
 const (

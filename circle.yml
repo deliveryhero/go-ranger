@@ -1,6 +1,6 @@
 machine:
   environment:
-    IMPORT_PATH: "/home/ubuntu/.go_workspace/src/github.com/fesposito"
+    IMPORT_PATH: "/home/ubuntu/.go_workspace/src/github.com/foodora"
     APP_PATH: "$IMPORT_PATH/go-ranger"
 dependencies:
   override:

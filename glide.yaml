@@ -1,4 +1,4 @@
-package: github.com/fesposito/go-ranger
+package: github.com/foodora/go-ranger
 import:
 - package: github.com/bshuster-repo/logrus-logstash-hook
   version: ~1.0.0-beta

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	ranger_logger "github.com/fesposito/go-ranger/ranger_logger"
+	ranger_logger "github.com/foodora/go-ranger/ranger_logger"
 )
 
 func RequestLog(next http.Handler) http.Handler {

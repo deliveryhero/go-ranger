@@ -3,7 +3,7 @@ package ranger_config
 import (
 	"testing"
 
-	"github.com/fesposito/go-ranger/ranger_http"
+	"github.com/foodora/go-ranger/ranger_http"
 )
 
 func TestNewRemoteConfigReader(t *testing.T) {

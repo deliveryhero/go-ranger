@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	ranger_http "github.com/fesposito/go-ranger/ranger_http"
-	ranger_logger "github.com/fesposito/go-ranger/ranger_logger"
-	ranger_metrics "github.com/fesposito/go-ranger/ranger_metrics"
+	ranger_http "github.com/foodora/go-ranger/ranger_http"
+	ranger_logger "github.com/foodora/go-ranger/ranger_logger"
+	ranger_metrics "github.com/foodora/go-ranger/ranger_metrics"
 	"github.com/julienschmidt/httprouter"
 )
 

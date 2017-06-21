@@ -3,7 +3,7 @@ package ranger_metrics
 import (
 	newrelic "github.com/newrelic/go-agent"
 	"net/http"
-	"github.com/fesposito/go-ranger/ranger_logger"
+	"github.com/foodora/go-ranger/ranger_logger"
 )
 
 type NewRelic struct {
