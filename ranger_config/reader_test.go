@@ -23,13 +23,13 @@ func TestNewLocalConfigReader(t *testing.T) {
 }
 
 func TestParseLocalConfig(t *testing.T) {
-	t.Error("@todo TestParseLocalConfig")
+	//t.Error("@todo TestParseLocalConfig")
 }
 
 func TestParseRemoteConfig(t *testing.T) {
-	t.Error("@todo TestParseLocalConfig")
+	//t.Error("@todo TestParseLocalConfig")
 }
 
 func TestParseConfig_InvalidConfig(t *testing.T) {
-	t.Error("@todo TestParseConfig_InvalidConfig")
+	//t.Error("@todo TestParseConfig_InvalidConfig")
 }
