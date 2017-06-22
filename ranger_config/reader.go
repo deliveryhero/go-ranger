@@ -6,20 +6,20 @@ import (
 	"strings"
 
 	"github.com/foodora/go-ranger/ranger_http"
+	"gopkg.in/yaml.v2"
 )
 
 const (
 	defaultTimeout = 5
 )
 
-// @todo parse yaml filo into this configs
-type config struct {
-	AppName           string
-	APIRequestTimeout int
-	HTTPAddress       string
-	Version           string
-	LogstashAddress   string
-	LogstashProtocol  string
+type Config struct {
+	AppName           string `yaml:"app_name"`
+	APIRequestTimeout int    `yaml:"api_request_timeout"`
+	HTTPAddress       string `yaml:"http_address"`
+	Version           string `yaml:"version"`
+	LogstashAddress   string `yaml:"logstash_address"`
+	LogstashProtocol  string `yaml:"logstash_protocol"`
 }
 
 // Reader is the interface for config readers
@@ -60,7 +60,7 @@ func (configReader *remoteConfigReader) GetConfigPath() string {
 }
 
 // newLocalConfigReader is the factory for config readers.
-func newLocalConfigReader(configPath string) Reader {
+func newLocalConfigReader(configPath string) *localConfigReader {
 	return &localConfigReader{
 		configPath: configPath,
 		readFile:   ioutil.ReadFile,
@@ -69,8 +69,14 @@ func newLocalConfigReader(configPath string) Reader {
 
 // ReadConfig fetches the config for the app locally
 func (configReader *localConfigReader) ReadConfig() (interface{}, error) {
-	// @todo define data structure and implement localConfigReader
-	return nil, nil
+	config := &Config{}
+	fileContents, err := ioutil.ReadFile(configReader.configPath)
+
+	if err != nil {
+		return config, err
+	}
+
+	return config, yaml.Unmarshal(fileContents, &config)
 }
 
 // GetConfigPath ...
@@ -101,4 +107,10 @@ func getLocalPath(path string) string {
 		panic(err)
 	}
 	return strings.Replace(u.String(), "file://", "", -1)
+}
+
+// returns *Config instead of interface{}
+func (configReader *localConfigReader) ReadConfigAsObject() (*Config, error) {
+	interfaceConfig, err := configReader.ReadConfig()
+	return interfaceConfig.(*Config), err
 }

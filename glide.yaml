@@ -14,3 +14,4 @@ import:
   - store/memstore
 - package: github.com/justinas/alice
   version: ~1.0.0
+- package: gopkg.in/yaml.v2
