@@ -22,11 +22,7 @@ help: ## Display this help
 	@ echo
 
 .PHONY: all
-all: deps build ## Install dependencies and build binaries
-
-.PHONY: build
-build: clean fmt ## Build binaries
-	GOARCH=$(ARCH) CGO_ENABLED=0 $(GO) build $(FLAGS) -ldflags '$(LDFLAGS)' -o $(CURDIR)/bin/feed ./cmd/...
+all: deps ## Install dependencies
 
 .PHONY: test
 test: fmt-check lint test-unit ## Execute all checks and tests
