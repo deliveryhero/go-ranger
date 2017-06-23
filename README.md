@@ -1,3 +1,7 @@
+<p align="center">
+ <img alt="Hermes" src="ranger.png" >
+</p>
+
 # GO Ranger [![Build Status](https://travis-ci.org/foodora/go-ranger.svg?branch=master)](https://travis-ci.org/foodora/go-ranger)
 
 A Golang toolkit/set of libs to build standardized apps
