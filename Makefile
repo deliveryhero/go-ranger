@@ -79,3 +79,4 @@ clean: ## Cleanup runtime files
 .PHONY: clean-all
 clean-all: clean ## Cleanup ALL runtime files
 	rm -rf vendor
+
