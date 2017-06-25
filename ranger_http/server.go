@@ -44,9 +44,9 @@ func (s Server) WithDefaultErrorRoute() Server {
 	return s
 }
 
-func (s Server) WithHealthCheckFor(services ...interface{}) Server {
-	s.GET("/health/check", HealthCheckHandler(services))
-	s.GET("/health/check/lb", HealthCheckHandlerLB())
+func (s Server) WithHealthCheckFor(healthCheckPath string, healthCheckLbPath string, services ...interface{}) Server {
+	s.GET(healthCheckPath, HealthCheckHandler(services))
+	s.GET(healthCheckLbPath, HealthCheckHandlerLB())
 	return s
 }
 

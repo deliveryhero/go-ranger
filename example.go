@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	logger ranger_logger.LoggerInterface
+	logger        ranger_logger.LoggerInterface
 	rangerMetrics ranger_metrics.MetricsInterface
 )
 
@@ -44,7 +44,7 @@ func main() {
 		// basic health check endpoints
 		// /health/check/lb and /health/check
 		// any struct sent as parameter here will be printed on key: value format (see Sprintf with "%+v")
-		WithHealthCheckFor(nil).
+		WithHealthCheckFor("/health/check", "/health/check/lb").
 		Build()
 
 	// add some endpoints. based on "github.com/julienschmidt/httprouter"
