@@ -12,8 +12,8 @@ import (
 
 var (
 	logger        ranger_logger.LoggerInterface
-	rangerMetrics ranger_http.MiddlewareInteface
-	requestLogger ranger_http.MiddlewareInteface
+	rangerMetrics ranger_http.MiddlewareInterface
+	requestLogger ranger_http.MiddlewareInterface
 )
 
 func init() {

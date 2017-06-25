@@ -7,8 +7,8 @@ import (
 	"bytes"
 )
 
-//MiddlewareInteface
-type MiddlewareInteface interface {
+//MiddlewareInterface
+type MiddlewareInterface interface {
 	Middleware(next http.Handler) http.Handler
 }
 
