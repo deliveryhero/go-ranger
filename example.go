@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	logger ranger_logger.LoggerInterface
-	rangerMetrics ranger_metrics.MetricsInterface
+	logger        ranger_logger.LoggerInterface
+	rangerMetrics ranger_http.MiddlewareInteface
+	requestLogger ranger_http.MiddlewareInteface
 )
 
 func init() {
@@ -28,6 +29,7 @@ func init() {
 		},
 	)
 	rangerMetrics = ranger_metrics.NewNewRelic("Your App Name", "<your-key-goes-here>....................", logger)
+	requestLogger = ranger_http.NewRequestLogger(logger)
 }
 
 func main() {
@@ -35,7 +37,12 @@ func main() {
 
 		// you can add as many middlewares as  you want. they will be applied in the same order
 		// sampleMiddlewar -> anotherSampleMiddleware -> ranger_http.RequestLog
-		WithMiddleware(rangerMetrics.Middleware, sampleMiddleware, anotherSampleMiddleware, ranger_http.RequestLog).
+		WithMiddleware(
+			rangerMetrics.Middleware,
+			sampleMiddleware,
+			anotherSampleMiddleware,
+			requestLogger.Middleware,
+		).
 
 		// with this we provide a default http 404 and 500 error.
 		// see more on response_writer.go

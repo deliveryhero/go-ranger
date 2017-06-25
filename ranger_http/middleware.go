@@ -1,20 +1,52 @@
 package ranger_http
 
 import (
+	"github.com/foodora/go-ranger/ranger_logger"
 	"net/http"
 	"time"
-
-	ranger_logger "github.com/foodora/go-ranger/ranger_logger"
+	"bytes"
 )
 
-func RequestLog(next http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		// @todo add logrus CreateFieldsFromRequest call
+//MiddlewareInteface
+type MiddlewareInteface interface {
+	Middleware(next http.Handler) http.Handler
+}
 
-		t1 := time.Now()
-		next.ServeHTTP(w, r)
-		t2 := time.Now()
-		logger.Info("RequestLog", ranger_logger.LoggerData{"method": r.Method, "url": r.URL.String(), "t": t2.Sub(t1)})
+//NewRequestLogger - RequestLogger Constructor
+func NewRequestLogger(logger ranger_logger.LoggerInterface) *RequestLogger {
+	return &RequestLogger{
+		logger: logger,
 	}
+}
+
+//RequestLogger struct
+type RequestLogger struct {
+	logger ranger_logger.LoggerInterface
+}
+
+//Middleware - RequestLogger middleware
+func (requestLogger *RequestLogger) Middleware(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		defer func() {
+			var message bytes.Buffer
+			message.WriteString(r.Method)
+			message.WriteString(" ")
+			message.WriteString(r.RequestURI)
+
+			requestLogger.logger.Info(
+				message.String(),
+				ranger_logger.LoggerData{
+					"method": r.Method,
+					"URI":    r.RequestURI,
+					"time":   time.Since(start),
+				},
+			)
+		}()
+
+		next.ServeHTTP(w, r)
+	}
+
 	return http.HandlerFunc(fn)
 }
