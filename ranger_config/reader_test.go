@@ -23,7 +23,17 @@ func TestNewLocalConfigReader(t *testing.T) {
 }
 
 func TestParseLocalConfig(t *testing.T) {
-	//t.Error("@todo TestParseLocalConfig")
+	configReader := newLocalConfigReader("./test_config.yaml")
+
+	config, err := configReader.ReadConfigAsObject()
+
+	if err != nil {
+		t.Error("unable to read config")
+	}
+
+	if config.AppName != "test" {
+		t.Error("config parsed incorrectly")
+	}
 }
 
 func TestParseRemoteConfig(t *testing.T) {
