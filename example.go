@@ -50,9 +50,10 @@ func main() {
 
 		// basic health check endpoints
 		// /health/check/lb and /health/check
-		// any struct sent as parameter here will be printed on key: value format (see Sprintf with "%+v")
-		WithHealthCheckFor("/health/check", "/health/check/lb").
-		Build()
+		// any instance of HealthCheckService sent as parameter of the configuration will be converted to JSON and printed
+		// if necessary, you also can add a prefix to the endpoints with WithPrefix("/prefix")
+		//     ex: WithHealthCheckFor(ranger_http.NewHealthCheckConfiguration(versionHealthCheck()).WithPrefix("/prefix"))
+		WithHealthCheckFor(ranger_http.NewHealthCheckConfiguration(versionHealthCheck()))
 
 	// add some endpoints. based on "github.com/julienschmidt/httprouter"
 	s.GET("/hello", helloEndpoint())
@@ -91,4 +92,16 @@ func helloEndpoint() httprouter.Handle {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		json.NewEncoder(w).Encode("Hello world")
 	}
+}
+
+func versionHealthCheck() ranger_http.HealthCheckService {
+	type versionHealthCheck struct {
+		Tag    string `json:"tag"`
+		Commit string `json:"commit"`
+	}
+
+	return ranger_http.NewHealthCheckService("version", versionHealthCheck{
+		Tag:    "0.0.0",
+		Commit: "30ac4383d0260f517d7f171de244fa46c1879c67",
+	})
 }

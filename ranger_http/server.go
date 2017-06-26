@@ -44,12 +44,6 @@ func (s Server) WithDefaultErrorRoute() Server {
 	return s
 }
 
-func (s Server) WithHealthCheckFor(healthCheckPath string, healthCheckLbPath string, services ...interface{}) Server {
-	s.GET(healthCheckPath, HealthCheckHandler(services))
-	s.GET(healthCheckLbPath, HealthCheckHandlerLB())
-	return s
-}
-
 func (s Server) WithMiddleware(middlewares ...func(http.Handler) http.Handler) Server {
 	for _, v := range middlewares {
 		s.middlewares = append(s.middlewares, v)
@@ -76,10 +70,6 @@ func (s Server) SetThrottle(handler *http.HandlerFunc) http.Handler {
 	}
 
 	return httpRateLimiter.RateLimit(handler)
-}
-
-func (s Server) Build() Server {
-	return s
 }
 
 func (s Server) Start() http.Handler {
