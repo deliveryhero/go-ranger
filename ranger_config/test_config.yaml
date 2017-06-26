@@ -1,0 +1,6 @@
+app_name: "test"
+api_request_timeout: 3
+http_address: "localhost"
+version: "0.0.1"
+logstash_address: "localhost"
+logstash_protocol: "whatever"

@@ -1,5 +1,5 @@
-hash: 3a3d138373a362f8396ff046c024435700e0a444bf0512c763e0cc3aa63f7ba2
-updated: 2017-06-21T11:43:11.66848093+02:00
+hash: 6c45204fb61b3736fcacf55b5166a93f03a5d35a4f69a2a0d4ac60e0ef411970
+updated: 2017-06-22T16:03:23.88469546+02:00
 imports:
 - name: github.com/bshuster-repo/logrus-logstash-hook
   version: ea59b04518367f2aafe8cf6d46a7d60605d075ce
@@ -29,4 +29,6 @@ imports:
   version: b5675e93f9d999b22f92d859a5bf2138d3641af4
   subpackages:
   - store/memstore
+- name: gopkg.in/yaml.v2
+  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 testImports: []
