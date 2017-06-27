@@ -1,10 +1,11 @@
 package ranger_http
 
 import (
-	"github.com/foodora/go-ranger/ranger_logger"
+	"bytes"
 	"net/http"
 	"time"
-	"bytes"
+
+	"github.com/foodora/go-ranger/ranger_logger"
 )
 
 //MiddlewareInterface

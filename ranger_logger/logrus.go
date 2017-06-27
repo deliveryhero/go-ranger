@@ -20,8 +20,8 @@ type LoggerInterface interface {
 
 //Wrapper - Wrap a logrus logger
 type Wrapper struct {
-	*logrus.Logger // see promoted methods https://www.goinggo.net/2015/09/composition-with-go.html,
-	AppData LoggerData     // default fields
+	*logrus.Logger            // see promoted methods https://www.goinggo.net/2015/09/composition-with-go.html,
+	AppData        LoggerData // default fields
 }
 
 //NewLoggerWithLogstashHook - LoggerWrapper constructor with logstash hook
