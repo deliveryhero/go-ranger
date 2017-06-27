@@ -1,10 +1,11 @@
 package ranger_http
 
 import (
-	"github.com/foodora/go-ranger/ranger_logger"
+	"bytes"
 	"net/http"
 	"time"
-	"bytes"
+
+	"github.com/foodora/go-ranger/ranger_logger"
 )
 
 //MiddlewareInterface
@@ -13,15 +14,12 @@ type MiddlewareInterface interface {
 }
 
 //NewRequestLogger - RequestLogger Constructor
-func NewRequestLogger(logger ranger_logger.LoggerInterface) *RequestLogger {
-	return &RequestLogger{
-		logger: logger,
-	}
+func NewRequestLogger() *RequestLogger {
+	return &RequestLogger{}
 }
 
 //RequestLogger struct
 type RequestLogger struct {
-	logger ranger_logger.LoggerInterface
 }
 
 //Middleware - RequestLogger middleware
@@ -35,7 +33,7 @@ func (requestLogger *RequestLogger) Middleware(next http.Handler) http.Handler {
 			message.WriteString(" ")
 			message.WriteString(r.RequestURI)
 
-			requestLogger.logger.Info(
+			logger.Info(
 				message.String(),
 				ranger_logger.LoggerData{
 					"method": r.Method,

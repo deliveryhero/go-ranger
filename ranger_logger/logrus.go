@@ -20,8 +20,8 @@ type LoggerInterface interface {
 
 //Wrapper - Wrap a logrus logger
 type Wrapper struct {
-	*logrus.Logger // see promoted methods https://www.goinggo.net/2015/09/composition-with-go.html,
-	AppData LoggerData     // default fields
+	*logrus.Logger            // see promoted methods https://www.goinggo.net/2015/09/composition-with-go.html,
+	AppData        LoggerData // default fields
 }
 
 //NewLoggerWithLogstashHook - LoggerWrapper constructor with logstash hook
@@ -39,7 +39,7 @@ func NewLoggerWithLogstashHook(protocol string, addr string, appName string, app
 }
 
 //CreateFieldsFromRequest - Create a logrus.Fields object from a Request
-func (logger *Wrapper) CreateFieldsFromRequest(r *http.Request) LoggerData {
+func CreateFieldsFromRequest(r *http.Request) LoggerData {
 	return LoggerData{
 		"client_ip":      r.RemoteAddr,
 		"request_method": r.Method,

@@ -29,7 +29,7 @@ func init() {
 		},
 	)
 	rangerMetrics = ranger_metrics.NewNewRelic("Your App Name", "<your-key-goes-here>....................", logger)
-	requestLogger = ranger_http.NewRequestLogger(logger)
+	requestLogger = ranger_http.NewRequestLogger()
 }
 
 func main() {
