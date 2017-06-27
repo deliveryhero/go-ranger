@@ -38,12 +38,14 @@ func NewHTTPServer(l ranger_logger.LoggerInterface) *Server {
 	}
 }
 
+// WithDefaultErrorRoute ...
 func (s Server) WithDefaultErrorRoute() Server {
 	s.PanicHandler = PanicHandler(s.ResponseWriter)
 	s.NotFound = NotFoundHandler(s.ResponseWriter)
 	return s
 }
 
+// WithMiddleware ...
 func (s Server) WithMiddleware(middlewares ...func(http.Handler) http.Handler) Server {
 	for _, v := range middlewares {
 		s.middlewares = append(s.middlewares, v)
@@ -51,6 +53,7 @@ func (s Server) WithMiddleware(middlewares ...func(http.Handler) http.Handler) S
 	return s
 }
 
+// SetThrottle ...
 func (s Server) SetThrottle(handler *http.HandlerFunc) http.Handler {
 	// @todo learn more about this memstore
 	store, err := memstore.New(65536)
@@ -58,7 +61,7 @@ func (s Server) SetThrottle(handler *http.HandlerFunc) http.Handler {
 		logger.Error(err.Error(), nil)
 	}
 
-	quota := throttled.RateQuota{throttled.PerMin(20), 5}
+	quota := throttled.RateQuota{MaxRate: throttled.PerMin(20), MaxBurst: 5}
 	rateLimiter, err := throttled.NewGCRARateLimiter(store, quota)
 	if err != nil {
 		logger.Error(err.Error(), nil)
@@ -72,6 +75,7 @@ func (s Server) SetThrottle(handler *http.HandlerFunc) http.Handler {
 	return httpRateLimiter.RateLimit(handler)
 }
 
+// Start ...
 func (s Server) Start() http.Handler {
 	chain := alice.New(s.middlewares...)
 	return chain.Then(s.Router)

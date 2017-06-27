@@ -2,7 +2,6 @@ package ranger_http
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 )
 
@@ -38,6 +37,4 @@ func (writer *ResponseWriter) writeErrorResponse(rw http.ResponseWriter, statusC
 			MoreInformation: "null",
 		},
 	})
-
-	log.Println(errorCode + " - " + message)
 }
