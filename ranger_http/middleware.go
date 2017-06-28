@@ -13,17 +13,8 @@ type MiddlewareInterface interface {
 	Middleware(next http.Handler) http.Handler
 }
 
-//NewRequestLogger - RequestLogger Constructor
-func NewRequestLogger() *RequestLogger {
-	return &RequestLogger{}
-}
-
-//RequestLogger struct
-type RequestLogger struct {
-}
-
-//Middleware - RequestLogger middleware
-func (requestLogger *RequestLogger) Middleware(next http.Handler) http.Handler {
+// LoggerMiddleware ...
+func LoggerMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
