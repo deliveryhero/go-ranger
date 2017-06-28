@@ -29,7 +29,6 @@ func init() {
 		},
 	)
 	rangerMetrics = ranger_metrics.NewNewRelic("Your App Name", "<your-key-goes-here>....................", logger)
-	requestLogger = ranger_http.NewRequestLogger(logger)
 }
 
 func main() {
@@ -41,7 +40,7 @@ func main() {
 			rangerMetrics.Middleware,
 			sampleMiddleware,
 			anotherSampleMiddleware,
-			requestLogger.Middleware,
+			ranger_http.LoggerMiddleware,
 		).
 
 		// with this we provide a default http 404 and 500 error.
