@@ -8,6 +8,7 @@ import (
 	ranger_logger "github.com/foodora/go-ranger/ranger_logger"
 	ranger_metrics "github.com/foodora/go-ranger/ranger_metrics"
 	"github.com/julienschmidt/httprouter"
+	"time"
 )
 
 var (
@@ -113,17 +114,19 @@ func versionHealthCheck() func() ranger_http.HealthCheckService {
 
 func etcdHealthCheck() func() ranger_http.HealthCheckService {
 	type etcdHealthCheck struct {
-		ResponseTime    int `json:"response_time"`
+		ResponseTime    int64 `json:"response_time"`
 	}
 
 	return func() ranger_http.HealthCheckService {
 		//some logic here to get etcd response time
+		var crazyLogic int64
+		crazyLogic = time.Now().Unix() % 10
 
 		return ranger_http.HealthCheckService{
 			Name: "etcd",
 			Status: true,
 			Info: etcdHealthCheck{
-				ResponseTime: 10,
+				ResponseTime: crazyLogic,
 			},
 		}
 	}
