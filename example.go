@@ -114,13 +114,13 @@ func versionHealthCheck() func() ranger_http.HealthCheckService {
 
 func etcdHealthCheck() func() ranger_http.HealthCheckService {
 	type etcdHealthCheck struct {
-		ResponseTime    int64 `json:"response_time"`
+		ResponseTime    int `json:"response_time"`
 	}
 
 	return func() ranger_http.HealthCheckService {
 		//some logic here to get etcd response time
-		var crazyLogic int64
-		crazyLogic = time.Now().Unix() % 10
+		var crazyLogic int
+		crazyLogic = int(time.Now().Unix() % 10)
 
 		return ranger_http.HealthCheckService{
 			Name: "etcd",
