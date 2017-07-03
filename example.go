@@ -8,6 +8,7 @@ import (
 	ranger_logger "github.com/foodora/go-ranger/ranger_logger"
 	ranger_metrics "github.com/foodora/go-ranger/ranger_metrics"
 	"github.com/julienschmidt/httprouter"
+	"time"
 )
 
 var (
@@ -49,10 +50,10 @@ func main() {
 
 		// basic health check endpoints
 		// /health/check/lb and /health/check
-		// any instance of HealthCheckService sent as parameter of the configuration will be converted to JSON and printed
+		// any instance of `func() ranger_http.HealthCheckService` sent as parameter of the configuration will be converted to JSON and printed
 		// if necessary, you also can add a prefix to the endpoints with WithPrefix("/prefix")
 		//     ex: WithHealthCheckFor(ranger_http.NewHealthCheckConfiguration(versionHealthCheck()).WithPrefix("/prefix"))
-		WithHealthCheckFor(ranger_http.NewHealthCheckConfiguration(versionHealthCheck()))
+		WithHealthCheckFor(ranger_http.NewHealthCheckConfiguration(versionHealthCheck(), etcdHealthCheck()))
 
 	// add some endpoints. based on "github.com/julienschmidt/httprouter"
 	s.GET("/hello", helloEndpoint())
@@ -93,14 +94,40 @@ func helloEndpoint() httprouter.Handle {
 	}
 }
 
-func versionHealthCheck() ranger_http.HealthCheckService {
+func versionHealthCheck() func() ranger_http.HealthCheckService {
 	type versionHealthCheck struct {
 		Tag    string `json:"tag"`
 		Commit string `json:"commit"`
 	}
 
-	return ranger_http.NewHealthCheckService("version", versionHealthCheck{
-		Tag:    "0.0.0",
-		Commit: "30ac4383d0260f517d7f171de244fa46c1879c67",
-	})
+	return func() ranger_http.HealthCheckService {
+		return ranger_http.HealthCheckService{
+			Name: "version",
+			Status: true,
+			Info: versionHealthCheck{
+				Tag:    "0.0.0",
+				Commit: "30ac4383d0260f517d7f171de244fa46c1879c67",
+			},
+		}
+	}
+}
+
+func etcdHealthCheck() func() ranger_http.HealthCheckService {
+	type etcdHealthCheck struct {
+		ResponseTime    int `json:"response_time"`
+	}
+
+	return func() ranger_http.HealthCheckService {
+		//some logic here to get etcd response time
+		var crazyLogic int
+		crazyLogic = int(time.Now().Unix() % 10)
+
+		return ranger_http.HealthCheckService{
+			Name: "etcd",
+			Status: true,
+			Info: etcdHealthCheck{
+				ResponseTime: crazyLogic,
+			},
+		}
+	}
 }

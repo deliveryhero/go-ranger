@@ -10,18 +10,19 @@ import (
 
 //HealthCheckService
 type HealthCheckService struct {
-	name string
-	data interface{}
+	Name string
+	Status bool
+	Info interface{}
 }
 
 //HealthCheckConfiguration represents a configuration service
 type healthCheckConfiguration struct {
 	Prefix   string
-	Services []HealthCheckService
+	Services []func() HealthCheckService
 }
 
 //NewHealthCheckConfiguration
-func NewHealthCheckConfiguration(services ...HealthCheckService) healthCheckConfiguration {
+func NewHealthCheckConfiguration(services ...func() HealthCheckService) healthCheckConfiguration {
 	return healthCheckConfiguration{
 		Services: services,
 	}
@@ -34,47 +35,55 @@ func (configuration healthCheckConfiguration) WithPrefix(prefix string) healthCh
 	return configuration
 }
 
-//NewHealthCheckService constructor
-func NewHealthCheckService(name string, data interface{}) HealthCheckService {
-	return HealthCheckService{
-		name: name,
-		data: data,
-	}
-}
-
 type healthCheckResponse struct {
-	HTTPStatus int                    `json:"http_status"`
-	Services   map[string]interface{} `json:"services"`
+	HTTPStatus int                    `json:"http-status"`
+	Services   map[string]interface{} `json:"checks"`
 }
 
 //WithHealthCheckFor
 func (s Server) WithHealthCheckFor(configuration healthCheckConfiguration) Server {
 	s.GET(fmt.Sprintf("%s/health/check", configuration.Prefix), HealthCheckHandler(configuration.Services))
-	s.GET(fmt.Sprintf("%s/health/check/lb", configuration.Prefix), HealthCheckHandlerLB())
+	s.GET(fmt.Sprintf("%s/health/check/lb", configuration.Prefix), HealthCheckHandlerLB(configuration.Services))
 	return s
 }
 
 // HealthCheckHandlerLB to check if the webserver is up
-func HealthCheckHandlerLB() httprouter.Handle {
+func HealthCheckHandlerLB(services []func() HealthCheckService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
+type healthCheckServiceResponse struct {
+	Status bool       `json:"status"`
+	Info interface{}  `json:"info"`
+}
+
 // HealthCheckHandler to check the service and external dependencies
-func HealthCheckHandler(services []HealthCheckService) httprouter.Handle {
+func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 		mapServices := make(map[string]interface{})
 
-		for _, service := range services {
-			mapServices[service.name] = service.data
+		statusCode := http.StatusOK
+
+		var service HealthCheckService
+		for _, serviceFunc := range services {
+			service = serviceFunc()
+
+			mapServices[service.Name] = healthCheckServiceResponse{
+				Status: service.Status,
+				Info: service.Info,
+			}
+			if service.Status == false {
+				statusCode = http.StatusServiceUnavailable
+			}
 		}
 
 		json.NewEncoder(w).Encode(
 			healthCheckResponse{
-				HTTPStatus: http.StatusOK,
+				HTTPStatus: statusCode,
 				Services:   mapServices,
 			})
 	}
