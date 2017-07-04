@@ -1,5 +1,5 @@
 <p align="center">
- <img alt="Hermes" src="ranger.png" >
+ <img alt="ranger" src="ranger.png" >
 </p>
 
 # GO Ranger [![Build Status](https://travis-ci.org/foodora/go-ranger.svg?branch=master)](https://travis-ci.org/foodora/go-ranger)
