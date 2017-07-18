@@ -11,6 +11,7 @@ import (
 type APIClientInterface interface {
 	Get(url string) (resp *http.Response, err error)
 	Do(req *http.Request) (*http.Response, error)
+	GetContentByURL(method string, url string, header http.Header) ([]byte, error)
 }
 
 type apiClient struct {

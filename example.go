@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"time"
+
 	ranger_http "github.com/foodora/go-ranger/ranger_http"
 	ranger_logger "github.com/foodora/go-ranger/ranger_logger"
 	ranger_metrics "github.com/foodora/go-ranger/ranger_metrics"
 	"github.com/julienschmidt/httprouter"
-	"time"
 )
 
 var (
@@ -102,7 +103,7 @@ func versionHealthCheck() func() ranger_http.HealthCheckService {
 
 	return func() ranger_http.HealthCheckService {
 		return ranger_http.HealthCheckService{
-			Name: "version",
+			Name:   "version",
 			Status: true,
 			Info: versionHealthCheck{
 				Tag:    "0.0.0",
@@ -114,7 +115,7 @@ func versionHealthCheck() func() ranger_http.HealthCheckService {
 
 func etcdHealthCheck() func() ranger_http.HealthCheckService {
 	type etcdHealthCheck struct {
-		ResponseTime    int `json:"response_time"`
+		ResponseTime int `json:"response_time"`
 	}
 
 	return func() ranger_http.HealthCheckService {
@@ -123,7 +124,7 @@ func etcdHealthCheck() func() ranger_http.HealthCheckService {
 		crazyLogic = int(time.Now().Unix() % 10)
 
 		return ranger_http.HealthCheckService{
-			Name: "etcd",
+			Name:   "etcd",
 			Status: true,
 			Info: etcdHealthCheck{
 				ResponseTime: crazyLogic,
