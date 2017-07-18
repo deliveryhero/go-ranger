@@ -2,6 +2,7 @@ package ranger_http
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -55,4 +56,29 @@ func (client *apiClient) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	return res, err
+}
+
+// GetContentByURL execute a GET request and retur
+func (client *apiClient) GetContentByURL(method string, url string, header http.Header) ([]byte, error) {
+	req, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if header != nil {
+		req.Header = header
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
 }
