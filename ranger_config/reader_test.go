@@ -3,6 +3,8 @@ package ranger_config
 import (
 	"testing"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/foodora/go-ranger/ranger_http"
 )
 
@@ -24,8 +26,10 @@ func TestNewLocalConfigReader(t *testing.T) {
 
 func TestParseLocalConfig(t *testing.T) {
 	configReader := newLocalConfigReader("./test_config.yaml")
+	data, err := configReader.ReadConfig()
 
-	config, err := configReader.ReadConfigAsObject()
+	config := &Config{}
+	yaml.Unmarshal(data, config)
 
 	if err != nil {
 		t.Error("unable to read config")

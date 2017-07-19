@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/foodora/go-ranger/ranger_http"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -24,7 +23,7 @@ type Config struct {
 
 // Reader is the interface for config readers
 type Reader interface {
-	ReadConfig() (interface{}, error)
+	ReadConfig() ([]byte, error)
 	GetConfigPath() string
 }
 
@@ -49,7 +48,7 @@ func newRemoteConfigReader(apiClient ranger_http.APIClientInterface, configPath 
 }
 
 // ReadConfig fetches the config for the app remotely
-func (configReader *remoteConfigReader) ReadConfig() (interface{}, error) {
+func (configReader *remoteConfigReader) ReadConfig() ([]byte, error) {
 	// @todo define data structure and implement remoteConfigReader
 	return nil, nil
 }
@@ -68,15 +67,14 @@ func newLocalConfigReader(configPath string) *localConfigReader {
 }
 
 // ReadConfig fetches the config for the app locally
-func (configReader *localConfigReader) ReadConfig() (interface{}, error) {
-	config := &Config{}
+func (configReader *localConfigReader) ReadConfig() ([]byte, error) {
 	fileContents, err := ioutil.ReadFile(configReader.configPath)
 
 	if err != nil {
-		return config, err
+		return nil, err
 	}
 
-	return config, yaml.Unmarshal(fileContents, &config)
+	return fileContents, nil
 }
 
 // GetConfigPath ...
@@ -107,10 +105,4 @@ func getLocalPath(path string) string {
 		panic(err)
 	}
 	return strings.Replace(u.String(), "file://", "", -1)
-}
-
-// returns *Config instead of interface{}
-func (configReader *localConfigReader) ReadConfigAsObject() (*Config, error) {
-	interfaceConfig, err := configReader.ReadConfig()
-	return interfaceConfig.(*Config), err
 }

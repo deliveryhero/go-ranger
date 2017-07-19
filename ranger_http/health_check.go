@@ -10,9 +10,9 @@ import (
 
 //HealthCheckService
 type HealthCheckService struct {
-	Name string
+	Name   string
 	Status bool
-	Info interface{}
+	Info   interface{}
 }
 
 //HealthCheckConfiguration represents a configuration service
@@ -40,23 +40,23 @@ type healthCheckResponse struct {
 	Services   map[string]interface{} `json:"checks"`
 }
 
-//WithHealthCheckFor
+//WithHealthCheckFor ...
 func (s Server) WithHealthCheckFor(configuration healthCheckConfiguration) Server {
 	s.GET(fmt.Sprintf("%s/health/check", configuration.Prefix), HealthCheckHandler(configuration.Services))
-	s.GET(fmt.Sprintf("%s/health/check/lb", configuration.Prefix), HealthCheckHandlerLB(configuration.Services))
+	s.GET(fmt.Sprintf("%s/health/check/lb", configuration.Prefix), HealthCheckHandlerLB())
 	return s
 }
 
 // HealthCheckHandlerLB to check if the webserver is up
-func HealthCheckHandlerLB(services []func() HealthCheckService) httprouter.Handle {
+func HealthCheckHandlerLB() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
 type healthCheckServiceResponse struct {
-	Status bool       `json:"status"`
-	Info interface{}  `json:"info"`
+	Status bool        `json:"status"`
+	Info   interface{} `json:"info"`
 }
 
 // HealthCheckHandler to check the service and external dependencies
@@ -74,7 +74,7 @@ func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle 
 
 			mapServices[service.Name] = healthCheckServiceResponse{
 				Status: service.Status,
-				Info: service.Info,
+				Info:   service.Info,
 			}
 			if service.Status == false {
 				statusCode = http.StatusServiceUnavailable
