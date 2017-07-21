@@ -3,6 +3,7 @@ package ranger_logger
 import (
 	"net"
 	"net/http"
+	"os"
 
 	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/sirupsen/logrus"
@@ -34,6 +35,15 @@ func NewLoggerWithLogstashHook(protocol string, addr string, appName string, app
 	} else {
 		log.Warn("unable to connect to logstash")
 	}
+
+	return &Wrapper{log, appData}
+}
+
+//NewLoggerStdout - LoggerWrapper constructor that uses stdout, since on production we are collecting logs based on the output of the container
+func NewLoggerStdout(appData LoggerData) LoggerInterface {
+	log := logrus.New()
+	log.Out = os.Stdout
+	log.Formatter = &logrus.JSONFormatter{}
 
 	return &Wrapper{log, appData}
 }
