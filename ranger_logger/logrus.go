@@ -41,9 +41,10 @@ func NewLoggerWithLogstashHook(protocol string, addr string, appName string, app
 
 //NewLoggerStdout - LoggerWrapper constructor that uses stdout, since on production we are collecting logs based on the output of the container
 func NewLoggerStdout(appData LoggerData) LoggerInterface {
-	log := logrus.New()
-	log.Out = os.Stdout
-	log.Formatter = &logrus.JSONFormatter{}
+	log := &logrus.Logger{
+		Out:       os.Stdout,
+		Formatter: &logrus.JSONFormatter{},
+	}
 
 	return &Wrapper{log, appData}
 }
