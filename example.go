@@ -30,6 +30,9 @@ func init() {
 			"channel":     "example",
 		},
 	)
+
+	// uncomment the next line if you wanna use stdout logger
+	//logger = ranger_logger.NewLoggerStdout(ranger_logger.LoggerData{"environment": "development"})
 	rangerMetrics = ranger_metrics.NewNewRelic("Your App Name", "<your-key-goes-here>....................", logger)
 }
 
