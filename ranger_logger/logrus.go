@@ -44,6 +44,7 @@ func NewLoggerStdout(appData LoggerData) LoggerInterface {
 	log := &logrus.Logger{
 		Out:       os.Stdout,
 		Formatter: &logrus.JSONFormatter{},
+		Level:     logrus.InfoLevel,
 	}
 
 	return &Wrapper{log, appData}
