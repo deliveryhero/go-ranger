@@ -40,7 +40,7 @@ func NewLoggerWithLogstashHook(protocol string, addr string, appName string, app
 }
 
 //NewLoggerStdout - LoggerWrapper constructor that uses the given io.Writer like os.Stdout
-func NewLoggerIoWriter(appData LoggerData, out io.Writer) LoggerInterface {
+func NewLoggerIoWriter(out io.Writer, appData LoggerData) LoggerInterface {
 	log := &logrus.Logger{
 		Out:       out,
 		Formatter: &logrus.JSONFormatter{},
