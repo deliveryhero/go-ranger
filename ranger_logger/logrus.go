@@ -1,13 +1,12 @@
 package ranger_logger
 
 import (
+	"io"
 	"net"
 	"net/http"
-	"os"
 
 	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/sirupsen/logrus"
-	"io"
 )
 
 type LoggerData map[string]interface{}
