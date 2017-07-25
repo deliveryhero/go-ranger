@@ -26,11 +26,11 @@ type Wrapper struct {
 }
 
 //NewLoggerWithLogstashHook - LoggerWrapper constructor with logstash hook
-func NewLoggerWithLogstashHook(protocol string, addr string, appName string, appData LoggerData) LoggerInterface {
+func NewLoggerWithLogstashHook(protocol string, addr string, appName string, appData LoggerData, f logrus.Formatter) LoggerInterface {
 	log := logrus.New()
 
 	if conn, err := net.Dial(protocol, addr); err == nil {
-		hook := logrustash.New(conn, &logrus.JSONFormatter{})
+		hook := logrustash.New(conn, f)
 		log.Hooks.Add(hook)
 	} else {
 		log.Warn("unable to connect to logstash")
@@ -39,11 +39,11 @@ func NewLoggerWithLogstashHook(protocol string, addr string, appName string, app
 	return &Wrapper{log, appData}
 }
 
-//NewLoggerStdout - LoggerWrapper constructor that uses the given io.Writer like os.Stdout
-func NewLoggerIoWriter(out io.Writer, appData LoggerData) LoggerInterface {
+//NewLoggerStdout - LoggerWrapper constructor that uses the given Formatter and io.Writer like os.Stdout
+func NewLoggerIoWriter(out io.Writer, appData LoggerData, f logrus.Formatter) LoggerInterface {
 	log := &logrus.Logger{
 		Out:       out,
-		Formatter: &logrus.JSONFormatter{},
+		Formatter: f,
 		Level:     logrus.InfoLevel,
 	}
 

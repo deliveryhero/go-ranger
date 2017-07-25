@@ -10,6 +10,7 @@ import (
 	ranger_logger "github.com/foodora/go-ranger/ranger_logger"
 	ranger_metrics "github.com/foodora/go-ranger/ranger_metrics"
 	"github.com/julienschmidt/httprouter"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -29,6 +30,7 @@ func init() {
 			"environment": "development",
 			"channel":     "example",
 		},
+		&logrus.JSONFormatter{},
 	)
 
 	// uncomment the next line if you wanna use stdout logger
