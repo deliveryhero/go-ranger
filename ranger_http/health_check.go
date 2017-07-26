@@ -70,14 +70,16 @@ func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle 
 
 		var service HealthCheckService
 		for _, serviceFunc := range services {
-			service = serviceFunc()
+			if serviceFunc != nil {
+				service = serviceFunc()
 
-			mapServices[service.Name] = healthCheckServiceResponse{
-				Status: service.Status,
-				Info:   service.Info,
-			}
-			if service.Status == false {
-				statusCode = http.StatusServiceUnavailable
+				mapServices[service.Name] = healthCheckServiceResponse{
+					Status: service.Status,
+					Info:   service.Info,
+				}
+				if service.Status == false {
+					statusCode = http.StatusServiceUnavailable
+				}
 			}
 		}
 
