@@ -26,8 +26,8 @@ type Wrapper struct {
 	AppData        LoggerData // default fields
 }
 
-// JsonFormatter Wrapper for logrus.JSONFormatter
-type JsonFormatter struct {
+// JSONFormatter Wrapper for logrus.JSONFormatter
+type JSONFormatter struct {
 	logrus.JSONFormatter
 }
 
@@ -45,7 +45,7 @@ func NewLoggerWithLogstashHook(protocol string, addr string, appName string, app
 	return &Wrapper{log, appData}
 }
 
-//NewLoggerStdout - LoggerWrapper constructor that uses the given Formatter and io.Writer like os.Stdout
+//NewLoggerIoWriter - LoggerWrapper constructor that uses the given Formatter and io.Writer like os.Stdout
 func NewLoggerIoWriter(out io.Writer, appData LoggerData, f logrus.Formatter) LoggerInterface {
 	log := &logrus.Logger{
 		Out:       out,

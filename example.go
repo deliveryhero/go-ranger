@@ -29,7 +29,7 @@ func init() {
 			"environment": "development",
 			"channel":     "example",
 		},
-		&ranger_logger.JsonFormatter{},
+		&ranger_logger.JSONFormatter{},
 	)
 
 	// uncomment the next line if you wanna use stdout logger
