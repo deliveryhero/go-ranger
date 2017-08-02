@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// LoggerData used to log any data structure
 type LoggerData map[string]interface{}
 
 //LoggerInterface ...
@@ -23,6 +24,11 @@ type LoggerInterface interface {
 type Wrapper struct {
 	*logrus.Logger            // see promoted methods https://www.goinggo.net/2015/09/composition-with-go.html,
 	AppData        LoggerData // default fields
+}
+
+// JsonFormatter Wrapper for logrus.JSONFormatter
+type JsonFormatter struct {
+	logrus.JSONFormatter
 }
 
 //NewLoggerWithLogstashHook - LoggerWrapper constructor with logstash hook
