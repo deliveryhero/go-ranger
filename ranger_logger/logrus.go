@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// LoggerData used to log any data structure
 type LoggerData map[string]interface{}
 
 //LoggerInterface ...
@@ -25,6 +26,11 @@ type Wrapper struct {
 	AppData        LoggerData // default fields
 }
 
+// JSONFormatter Wrapper for logrus.JSONFormatter
+type JSONFormatter struct {
+	logrus.JSONFormatter
+}
+
 //NewLoggerWithLogstashHook - LoggerWrapper constructor with logstash hook
 func NewLoggerWithLogstashHook(protocol string, addr string, appName string, appData LoggerData, f logrus.Formatter) LoggerInterface {
 	log := logrus.New()
@@ -39,7 +45,7 @@ func NewLoggerWithLogstashHook(protocol string, addr string, appName string, app
 	return &Wrapper{log, appData}
 }
 
-//NewLoggerStdout - LoggerWrapper constructor that uses the given Formatter and io.Writer like os.Stdout
+//NewLoggerIoWriter - LoggerWrapper constructor that uses the given Formatter and io.Writer like os.Stdout
 func NewLoggerIoWriter(out io.Writer, appData LoggerData, f logrus.Formatter) LoggerInterface {
 	log := &logrus.Logger{
 		Out:       out,
