@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -56,6 +57,7 @@ func HealthCheckHandlerLB() httprouter.Handle {
 
 type healthCheckServiceResponse struct {
 	Status bool        `json:"status"`
+	Time   float64     `json:"time"`
 	Info   interface{} `json:"info"`
 }
 
@@ -71,10 +73,12 @@ func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle 
 		var service HealthCheckService
 		for _, serviceFunc := range services {
 			if serviceFunc != nil {
+				s := time.Now()
 				service = serviceFunc()
 
 				mapServices[service.Name] = healthCheckServiceResponse{
 					Status: service.Status,
+					Time: ElapsedTimeSince(s),
 					Info:   service.Info,
 				}
 				if service.Status == false {
@@ -89,4 +93,9 @@ func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle 
 				Services:   mapServices,
 			})
 	}
+}
+
+//ElapsedTimeSince calculates the elapsed time from a given start
+func ElapsedTimeSince(s time.Time) float64 {
+	return float64(time.Since(s)) / float64(time.Second)
 }
