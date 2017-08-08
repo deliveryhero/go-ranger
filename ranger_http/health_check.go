@@ -38,6 +38,7 @@ func (configuration healthCheckConfiguration) WithPrefix(prefix string) healthCh
 
 type healthCheckResponse struct {
 	HTTPStatus int                    `json:"http-status"`
+	Time 	   float64                `json:"time"`
 	Services   map[string]interface{} `json:"checks"`
 }
 
@@ -69,6 +70,7 @@ func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle 
 		mapServices := make(map[string]interface{})
 
 		statusCode := http.StatusOK
+		sAll := time.Now()
 
 		var service HealthCheckService
 		for _, serviceFunc := range services {
@@ -90,6 +92,7 @@ func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle 
 		json.NewEncoder(w).Encode(
 			healthCheckResponse{
 				HTTPStatus: statusCode,
+				Time: ElapsedTimeSince(sAll),
 				Services:   mapServices,
 			})
 	}
