@@ -5,36 +5,34 @@ import (
 	"net/http"
 )
 
-// ResponseWriter struct
-type ResponseWriter struct {
-}
-
 // ErrorResponse struct
 type ErrorResponse struct {
 	Status int `json:"status"`
-	Data   struct {
-		ErrorCode       string `json:"exception_type"`
-		Message         string `json:"message"`
-		Details         string `json:"developer_message"`
-		MoreInformation string `json:"more_information"`
-	} `json:"data"`
+	Data *ErrorResponseData `json:"data"`
 }
 
-func (writer *ResponseWriter) writeErrorResponse(rw http.ResponseWriter, statusCode int, errorCode string, message string) {
+// ErrorResponseData struct
+type ErrorResponseData struct {
+	ErrorCode       string `json:"exception_type"`
+	Message         string `json:"message"`
+	MoreInformation	string `json:"more_information"`
+}
+
+// NewErrorResponseData ...
+func NewErrorResponseData(errorCode string, message string, moreInformation string) *ErrorResponseData {
+	return &ErrorResponseData{
+		ErrorCode: errorCode,
+		Message: message,
+		MoreInformation: moreInformation,
+	}
+}
+
+// WriteErrorResponse Write status code and body for an error response
+func WriteErrorResponse(rw http.ResponseWriter, statusCode int, erd *ErrorResponseData) {
 	rw.WriteHeader(statusCode)
 
 	json.NewEncoder(rw).Encode(ErrorResponse{
 		Status: statusCode,
-		Data: struct {
-			ErrorCode       string `json:"exception_type"`
-			Message         string `json:"message"`
-			Details         string `json:"developer_message"`
-			MoreInformation string `json:"more_information"`
-		}{
-			ErrorCode:       errorCode,
-			Message:         message,
-			Details:         "",
-			MoreInformation: "null",
-		},
+		Data:   erd,
 	})
 }
