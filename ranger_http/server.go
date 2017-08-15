@@ -14,7 +14,6 @@ import (
 // Server ...
 type Server struct {
 	*httprouter.Router
-	ResponseWriter
 	middlewares []alice.Constructor
 }
 
@@ -29,19 +28,17 @@ var (
 // NewHTTPServer ...
 func NewHTTPServer(l ranger_logger.LoggerInterface) *Server {
 	logger = l
-	responseWriter := ResponseWriter{}
 	router := httprouter.New()
 
 	return &Server{
-		Router:         router,
-		ResponseWriter: responseWriter,
+		Router:	router,
 	}
 }
 
 // WithDefaultErrorRoute ...
 func (s Server) WithDefaultErrorRoute() Server {
-	s.PanicHandler = PanicHandler(s.ResponseWriter)
-	s.NotFound = NotFoundHandler(s.ResponseWriter)
+	s.PanicHandler = PanicHandler()
+	s.NotFound = NotFoundHandler()
 	return s
 }
 
