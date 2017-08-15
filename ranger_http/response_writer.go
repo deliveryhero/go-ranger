@@ -8,7 +8,7 @@ import (
 // ErrorResponse struct
 type ErrorResponse struct {
 	Status int `json:"status"`
-	Data *ErrorResponseData `json:"data"`
+	Data   *ErrorResponseData `json:"data"`
 }
 
 // ErrorResponseData struct
@@ -19,10 +19,10 @@ type ErrorResponseData struct {
 }
 
 // NewErrorResponseData ...
-func NewErrorResponseData(errorCode string, message string, moreInformation string) *ErrorResponseData {
+func NewErrorResponseData(errorCode, message, moreInformation string) *ErrorResponseData {
 	return &ErrorResponseData{
-		ErrorCode: errorCode,
-		Message: message,
+		ErrorCode:	 errorCode,
+		Message:	 message,
 		MoreInformation: moreInformation,
 	}
 }
