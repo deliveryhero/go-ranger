@@ -38,7 +38,7 @@ func (configuration healthCheckConfiguration) WithPrefix(prefix string) healthCh
 
 type healthCheckResponse struct {
 	HTTPStatus int                    `json:"http-status"`
-	Time 	   float64                `json:"time"`
+	Time       float64                `json:"time"`
 	Services   map[string]interface{} `json:"checks"`
 }
 
@@ -52,6 +52,7 @@ func (s Server) WithHealthCheckFor(configuration healthCheckConfiguration) Serve
 // HealthCheckHandlerLB to check if the webserver is up
 func HealthCheckHandlerLB() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		w.Header().Set("Cache-Control", "no-cache, private, max-age=0")
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -66,6 +67,7 @@ type healthCheckServiceResponse struct {
 func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.Header().Set("Cache-Control", "no-cache, private, max-age=0")
 
 		mapServices := make(map[string]interface{})
 
@@ -80,7 +82,7 @@ func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle 
 
 				mapServices[service.Name] = healthCheckServiceResponse{
 					Status: service.Status,
-					Time: ElapsedTimeSince(s),
+					Time:   ElapsedTimeSince(s),
 					Info:   service.Info,
 				}
 				if service.Status == false {
@@ -92,7 +94,7 @@ func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle 
 		json.NewEncoder(w).Encode(
 			healthCheckResponse{
 				HTTPStatus: statusCode,
-				Time: ElapsedTimeSince(sAll),
+				Time:       ElapsedTimeSince(sAll),
 				Services:   mapServices,
 			})
 	}
