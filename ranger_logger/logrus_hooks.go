@@ -20,7 +20,7 @@ func NewLogstashHook(protocol string, addr string, formatter Formatter) Hook {
 }
 
 // NewSlackHook constructor
-func NewSlackHook(channel string, webhook string, logLevel string) Hook {
+func NewSlackHook(channel, webhook, logLevel string) Hook {
 	level, err := logrus.ParseLevel(logLevel)
 	if err != nil {
 		level = logrus.DebugLevel
