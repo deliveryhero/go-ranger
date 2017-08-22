@@ -10,24 +10,24 @@ import (
 )
 
 // NewLogstashHook ...
-func NewLogstashHook(protocol string, addr string, f Formatter) Hook {
+func NewLogstashHook(protocol string, addr string, formatter Formatter) Hook {
 	conn, err := net.Dial(protocol, addr)
 	if err != nil {
 		fmt.Printf("Unable to connect to logstash: %s \n", err.Error())
 		return nil
 	}
-	return logrustash.New(conn, f)
+	return logrustash.New(conn, formatter)
 }
 
 // NewSlackHook constructor
-func NewSlackHook(channel string, webhook string, logNotificationLevel string) Hook {
-	logLevel, err := logrus.ParseLevel(logNotificationLevel)
+func NewSlackHook(channel string, webhook string, logLevel string) Hook {
+	level, err := logrus.ParseLevel(logLevel)
 	if err != nil {
-		logLevel = logrus.DebugLevel
+		level = logrus.DebugLevel
 	}
 	return &slackrus.SlackrusHook{
 		HookURL:        webhook,
-		AcceptedLevels: slackrus.LevelThreshold(logLevel),
+		AcceptedLevels: slackrus.LevelThreshold(level),
 		Channel:        channel,
 	}
 }
