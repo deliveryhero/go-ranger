@@ -2,19 +2,21 @@ package ranger_logger
 
 import (
 	"io"
-	"net"
 	"net/http"
 
-	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/sirupsen/logrus"
 )
 
 // LoggerData used to log any data structure
 type LoggerData map[string]interface{}
 
+// Hook wrapper
+type Hook logrus.Hook
+
 //LoggerInterface ...
 type LoggerInterface interface {
 	Info(message string, data LoggerData)
+	Debug(message string, data LoggerData)
 	Warning(message string, data LoggerData)
 	Error(message string, data LoggerData)
 	Panic(message string, data LoggerData)
@@ -31,26 +33,21 @@ type JSONFormatter struct {
 	logrus.JSONFormatter
 }
 
-//NewLoggerWithLogstashHook - LoggerWrapper constructor with logstash hook
-func NewLoggerWithLogstashHook(protocol string, addr string, appName string, appData LoggerData, f logrus.Formatter) LoggerInterface {
+// Formatter wrappper
+type Formatter logrus.Formatter
+
+//NewLogger - LoggerWrapper constructor that uses the given Formatter and io.Writer like os.Stdout
+func NewLogger(out io.Writer, appData LoggerData, f Formatter, hooks ...Hook) LoggerInterface {
 	log := logrus.New()
 
-	if conn, err := net.Dial(protocol, addr); err == nil {
-		hook := logrustash.New(conn, f)
-		log.Hooks.Add(hook)
-	} else {
-		log.Warn("unable to connect to logstash")
-	}
+	log.Out = out
+	log.Formatter = f
+	log.Level = logrus.InfoLevel
 
-	return &Wrapper{log, appData}
-}
-
-//NewLoggerIoWriter - LoggerWrapper constructor that uses the given Formatter and io.Writer like os.Stdout
-func NewLoggerIoWriter(out io.Writer, appData LoggerData, f logrus.Formatter) LoggerInterface {
-	log := &logrus.Logger{
-		Out:       out,
-		Formatter: f,
-		Level:     logrus.InfoLevel,
+	for _, h := range hooks {
+		if h != nil {
+			log.Hooks.Add(h)
+		}
 	}
 
 	return &Wrapper{log, appData}
@@ -78,6 +75,13 @@ func (logger *Wrapper) Warning(message string, data LoggerData) {
 	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
 
 	ctx.Warning(message)
+}
+
+//Debug - Wrap Debug from logrus logger
+func (logger *Wrapper) Debug(message string, data LoggerData) {
+	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
+
+	ctx.Debug(message)
 }
 
 //Error - Wrap Error from logrus logger
