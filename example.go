@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"time"
 
@@ -14,26 +15,34 @@ import (
 
 var (
 	logger        ranger_logger.LoggerInterface
+	logstash      ranger_logger.Hook
+	slack         ranger_logger.Hook
 	rangerMetrics ranger_http.MiddlewareInterface
 	requestLogger ranger_http.MiddlewareInterface
 )
 
 func init() {
-	// we recommend to use ranger_logger (logrus + logstash hook)
-	// if the connection fails we will warn and keep logging to stdout
-	logger = ranger_logger.NewLoggerWithLogstashHook(
+	// you can use all logrus hooks. we provide some useful with go-ranger
+	logstash = ranger_logger.NewLogstashHook(
 		"tcp",
 		"localhost:1234",
-		"exampleApp",
-		ranger_logger.LoggerData{
-			"environment": "development",
-			"channel":     "example",
-		},
 		&ranger_logger.JSONFormatter{},
 	)
 
-	// uncomment the next line if you wanna use stdout logger
-	//logger = ranger_logger.NewLoggerIoWriter(io.Stdout, ranger_logger.LoggerData{"environment": "development"})
+	slack = ranger_logger.NewSlackHook(
+		"#my-channel",
+		"https://hooks.slack.com/services/T00/B00/absfmzyy",
+		"debug",
+	)
+
+	logger = ranger_logger.NewLogger(
+		os.Stdout,
+		ranger_logger.LoggerData{"environment": "development"},
+		&ranger_logger.JSONFormatter{},
+		logstash,
+		slack,
+	)
+
 	rangerMetrics = ranger_metrics.NewNewRelic("Your App Name", "<your-key-goes-here>....................", logger)
 }
 

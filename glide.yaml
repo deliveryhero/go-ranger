@@ -15,3 +15,5 @@ import:
 - package: github.com/justinas/alice
   version: ~1.0.0
 - package: gopkg.in/yaml.v2
+- package: github.com/johntdyer/slackrus
+- package: github.com/johntdyer/slack-go
