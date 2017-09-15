@@ -1,8 +1,10 @@
 package ranger_config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/foodora/go-ranger/ranger_http"
@@ -84,11 +86,18 @@ func (configReader *localConfigReader) GetConfigPath() string {
 
 // GetConfigReader strategy
 func GetConfigReader(path string) Reader {
+	var r Reader
 	if isReadConfigurationLocal(path) {
-		return newLocalConfigReader(getLocalPath(path))
+		r = newLocalConfigReader(getLocalPath(path))
 	}
 
-	return newRemoteConfigReader(ranger_http.NewAPIClient(defaultTimeout), path)
+	r = newRemoteConfigReader(ranger_http.NewAPIClient(defaultTimeout), path)
+
+	_, err := os.Open(r.GetConfigPath())
+	if err != nil {
+		panic(fmt.Errorf("%v %s", err, r.GetConfigPath()))
+	}
+	return r
 }
 
 func isReadConfigurationLocal(path string) bool {
