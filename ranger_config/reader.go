@@ -3,6 +3,7 @@ package ranger_config
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -43,6 +44,11 @@ type localConfigReader struct {
 
 // newAPIConfigReader is the factory for config readers.
 func newRemoteConfigReader(apiClient ranger_http.APIClientInterface, configPath string) Reader {
+	_, err := http.Get(configPath)
+	if err != nil {
+		panic(fmt.Errorf("%v %s", err, configPath))
+	}
+
 	return &remoteConfigReader{
 		url:    configPath,
 		client: apiClient,
@@ -62,8 +68,15 @@ func (configReader *remoteConfigReader) GetConfigPath() string {
 
 // newLocalConfigReader is the factory for config readers.
 func newLocalConfigReader(configPath string) *localConfigReader {
+	localPath := getLocalPath(configPath)
+
+	_, err := os.Stat(localPath)
+	if err != nil {
+		panic(fmt.Errorf("%v %s", err, configPath))
+	}
+
 	return &localConfigReader{
-		configPath: configPath,
+		configPath: localPath,
 		readFile:   ioutil.ReadFile,
 	}
 }
@@ -86,18 +99,11 @@ func (configReader *localConfigReader) GetConfigPath() string {
 
 // GetConfigReader strategy
 func GetConfigReader(path string) Reader {
-	var r Reader
 	if isReadConfigurationLocal(path) {
-		r = newLocalConfigReader(getLocalPath(path))
+		return newLocalConfigReader(path)
 	}
 
-	r = newRemoteConfigReader(ranger_http.NewAPIClient(defaultTimeout), path)
-
-	_, err := os.Open(r.GetConfigPath())
-	if err != nil {
-		panic(fmt.Errorf("%v %s", err, r.GetConfigPath()))
-	}
-	return r
+	return newRemoteConfigReader(ranger_http.NewAPIClient(defaultTimeout), path)
 }
 
 func isReadConfigurationLocal(path string) bool {

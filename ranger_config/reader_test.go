@@ -4,28 +4,26 @@ import (
 	"testing"
 
 	yaml "gopkg.in/yaml.v2"
-
-	"github.com/foodora/go-ranger/ranger_http"
 )
 
 func TestNewRemoteConfigReader(t *testing.T) {
-	configReader := newRemoteConfigReader(ranger_http.NewAPIClient(5), "http://url")
+	configReader := GetConfigReader("http://www.google.com")
 
-	if configReader.GetConfigPath() != "http://url" {
+	if configReader.GetConfigPath() != "http://www.google.com" {
 		t.Error("invalid url set to configReader")
 	}
 }
 
 func TestNewLocalConfigReader(t *testing.T) {
-	configReader := newLocalConfigReader("file:///my/path")
+	configReader := GetConfigReader("file://./test_config.yaml")
 
-	if configReader.GetConfigPath() != "/my/path" {
+	if configReader.GetConfigPath() != "./test_config.yaml" {
 		t.Error("invalid url set to configReader")
 	}
 }
 
 func TestParseLocalConfig(t *testing.T) {
-	configReader := newLocalConfigReader("./test_config.yaml")
+	configReader := GetConfigReader("file://./test_config.yaml")
 	data, err := configReader.ReadConfig()
 
 	config := &Config{}
