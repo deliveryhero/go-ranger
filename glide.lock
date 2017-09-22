@@ -1,5 +1,5 @@
-hash: edce7afc3fe2fb14bb6959f2ef99e7be1e1e2e53aaba178ab822951b51364bb5
-updated: 2017-08-22T14:27:28.091997599+02:00
+hash: b2e3f1be304bd86e72f253c3cf3fa8f95688a31d73753c76c9f31bc56e0f02ce
+updated: 2017-09-22T14:44:17.166696572+02:00
 imports:
 - name: github.com/bshuster-repo/logrus-logstash-hook
   version: ea59b04518367f2aafe8cf6d46a7d60605d075ce
@@ -25,6 +25,8 @@ imports:
   - internal/utilization
 - name: github.com/sirupsen/logrus
   version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
+- name: github.com/tomnomnom/linkheader
+  version: 6953a30d444317754766fccdd3f7f000edc874f6
 - name: golang.org/x/sys
   version: fb4cac33e3196ff7f507ab9b2d2a44b0142f5b5a
   subpackages:
