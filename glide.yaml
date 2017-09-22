@@ -17,3 +17,5 @@ import:
 - package: gopkg.in/yaml.v2
 - package: github.com/johntdyer/slackrus
 - package: github.com/johntdyer/slack-go
+- package: github.com/tomnomnom/linkheader
+  version: 0.1.0
