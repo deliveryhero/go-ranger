@@ -12,6 +12,7 @@ type APIClientInterface interface {
 	Get(url string) (resp *http.Response, err error)
 	Do(req *http.Request) (*http.Response, error)
 	GetContentByURL(method string, url string, header http.Header) ([]byte, error)
+	Head(url string) (resp *http.Response, err error)
 }
 
 type apiClient struct {
@@ -59,7 +60,7 @@ func (client *apiClient) Do(req *http.Request) (*http.Response, error) {
 	return res, err
 }
 
-// GetContentByURL execute a GET request and retur
+// GetContentByURL execute a GET request and return
 func (client *apiClient) GetContentByURL(method string, url string, header http.Header) ([]byte, error) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
@@ -82,4 +83,15 @@ func (client *apiClient) GetContentByURL(method string, url string, header http.
 	}
 
 	return body, nil
+}
+
+// Head issues a HEAD to the specified URL.
+func (client *apiClient) Head(url string) (resp *http.Response, err error) {
+	response, err := client.client.Head(url)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
