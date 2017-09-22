@@ -32,7 +32,7 @@ func GetLastPageFromLinksHeader(linksHeader string) (int, error) {
 	parsedLinks := linkheader.Parse(linksHeader)
 	lastPage := 0
 
-	if rel := parsedLinks.FilterByRel("last"); rel != nil && len(parsedLinks) > 0 {
+	if rel := parsedLinks.FilterByRel("last"); rel != nil && len(rel) > 0 {
 		parsedURL, err := url.Parse(rel[0].URL)
 
 		if err != nil {
