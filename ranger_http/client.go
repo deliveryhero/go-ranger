@@ -51,11 +51,6 @@ func (client *apiClient) Do(req *http.Request) (*http.Response, error) {
 			"ApiClient.Do=Cannot execute request, URL=%s, Header=%+v", req.URL, req.Header,
 		)
 	}
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(
-			"ApiClient.Do=Bad request,StatusCode=%d, URL=%s, Header: %+v", res.StatusCode, req.URL, res.Header,
-		)
-	}
 
 	return res, err
 }
