@@ -24,7 +24,7 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 			message.WriteString(" ")
 			message.WriteString(r.RequestURI)
 
-			logger.Info(
+			logger.Debug(
 				message.String(),
 				ranger_logger.LoggerData{
 					"method": r.Method,
