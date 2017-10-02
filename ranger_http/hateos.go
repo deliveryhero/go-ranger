@@ -39,10 +39,9 @@ func GetLastPageFromLinksHeader(linksHeader string) (int, error) {
 			return 0, err
 		}
 
-		params := parsedURL.Query()
-
-		if lastPage, err = strconv.Atoi(params["page"][0]); err != nil {
-			return 0, err
+		lastPage, _ = strconv.Atoi(parsedURL.Query().Get("page"))
+		if lastPage == 0 {
+			return lastPage, errors.New("page is empty or contains invalid data")
 		}
 	} else {
 		return 0, errors.New("rel property not found")
@@ -59,8 +58,8 @@ func GetNumPagesForURL(url *url.URL, apiClient APIClientInterface) (int, error) 
 	res, err := GetLastPageFromLinksHeader(linksHeader)
 
 	if err != nil {
-		return 1, err // there is no Link header or no info about paging, so we assume it's 1 page
-	} else {
-		return res, nil
+		return 0, err
 	}
+
+	return res, nil
 }
