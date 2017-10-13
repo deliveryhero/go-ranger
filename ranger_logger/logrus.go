@@ -33,6 +33,14 @@ type JSONFormatter struct {
 	logrus.JSONFormatter
 }
 
+// GetJSONFormatter https://foodpanda.atlassian.net/browse/DISCOVER-601
+func GetJSONFormatter() *JSONFormatter {
+	jsonFormatter := logrus.JSONFormatter{
+		TimestampFormat: "2006-01-02T15:04:05-0700",
+	}
+	return &JSONFormatter{jsonFormatter}
+}
+
 // Formatter wrappper
 type Formatter logrus.Formatter
 
