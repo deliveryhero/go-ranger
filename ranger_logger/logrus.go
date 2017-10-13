@@ -37,6 +37,9 @@ type JSONFormatter struct {
 func GetJSONFormatter() *JSONFormatter {
 	jsonFormatter := logrus.JSONFormatter{
 		TimestampFormat: "2006-01-02T15:04:05-0700",
+		FieldMap: logrus.FieldMap{
+			logrus.FieldKeyTime: "@timestamp",
+		},
 	}
 	return &JSONFormatter{jsonFormatter}
 }
