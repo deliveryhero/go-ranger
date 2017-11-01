@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/foodora/go-ranger/ranger_logger"
+	"net/http/httputil"
 )
 
 //MiddlewareInterface
@@ -27,9 +28,10 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 			logger.Debug(
 				message.String(),
 				ranger_logger.LoggerData{
-					"method": r.Method,
-					"URI":    r.RequestURI,
-					"time":   time.Since(start),
+					"method":  r.Method,
+					"URI":     r.RequestURI,
+					"time":    time.Since(start),
+					"request": getRequestDump(r),
 				},
 			)
 		}()
@@ -38,4 +40,14 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(fn)
+}
+
+//getRequestDump - Get a pretty print request or empty string
+func getRequestDump(r *http.Request) string {
+	d, err := httputil.DumpRequest(r, true)
+	if err != nil {
+		return ""
+	}
+
+	return string(d)
 }
