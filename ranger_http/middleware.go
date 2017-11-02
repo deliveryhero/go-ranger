@@ -2,6 +2,7 @@ package ranger_http
 
 import (
 	"bytes"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -27,9 +28,10 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 			logger.Debug(
 				message.String(),
 				ranger_logger.LoggerData{
-					"method": r.Method,
-					"URI":    r.RequestURI,
-					"time":   time.Since(start),
+					"method":  r.Method,
+					"URI":     r.RequestURI,
+					"time":    time.Since(start),
+					"body": getRequestBody(r),
 				},
 			)
 		}()
@@ -38,4 +40,14 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(fn)
+}
+
+//getRequestBody - Get a pretty print request body or empty string
+func getRequestBody(r *http.Request) string {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return ""
+	}
+
+	return string(body)
 }
