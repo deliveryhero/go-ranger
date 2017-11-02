@@ -42,7 +42,7 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-//getRequestBody - Get a pretty print request or empty string
+//getRequestBody - Get a pretty print request body or empty string
 func getRequestBody(r *http.Request) string {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
