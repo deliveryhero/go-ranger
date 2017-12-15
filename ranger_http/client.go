@@ -31,11 +31,12 @@ func NewAPIClient(requestTimeout int) APIClientInterface {
 // Get is issueing a GET request to the given url
 func (client *apiClient) Get(url string) (*http.Response, error) {
 	res, err := client.client.Get(url)
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(
-			"ApiClient.Get=Bad request,StatusCode=%d, URL=%s, Header: %+v", res.StatusCode, url, res.Header,
-		)
+	if err != nil {
+		if res.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf(
+				"ApiClient.Get=Bad request,StatusCode=%d, URL=%s, Header: %+v", res.StatusCode, url, res.Header,
+			)
+		}
 	}
 
 	return res, err
