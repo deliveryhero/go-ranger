@@ -3,8 +3,8 @@ sudo: false
 go:
   - 1.9
 install:
-  - go get github.com/Masterminds/glide
+  - go get github.com/golang/dep/cmd/dep
   - if ! go get github.com/golang/tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
 script:
-  - $GOPATH/bin/glide install
-  - go test $($GOPATH/bin/glide novendor)
+  - $GOPATH/bin/dep ensure
+  - go test ./...

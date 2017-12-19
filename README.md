@@ -12,4 +12,4 @@ See more on ```example.go```
 
 # Libraries used
 
-See ```glide.yaml```
+See ```Gopkg.toml```
