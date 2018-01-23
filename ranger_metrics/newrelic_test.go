@@ -17,7 +17,7 @@ func ExampleStartTransactionManually() {
 	closeTxn()
 
 	// Start and end with defer
-	closeTxn := newRelic.StartTransaction(nil, nil)
+	closeTxn = newRelic.StartTransaction(nil, nil)
 	defer closeTxn()
 	// your code here
 
