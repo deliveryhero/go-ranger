@@ -1,9 +1,10 @@
 package ranger_metrics
 
 import (
-	newrelic "github.com/newrelic/go-agent"
 	"net/http"
+
 	"github.com/foodora/go-ranger/ranger_logger"
+	newrelic "github.com/newrelic/go-agent"
 )
 
 type NewRelic struct {
@@ -11,9 +12,11 @@ type NewRelic struct {
 }
 
 func NewNewRelic(appName string, license string, logger ranger_logger.LoggerInterface) *NewRelic {
-	app, err := newrelic.NewApplication(newrelic.NewConfig(
-		appName,
-		license),
+	app, err := newrelic.NewApplication(
+		newrelic.NewConfig(
+			appName,
+			license,
+		),
 	)
 
 	if err != nil {
