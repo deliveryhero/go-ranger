@@ -38,3 +38,13 @@ func (newRelic *NewRelic) Middleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(fn)
 }
+
+// StartTransaction start a transaction manually
+// call the returned function to end the transaction
+func (newRelic *NewRelic) StartTransaction(w http.ResponseWriter, r *http.Request) func() {
+	txn := newRelic.Application.StartTransaction(r.URL.Path, w, r)
+
+	return func() {
+		txn.End()
+	}
+}
