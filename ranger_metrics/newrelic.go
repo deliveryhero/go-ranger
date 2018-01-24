@@ -39,7 +39,7 @@ func (newRelic *NewRelic) Middleware(next http.Handler) http.Handler {
 }
 
 // StartTransaction start a transaction manually
-// call the returned function to end the transaction
+// * Call the returned function to end the transaction
 func (newRelic *NewRelic) StartTransaction(w http.ResponseWriter, r *http.Request) func() {
 	txn := newRelic.Application.StartTransaction(r.URL.Path, w, r)
 
@@ -48,6 +48,8 @@ func (newRelic *NewRelic) StartTransaction(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// NoticeError send content of err to newrelic using trasaction
+// that middleware has started
 func (newRelic *NewRelic) NoticeError(w http.ResponseWriter, err error) {
 	if txn, ok := w.(newrelic.Transaction); ok {
 		txnErr := txn.NoticeError(err)
