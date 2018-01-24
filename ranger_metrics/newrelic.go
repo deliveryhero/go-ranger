@@ -1,6 +1,7 @@
 package ranger_metrics
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/foodora/go-ranger/ranger_logger"
@@ -9,22 +10,20 @@ import (
 
 type NewRelic struct {
 	Application newrelic.Application
+	logger      ranger_logger.LoggerInterface
 }
 
 func NewNewRelic(appName string, license string, logger ranger_logger.LoggerInterface) *NewRelic {
-	app, err := newrelic.NewApplication(
-		newrelic.NewConfig(
-			appName,
-			license,
-		),
-	)
+	config := newrelic.NewConfig(appName, license)
 
+	app, err := newrelic.NewApplication(config)
 	if err != nil {
 		logger.Panic("NewRelic error", ranger_logger.LoggerData{"error": err.Error()})
 	}
 
 	return &NewRelic{
 		Application: app,
+		logger:      logger,
 	}
 }
 
@@ -33,7 +32,7 @@ func (newRelic *NewRelic) Middleware(next http.Handler) http.Handler {
 		txn := newRelic.Application.StartTransaction(r.URL.Path, w, r)
 		defer txn.End()
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(txn, r)
 	}
 
 	return http.HandlerFunc(fn)
@@ -47,4 +46,21 @@ func (newRelic *NewRelic) StartTransaction(w http.ResponseWriter, r *http.Reques
 	return func() {
 		txn.End()
 	}
+}
+
+func (newRelic *NewRelic) NoticeError(w http.ResponseWriter, err error) {
+	if txn, ok := w.(newrelic.Transaction); ok {
+		txnErr := txn.NoticeError(err)
+		if txnErr != nil {
+			newRelic.logger.Error("Cannot send error to NewRelic", ranger_logger.LoggerData{
+				"error": err.Error(),
+			})
+		}
+
+		return
+	}
+
+	newRelic.logger.Error("Cannot send error to NewRelic", ranger_logger.LoggerData{
+		"error": errors.New("Transaction wasn't started by NewRelic Middleware"),
+	})
 }
