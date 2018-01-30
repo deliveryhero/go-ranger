@@ -124,6 +124,20 @@ func TestExportEnvVars_WithoutQuotes(t *testing.T) {
 	assert.Equal(t, "pandora", os.Getenv("COMPANY"))
 }
 
+func TestExportEnvVars_WithEmptyValue(t *testing.T) {
+	tmpfile, _ := ioutil.TempFile("", "go-ranger-utils")
+	defer os.Remove(tmpfile.Name())
+
+	content := []byte(`COMPANY=`)
+	if _, err := tmpfile.Write(content); err != nil {
+		t.Fatal(err)
+	}
+
+	err := goranger.ExportEnvVars(tmpfile.Name())
+	assert.Nil(t, err)
+	assert.Equal(t, "", os.Getenv("COMPANY"))
+}
+
 func TestExportEnvVars_AllTogether(t *testing.T) {
 	tmpfile, _ := ioutil.TempFile("", "go-ranger-utils")
 	defer os.Remove(tmpfile.Name())
@@ -138,6 +152,7 @@ WITHOUT_EXPORT=1
 export SINGLE_QUOTES=' pandora'
 export DOUBLE_QUOTES=" pandora"
 export WITHOUT_QUOTES=pandora
+export EMPTY_VALUE=
 `)
 	if _, err := tmpfile.Write(content); err != nil {
 		t.Fatal(err)
@@ -151,4 +166,5 @@ export WITHOUT_QUOTES=pandora
 	assert.Equal(t, " pandora", os.Getenv("SINGLE_QUOTES"))
 	assert.Equal(t, " pandora", os.Getenv("DOUBLE_QUOTES"))
 	assert.Equal(t, "pandora", os.Getenv("WITHOUT_QUOTES"))
+	assert.Equal(t, "", os.Getenv("EMPTY_VALUE"))
 }
