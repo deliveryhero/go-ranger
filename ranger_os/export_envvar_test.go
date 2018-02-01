@@ -1,11 +1,11 @@
-package ranger_utils_test
+package ranger_os_test
 
 import (
 	"io/ioutil"
 	"os"
 	"testing"
 
-	goranger "github.com/foodora/go-ranger/ranger_utils"
+	goranger "github.com/foodora/go-ranger/ranger_os"
 	"github.com/stretchr/testify/assert"
 )
 

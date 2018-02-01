@@ -1,4 +1,4 @@
-package ranger_utils
+package ranger_os
 
 import (
 	"bufio"
