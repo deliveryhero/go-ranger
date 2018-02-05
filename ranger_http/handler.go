@@ -9,8 +9,10 @@ import (
 
 // PanicHandler is handling app panics gracefully
 func PanicHandler() func(http.ResponseWriter, *http.Request, interface{}) {
-	return func(w http.ResponseWriter, r *http.Request, ps interface{}) {
-		logger.Error(fmt.Sprintf("%s %s internalError", r.Method, r.RequestURI), ranger_logger.CreateFieldsFromRequest(r))
+	return func(w http.ResponseWriter, r *http.Request, rcv interface{}) {
+		loggerData := ranger_logger.CreateFieldsFromRequest(r)
+		loggerData["error"] = rcv
+		logger.Error(fmt.Sprintf("%s %s internalError", r.Method, r.RequestURI), loggerData)
 		WriteErrorResponse(w, http.StatusInternalServerError, NewErrorResponseData("internalServerError", "Internal server error", ""))
 	}
 }
