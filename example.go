@@ -39,6 +39,7 @@ func init() {
 		os.Stdout,
 		ranger_logger.LoggerData{"environment": "development"},
 		&ranger_logger.JSONFormatter{},
+		"debug",
 		logstash,
 		slack,
 	)

@@ -48,12 +48,16 @@ func GetJSONFormatter() *JSONFormatter {
 type Formatter logrus.Formatter
 
 //NewLogger - LoggerWrapper constructor that uses the given Formatter and io.Writer like os.Stdout
-func NewLogger(out io.Writer, appData LoggerData, f Formatter, hooks ...Hook) LoggerInterface {
+func NewLogger(out io.Writer, appData LoggerData, f Formatter, logLevel string, hooks ...Hook) LoggerInterface {
 	log := logrus.New()
 
 	log.Out = out
 	log.Formatter = f
-	log.Level = logrus.InfoLevel
+	level, err := logrus.ParseLevel(logLevel)
+	if err != nil {
+		level = logrus.DebugLevel
+	}
+	log.Level = level
 
 	for _, h := range hooks {
 		if h != nil {
