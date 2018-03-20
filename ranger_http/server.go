@@ -31,7 +31,7 @@ func NewHTTPServer(l ranger_logger.LoggerInterface) *Server {
 	router := httprouter.New()
 
 	return &Server{
-		Router:	router,
+		Router: router,
 	}
 }
 

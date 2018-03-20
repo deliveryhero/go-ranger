@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# 1. Rename the file to "pre-commit"
+# 2. Put it under .git/hooks/
+# 3. Make it executable
+
+# cp pre-commit.dist .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+STAGED_GO_FILES=`git diff --cached --name-only | grep .go$`
+
+if [ ! -z "$STAGED_GO_FILES" ]
+then
+    gofmt -s -w $STAGED_GO_FILES && git add $STAGED_GO_FILES
+fi
