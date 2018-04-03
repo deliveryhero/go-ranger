@@ -1,7 +1,6 @@
 package ranger_http
 
 import (
-	"bytes"
 	"net/http"
 	"time"
 
@@ -19,18 +18,12 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 		start := time.Now()
 
 		defer func() {
-			var message bytes.Buffer
-			message.WriteString(r.Method)
-			message.WriteString(" ")
-			message.WriteString(r.RequestURI)
+			loggerData := ranger_logger.CreateFieldsFromRequest(r)
+			loggerData["response_time"] = time.Since(start).Seconds()
 
 			logger.Debug(
-				message.String(),
-				ranger_logger.LoggerData{
-					"method": r.Method,
-					"URI":    r.RequestURI,
-					"time":   time.Since(start),
-				},
+				"ranger_logger.LoggerMiddleware",
+				loggerData,
 			)
 		}()
 

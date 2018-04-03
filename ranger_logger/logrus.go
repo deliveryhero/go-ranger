@@ -1,6 +1,7 @@
 package ranger_logger
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -70,11 +71,18 @@ func NewLogger(out io.Writer, appData LoggerData, f Formatter, logLevel string, 
 
 //CreateFieldsFromRequest - Create a logrus.Fields object from a Request
 func CreateFieldsFromRequest(r *http.Request) LoggerData {
+	message := fmt.Sprintf("%s %s %s", r.Method, " ", r.RequestURI)
+
 	return LoggerData{
-		"client_ip":      r.RemoteAddr,
+		"request":        message,
+		"protocol":       r.Proto,
+		"message_length": r.ContentLength,
+		"remote_address": r.RemoteAddr,
 		"request_method": r.Method,
-		"request_uri":    r.RequestURI,
-		"request_host":   r.Host,
+		"client_ip":      r.RemoteAddr,
+		"user_agent":     r.UserAgent(),
+		"uri":            r.RequestURI,
+		"headers":        r.Header,
 	}
 }
 
