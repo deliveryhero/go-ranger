@@ -8,22 +8,16 @@
   version = "1.0-beta"
 
 [[projects]]
-  name = "github.com/davecgh/go-spew"
-  packages = ["spew"]
-  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
-  version = "v1.1.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/hashicorp/golang-lru"
   packages = [".","simplelru"]
-  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
+  revision = "0a025b7e63adc15a622f29b0b2c4c3848243bbf6"
 
 [[projects]]
   branch = "master"
   name = "github.com/johntdyer/slack-go"
   packages = ["."]
-  revision = "95fac1160b220c5abcf8b0ef88e9c3cb213c09f4"
+  revision = "88ef3038545fa084d81f36e4a6943d112cdd74f6"
 
 [[projects]]
   branch = "master"
@@ -50,22 +44,10 @@
   version = "v1.11.0"
 
 [[projects]]
-  name = "github.com/pmezard/go-difflib"
-  packages = ["difflib"]
-  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
-  version = "v1.0.0"
-
-[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
-  version = "v1.0.5"
-
-[[projects]]
-  name = "github.com/stretchr/testify"
-  packages = ["assert"]
-  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
-  version = "v1.2.1"
+  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
+  version = "v1.0.4"
 
 [[projects]]
   name = "github.com/tomnomnom/linkheader"
@@ -77,13 +59,13 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "12892e8c234f4fe6f6803f052061de9057903bb2"
+  revision = "d585fd2cc9195196078f516b69daff6744ef5e84"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "378d26f46672a356c46195c28f61bdb4c0a781dd"
+  revision = "571f7bbbe08da2a8955aed9d4db316e78630e9a3"
 
 [[projects]]
   name = "gopkg.in/throttled/throttled.v2"
@@ -92,14 +74,14 @@
   version = "v2.0.3"
 
 [[projects]]
+  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
+  revision = "287cf08546ab5e7e37d55a84f7ed3fd1db036de5"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8248dd94941fb920a01432e7279eb53129669af9b7f745f996d0cfc3c6ec40dc"
+  inputs-digest = "7a5e40d319af6a331d2e4da7792e16d4fdd824e8f3132ca51de4c6aac6e025a1"
   solver-name = "gps-cdcl"
   solver-version = 1

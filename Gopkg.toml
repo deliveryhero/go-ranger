@@ -23,7 +23,7 @@
 
 [[constraint]]
   name = "github.com/bshuster-repo/logrus-logstash-hook"
-  version = "1.0.0-beta"
+  version = "1.0-beta"
 
 [[constraint]]
   branch = "master"
@@ -48,6 +48,10 @@
 [[constraint]]
   name = "github.com/tomnomnom/linkheader"
   version = "0.1.0"
+
+[[constraint]]
+  name = "gopkg.in/throttled/throttled.v2"
+  version = "2.0.3"
 
 [[constraint]]
   branch = "v2"

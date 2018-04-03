@@ -71,7 +71,7 @@ func NewLogger(out io.Writer, appData LoggerData, f Formatter, logLevel string, 
 
 //CreateFieldsFromRequest - Create a logrus.Fields object from a Request
 func CreateFieldsFromRequest(r *http.Request) LoggerData {
-	message := fmt.Sprintf("%s %s %s", r.Method, " ", r.RequestURI)
+	message := fmt.Sprintf("%s %s", r.Method, r.RequestURI)
 
 	return LoggerData{
 		"request":        message,
