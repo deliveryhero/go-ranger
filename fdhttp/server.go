@@ -12,32 +12,38 @@ import (
 )
 
 type (
+	// Server represent a server that can be Started or Stopped.
 	Server struct {
-		logger   Logger
 		addr     string
 		running  uint32
 		runLock  sync.Mutex
 		stopLock sync.Mutex
+		router   *Router
 		httpSrv  *http.Server
-	}
 
-	Router struct {
+		// Logger will be setted with DefaultLogger when NewServer is called
+		// but you can overwrite later only in this instance.
+		Logger Logger
 	}
 )
 
+// Errors that can be returned when Start() or Stop() are called.
 var (
 	ErrServerStopped        = errors.New("fdhttp: server stopped")
 	ErrServerNotRunning     = errors.New("fdhttp: server not running")
 	ErrServerAlreadyRunning = errors.New("fdhttp: server already running")
 )
 
+// NewServer return a new server instance and will be run in the address informed.
+// Address can be "0.0.0.0:8080", ":8080" or just the port "8080".
 func NewServer(addr string) *Server {
 	return &Server{
 		addr:   addr,
-		logger: DefaultLogger,
+		Logger: defaultLogger,
 	}
 }
 
+// checkAddr verify if address informed is valid
 func checkAddr(addr string) (string, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -52,6 +58,8 @@ func checkAddr(addr string) (string, error) {
 	return net.JoinHostPort(host, port), nil
 }
 
+// Start the server and block until another go rotine call Stop()
+// or return imediatily in case is not possible to start the server.
 func (s *Server) Start(r *Router) error {
 	if atomic.LoadUint32(&s.running) == 1 {
 		return ErrServerAlreadyRunning
@@ -73,10 +81,16 @@ func (s *Server) Start(r *Router) error {
 		return err
 	}
 
-	s.logger.Printf("Running http server on %s...", s.addr)
+	s.Logger.Printf("Running http server on %s...", s.addr)
 
 	s.httpSrv = &http.Server{
 		Addr: s.addr,
+	}
+
+	if r != nil {
+		s.router = r
+		s.router.Init()
+		s.httpSrv.Handler = s.router
 	}
 
 	errChan := make(chan error)
@@ -96,6 +110,9 @@ func (s *Server) Start(r *Router) error {
 	return err
 }
 
+// Stop the server. Return nil in case of success, but can fail due
+// take so long to shutdown. In case of success Start() will return
+// fdhttp.ErrServerStopped
 func (s *Server) Stop() error {
 	if atomic.LoadUint32(&s.running) == 0 {
 		return ErrServerNotRunning
@@ -109,7 +126,7 @@ func (s *Server) Stop() error {
 
 	defer atomic.StoreUint32(&s.running, 0)
 
-	s.logger.Printf("Stopping http server...")
+	s.Logger.Printf("Stopping http server...")
 
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)

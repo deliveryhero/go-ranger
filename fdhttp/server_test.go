@@ -1,9 +1,8 @@
 package fdhttp_test
 
 import (
-	"fmt"
+	"io/ioutil"
 	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 )
 
 func init() {
-	fdhttp.DefaultLogger = log.New(os.Stdout, "", 0)
+	fdhttp.SetLogger(log.New(ioutil.Discard, "", 0))
 }
 
 func startServer(addr string) (srv *fdhttp.Server, stopChan chan struct{}) {
@@ -27,7 +26,6 @@ func stopServer(t *testing.T, srv *fdhttp.Server, stopChan chan struct{}) error 
 	time.Sleep(1 * time.Millisecond)
 
 	err := srv.Stop()
-	fmt.Println(err)
 
 	select {
 	case <-stopChan:

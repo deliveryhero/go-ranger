@@ -1,22 +1,30 @@
 package fdhttp
 
 import (
-	"io/ioutil"
 	"log"
-	"sync"
+	"os"
 )
 
+// Logger is the interface used internally to log
 type Logger interface {
 	Printf(format string, v ...interface{})
+	Panicf(format string, v ...interface{})
 }
 
-var DefaultLogger = log.New(ioutil.Discard, "", 0)
+// defaultLogger will be used as logger when create a new server using NewServer()
+var defaultLogger Logger
 
-func Un(f func()) {
-	f()
+func init() {
+	// Set default logger
+	SetLogger(nil)
 }
 
-func Lock(x sync.Locker) func() {
-	x.Lock()
-	return func() { x.Unlock() }
+// SetLogger will be used as logger when create a new server using NewServer(), but
+// it's possible update individualy a server.Logger later.
+func SetLogger(logger Logger) {
+	if logger == nil {
+		defaultLogger = log.New(os.Stdout, "[fdhttp] ", log.LstdFlags)
+	} else {
+		defaultLogger = logger
+	}
 }
