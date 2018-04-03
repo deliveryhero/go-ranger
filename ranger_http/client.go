@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/foodora/go-ranger/ranger_logger"
 )
 
 // APIClientInterface is an interface for api clients. It allows us to mock the basic http client.
@@ -16,21 +18,23 @@ type APIClientInterface interface {
 }
 
 type apiClient struct {
-	client *http.Client
+	*http.Client
+	ranger_logger.LoggerInterface
 }
 
 // NewAPIClient is the factory method for api clients.
-func NewAPIClient(requestTimeout int) APIClientInterface {
+func NewAPIClient(requestTimeout int, logger ranger_logger.LoggerInterface) APIClientInterface {
 	return &apiClient{
-		client: &http.Client{
+		Client: &http.Client{
 			Timeout: time.Second * time.Duration(requestTimeout),
 		},
+		LoggerInterface: logger,
 	}
 }
 
 // Get is issueing a GET request to the given url
 func (client *apiClient) Get(url string) (*http.Response, error) {
-	res, err := client.client.Get(url)
+	res, err := client.Get(url)
 	if err != nil && res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
 			"ApiClient.Get=Bad request,StatusCode=%d, URL=%s, Header: %+v", res.StatusCode, url, res.Header,
@@ -44,7 +48,8 @@ func (client *apiClient) Get(url string) (*http.Response, error) {
 // policy (such as redirects, cookies, auth) as configured on the
 // client.
 func (client *apiClient) Do(req *http.Request) (*http.Response, error) {
-	res, err := client.client.Do(req)
+	client.Debug("ApiClient.Do", ranger_logger.CreateFieldsFromRequest(req))
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"ApiClient.Do=Cannot execute request, URL=%s, Header=%+v", req.URL, req.Header,
@@ -81,7 +86,7 @@ func (client *apiClient) GetContentByURL(method string, url string, header http.
 
 // Head issues a HEAD to the specified URL.
 func (client *apiClient) Head(url string) (resp *http.Response, err error) {
-	response, err := client.client.Head(url)
+	response, err := client.Head(url)
 
 	if err != nil {
 		return nil, err

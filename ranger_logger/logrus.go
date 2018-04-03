@@ -83,6 +83,7 @@ func CreateFieldsFromRequest(r *http.Request) LoggerData {
 		"user_agent":     r.UserAgent(),
 		"uri":            r.RequestURI,
 		"headers":        r.Header,
+		"request_id":     r.Header.Get("x-request-id"),
 	}
 }
 

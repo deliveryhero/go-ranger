@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/foodora/go-ranger/ranger_logger"
+
 	"github.com/foodora/go-ranger/ranger_http"
 )
 
@@ -98,12 +100,12 @@ func (configReader *localConfigReader) GetConfigPath() string {
 }
 
 // GetConfigReader strategy
-func GetConfigReader(path string) Reader {
+func GetConfigReader(path string, logger ranger_logger.LoggerInterface) Reader {
 	if isReadConfigurationLocal(path) {
 		return newLocalConfigReader(path)
 	}
 
-	return newRemoteConfigReader(ranger_http.NewAPIClient(defaultTimeout), path)
+	return newRemoteConfigReader(ranger_http.NewAPIClient(defaultTimeout, logger), path)
 }
 
 func isReadConfigurationLocal(path string) bool {
