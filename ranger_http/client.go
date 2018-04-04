@@ -16,6 +16,7 @@ type APIClientInterface interface {
 	Head(url string) (resp *http.Response, err error)
 }
 
+// APIClient ...
 type APIClient struct {
 	*http.Client
 	ranger_logger.LoggerInterface
@@ -32,6 +33,7 @@ func NewAPIClient(requestTimeout int) *APIClient {
 
 // Get is issueing a GET request to the given url
 func (c *APIClient) Get(url string) (*http.Response, error) {
+	c.Debug("ApiClient.Get", ranger_logger.LoggerData{"url": url})
 	res, err := c.Client.Get(url)
 	if err != nil && res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
@@ -60,6 +62,7 @@ func (c *APIClient) Do(req *http.Request) (*http.Response, error) {
 // GetContentByURL execute a GET request and return
 func (c *APIClient) GetContentByURL(method string, url string, header http.Header) ([]byte, error) {
 	req, err := http.NewRequest(method, url, nil)
+	c.Debug("ApiClient.GetContentByURL", ranger_logger.CreateFieldsFromRequest(req))
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +71,7 @@ func (c *APIClient) GetContentByURL(method string, url string, header http.Heade
 		req.Header = header
 	}
 
-	res, err := c.Client.Do(req)
+	res, err := c.Do(req)
 	if err != nil {
 		return nil, err
 	}

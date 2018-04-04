@@ -115,6 +115,7 @@ func helloEndpoint() httprouter.Handle {
 
 		// calling a external service
 		apiClient := ranger_http.NewAPIClient(5)
+		apiClient.LoggerInterface = logger
 
 		// starting cross application transaction
 		// more info here "Making HTTP requests" https://docs.newrelic.com/docs/agents/go-agent/features/cross-application-tracing-go
