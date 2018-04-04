@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 
@@ -10,25 +9,33 @@ import (
 	ranger_http "github.com/foodora/go-ranger/ranger_http"
 	ranger_logger "github.com/foodora/go-ranger/ranger_logger"
 	ranger_metrics "github.com/foodora/go-ranger/ranger_metrics"
+	ranger_os "github.com/foodora/go-ranger/ranger_os"
 	"github.com/julienschmidt/httprouter"
 )
 
 var (
-	logger        ranger_logger.LoggerInterface
-	logstash      ranger_logger.Hook
-	slack         ranger_logger.Hook
-	rangerMetrics ranger_http.MiddlewareInterface
-	requestLogger ranger_http.MiddlewareInterface
+	logger   ranger_logger.LoggerInterface
+	logstash ranger_logger.Hook
+	slack    ranger_logger.Hook
+	metrics  *ranger_metrics.NewRelic
 )
 
 func init() {
+	// load env vars if present
+	ranger_os.ExportEnvVars(".env")
+
+	// our logging system accepts power-ups called hooks
 	// you can use all logrus hooks. we provide some useful with go-ranger
+
+	// logstash hook
 	logstash = ranger_logger.NewLogstashHook(
 		"tcp",
 		"localhost:1234",
-		&ranger_logger.JSONFormatter{},
+		// important to use this formatter to have correct timestamps
+		ranger_logger.GetJSONFormatter(),
 	)
 
+	// slack hook
 	slack = ranger_logger.NewSlackHook(
 		"#my-channel",
 		"https://hooks.slack.com/services/T00/B00/absfmzyy",
@@ -44,16 +51,17 @@ func init() {
 		slack,
 	)
 
-	rangerMetrics = ranger_metrics.NewNewRelic("Your App Name", "<your-key-goes-here>....................", logger)
+	// currenttly we only support new relic APM integration
+	metrics = ranger_metrics.NewNewRelic("Your App Name", "<your-key-goes-here>....................", logger)
 }
 
 func main() {
 	s := ranger_http.NewHTTPServer(logger).
 
-		// you can add as many middlewares as  you want. they will be applied in the same order
+		// you can add as many middlewares as you want. they will be applied in the same order
 		// sampleMiddlewar -> anotherSampleMiddleware -> ranger_http.RequestLog
 		WithMiddleware(
-			rangerMetrics.Middleware,
+			metrics.Middleware,
 			sampleMiddleware,
 			anotherSampleMiddleware,
 			ranger_http.LoggerMiddleware,
@@ -104,8 +112,27 @@ func anotherSampleMiddleware(next http.Handler) http.Handler {
 // just an example
 func helloEndpoint() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+		// calling a external service
+		apiClient := ranger_http.NewAPIClient(5)
+
+		// starting cross application transaction
+		// more info here "Making HTTP requests" https://docs.newrelic.com/docs/agents/go-agent/features/cross-application-tracing-go
+		txn := metrics.Application.StartTransaction("cross-application-transaction-example", nil, nil)
+		defer txn.End()
+		metrics.UseNewRoundTripper(txn, apiClient.Client)
+
+		body, err := apiClient.GetContentByURL("GET", "http://www.mocky.io/v2/5185415ba171ea3a00704eed", nil)
+		if err != nil {
+			logger.Error("Could not make mock call", ranger_logger.LoggerData{"error": err})
+		}
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		json.NewEncoder(w).Encode("Hello world")
+
+		// normally we use a encoder to return a struct
+		//json.NewEncoder(w).Encode("Hi gopher!")
+
+		// but in this case we can simple forward the returned json
+		w.Write(body)
 	}
 }
 

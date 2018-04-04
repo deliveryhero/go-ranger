@@ -13,28 +13,26 @@ import (
 type APIClientInterface interface {
 	Get(url string) (resp *http.Response, err error)
 	Do(req *http.Request) (*http.Response, error)
-	GetContentByURL(method string, url string, header http.Header) ([]byte, error)
 	Head(url string) (resp *http.Response, err error)
 }
 
-type apiClient struct {
+type APIClient struct {
 	*http.Client
 	ranger_logger.LoggerInterface
 }
 
 // NewAPIClient is the factory method for api clients.
-func NewAPIClient(requestTimeout int, logger ranger_logger.LoggerInterface) APIClientInterface {
-	return &apiClient{
+func NewAPIClient(requestTimeout int) *APIClient {
+	return &APIClient{
 		Client: &http.Client{
 			Timeout: time.Second * time.Duration(requestTimeout),
 		},
-		LoggerInterface: logger,
 	}
 }
 
 // Get is issueing a GET request to the given url
-func (client *apiClient) Get(url string) (*http.Response, error) {
-	res, err := client.Get(url)
+func (c *APIClient) Get(url string) (*http.Response, error) {
+	res, err := c.Client.Get(url)
 	if err != nil && res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
 			"ApiClient.Get=Bad request,StatusCode=%d, URL=%s, Header: %+v", res.StatusCode, url, res.Header,
@@ -47,9 +45,9 @@ func (client *apiClient) Get(url string) (*http.Response, error) {
 // Do sends an HTTP request and returns an HTTP response, following
 // policy (such as redirects, cookies, auth) as configured on the
 // client.
-func (client *apiClient) Do(req *http.Request) (*http.Response, error) {
-	client.Debug("ApiClient.Do", ranger_logger.CreateFieldsFromRequest(req))
-	res, err := client.Do(req)
+func (c *APIClient) Do(req *http.Request) (*http.Response, error) {
+	c.Debug("ApiClient.Do", ranger_logger.CreateFieldsFromRequest(req))
+	res, err := c.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"ApiClient.Do=Cannot execute request, URL=%s, Header=%+v", req.URL, req.Header,
@@ -60,7 +58,7 @@ func (client *apiClient) Do(req *http.Request) (*http.Response, error) {
 }
 
 // GetContentByURL execute a GET request and return
-func (client *apiClient) GetContentByURL(method string, url string, header http.Header) ([]byte, error) {
+func (c *APIClient) GetContentByURL(method string, url string, header http.Header) ([]byte, error) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, err
@@ -70,7 +68,7 @@ func (client *apiClient) GetContentByURL(method string, url string, header http.
 		req.Header = header
 	}
 
-	res, err := client.Do(req)
+	res, err := c.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +83,8 @@ func (client *apiClient) GetContentByURL(method string, url string, header http.
 }
 
 // Head issues a HEAD to the specified URL.
-func (client *apiClient) Head(url string) (resp *http.Response, err error) {
-	response, err := client.Head(url)
+func (c *APIClient) Head(url string) (resp *http.Response, err error) {
+	response, err := c.Client.Head(url)
 
 	if err != nil {
 		return nil, err

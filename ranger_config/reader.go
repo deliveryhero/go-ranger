@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/foodora/go-ranger/ranger_logger"
+	"github.com/foodora/go-ranger/ranger_http"
 )
 
 const (
@@ -33,7 +33,7 @@ type Reader interface {
 // apiConfigReader is the config reader implementation using an api as source
 type remoteConfigReader struct {
 	url    string
-	client *http.Client
+	client ranger_http.APIClientInterface
 }
 
 // localConfigReader reader
@@ -43,7 +43,7 @@ type localConfigReader struct {
 }
 
 // newAPIConfigReader is the factory for config readers.
-func newRemoteConfigReader(apiClient *http.Client, configPath string) Reader {
+func newRemoteConfigReader(apiClient ranger_http.APIClientInterface, configPath string) Reader {
 	_, err := http.Get(configPath)
 	if err != nil {
 		panic(fmt.Errorf("%v %s", err, configPath))
@@ -98,12 +98,12 @@ func (configReader *localConfigReader) GetConfigPath() string {
 }
 
 // GetConfigReader strategy
-func GetConfigReader(path string, logger ranger_logger.LoggerInterface, apiClient *http.Client) Reader {
+func GetConfigReader(path string) Reader {
 	if isReadConfigurationLocal(path) {
 		return newLocalConfigReader(path)
 	}
 
-	return newRemoteConfigReader(apiClient, path)
+	return newRemoteConfigReader(ranger_http.NewAPIClient(defaultTimeout), path)
 }
 
 func isReadConfigurationLocal(path string) bool {
