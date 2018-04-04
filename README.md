@@ -6,9 +6,13 @@
 
 A Golang toolkit/set of libs to build standardized apps
 
-## How it works
+# Before you start
 
-See more on ```example.go```
+Run `dep ensure` to download all dependencies
+
+# How it works
+
+See all features on ```example.go```
 
 # Libraries used
 
