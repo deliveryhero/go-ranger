@@ -47,7 +47,7 @@ func (r *Router) Init() {
 	}
 	// Set default method not allowed handler
 	if r.MethodNotAllowedHandler != nil {
-		r.httprouter.MethodNotAllowed = r.NotFoundHandler
+		r.httprouter.MethodNotAllowed = r.MethodNotAllowedHandler
 	} else {
 		r.httprouter.MethodNotAllowed = NewMethodNotAllowedHandler()
 	}
