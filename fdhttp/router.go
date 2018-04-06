@@ -95,8 +95,8 @@ func (r *Router) StdDELETE(path string, handler http.HandlerFunc) {
 	r.httprouter.Handler("DELETE", path, handler)
 }
 
-// Handler register the method and path with fdhttp.HandlerFunc
-func (r *Router) Handler(method, path string, handler HandlerFunc) {
+// Handler register the method and path with fdhttp.EndpointFunc
+func (r *Router) Handler(method, path string, fn EndpointFunc) {
 	r.httprouter.Handle(method, path, func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		ctx := req.Context()
 
@@ -121,7 +121,7 @@ func (r *Router) Handler(method, path string, handler HandlerFunc) {
 		}
 
 		// call user handler
-		statusCode, resp, err := handler(ctx)
+		statusCode, resp, err := fn(ctx)
 		if err != nil {
 			// ignore response in case of error
 
@@ -138,27 +138,31 @@ func (r *Router) Handler(method, path string, handler HandlerFunc) {
 	})
 }
 
-// GET register a fdhttp.HandlerFunc to handle GET method
-func (r *Router) GET(path string, handler HandlerFunc) {
-	r.Handler("GET", path, handler)
+// GET register a fdhttp.EndpointFunc to handle GET method
+func (r *Router) GET(path string, fn EndpointFunc) {
+	r.Handler("GET", path, fn)
 }
 
-// POST register a fdhttp.HandlerFunc to handle POST method
-func (r *Router) POST(path string, handler HandlerFunc) {
-	r.Handler("POST", path, handler)
+// POST register a fdhttp.EndpointFunc to handle POST method
+func (r *Router) POST(path string, fn EndpointFunc) {
+	r.Handler("POST", path, fn)
 }
 
-// PUT register a fdhttp.HandlerFunc to handle PUT method
-func (r *Router) PUT(path string, handler HandlerFunc) {
-	r.Handler("PUT", path, handler)
+// PUT register a fdhttp.EndpointFunc to handle PUT method
+func (r *Router) PUT(path string, fn EndpointFunc) {
+	r.Handler("PUT", path, fn)
 }
 
-// DELETE register a fdhttp.HandlerFunc to handle DELETE method
-func (r *Router) DELETE(path string, handler HandlerFunc) {
-	r.Handler("DELETE", path, handler)
+// DELETE register a fdhttp.EndpointFunc to handle DELETE method
+func (r *Router) DELETE(path string, fn EndpointFunc) {
+	r.Handler("DELETE", path, fn)
 }
 
 // ServeHTTP makes this struct a valid implementation of http.Handler
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if r.rootHandler == nil {
+		r.Init()
+	}
+
 	r.rootHandler.ServeHTTP(w, req)
 }

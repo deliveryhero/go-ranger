@@ -8,7 +8,6 @@ import (
 // Logger is the interface used internally to log
 type Logger interface {
 	Printf(format string, v ...interface{})
-	Panicf(format string, v ...interface{})
 }
 
 // defaultLogger will be used as logger when create a new server using NewServer()

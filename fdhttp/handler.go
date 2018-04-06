@@ -13,14 +13,14 @@ type Handler interface {
 	Init(*Router)
 }
 
-// HandlerFunc is the method signature to deal with http requests.
+// EndpointFunc is the method signature to deal with http requests.
 //
 // See Also
 //
 // Router.GET(), Router.POST(), Router.PUT(), Router.DELETE()
 // or functions that are compatible with standard library
 // Router.StdGET(), Router.StdPOST(), Router.StdPUT(), Router.StdDELETE()
-type HandlerFunc func(context.Context) (int, interface{}, error)
+type EndpointFunc func(context.Context) (int, interface{}, error)
 
 // RouteParamPrefixKey is used to avoid name clashing inside of context.Context.
 var RouteParamPrefixKey = "_fdhttp_router_param_"
