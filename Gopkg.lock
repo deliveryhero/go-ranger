@@ -8,9 +8,18 @@
   version = "1.0-beta"
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/hashicorp/golang-lru"
-  packages = [".","simplelru"]
+  packages = [
+    ".",
+    "simplelru"
+  ]
   revision = "0a025b7e63adc15a622f29b0b2c4c3848243bbf6"
 
 [[projects]]
@@ -39,15 +48,35 @@
 
 [[projects]]
   name = "github.com/newrelic/go-agent"
-  packages = [".","internal","internal/cat","internal/jsonx","internal/logger","internal/sysinfo","internal/utilization"]
+  packages = [
+    ".",
+    "internal",
+    "internal/cat",
+    "internal/jsonx",
+    "internal/logger",
+    "internal/sysinfo",
+    "internal/utilization"
+  ]
   revision = "f5bce3387232559bcbe6a5f8227c4bf508dac1ba"
   version = "v1.11.0"
+
+[[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
   version = "v1.0.4"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
+  version = "v1.2.1"
 
 [[projects]]
   name = "github.com/tomnomnom/linkheader"
@@ -64,12 +93,18 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix","windows"]
+  packages = [
+    "unix",
+    "windows"
+  ]
   revision = "571f7bbbe08da2a8955aed9d4db316e78630e9a3"
 
 [[projects]]
   name = "gopkg.in/throttled/throttled.v2"
-  packages = [".","store/memstore"]
+  packages = [
+    ".",
+    "store/memstore"
+  ]
   revision = "b5675e93f9d999b22f92d859a5bf2138d3641af4"
   version = "v2.0.3"
 
@@ -82,6 +117,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7a5e40d319af6a331d2e4da7792e16d4fdd824e8f3132ca51de4c6aac6e025a1"
+  inputs-digest = "83007dbae8d40f8ae7c61813348b8e4e67b397f74bc9ee54bf30e3bfe79bdbcc"
   solver-name = "gps-cdcl"
   solver-version = 1
