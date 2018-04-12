@@ -58,7 +58,7 @@ func SetRequestBody(ctx context.Context, value io.Reader) context.Context {
 }
 
 // RequestHeaderKey is a key used inside of context.Context to save the request headers
-var RequestHeaderKey = "fdhttp_header"
+var RequestHeaderKey = "fdhttp_request_header"
 
 // RequestHeader get header from context.
 func RequestHeader(ctx context.Context) http.Header {
@@ -69,4 +69,18 @@ func RequestHeader(ctx context.Context) http.Header {
 // SetRequestHeader set header into context.
 func SetRequestHeader(ctx context.Context, value http.Header) context.Context {
 	return context.WithValue(ctx, RequestHeaderKey, value)
+}
+
+// ResponseHeaderKey is a key used inside of context.Context to save the request headers
+var ResponseHeaderKey = "fdhttp_response_header"
+
+// ResponseHeader get header from context.
+func ResponseHeader(ctx context.Context) http.Header {
+	header, _ := ctx.Value(ResponseHeaderKey).(http.Header)
+	return header
+}
+
+// SetResponseHeader set header into context.
+func SetResponseHeader(ctx context.Context, value http.Header) context.Context {
+	return context.WithValue(ctx, ResponseHeaderKey, value)
 }

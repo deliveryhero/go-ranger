@@ -3,6 +3,7 @@ package fdhttp_test
 import (
 	"bytes"
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/foodora/go-ranger/fdhttp"
@@ -74,4 +75,90 @@ func TestRequestBodyJSON(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, resp.Success)
 	assert.Equal(t, 1, resp.Data)
+}
+
+func TestRequestHeader(t *testing.T) {
+	header := http.Header{}
+	header.Add("X-Personal", "1")
+	header.Add("X-Personal", "2")
+	header.Add("Content-Type", "2")
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, fdhttp.RequestHeaderKey, header)
+
+	h := fdhttp.RequestHeader(ctx)
+	assert.Equal(t, header, h)
+}
+
+func TestRequestHeader_Empty(t *testing.T) {
+	ctx := context.Background()
+	h := fdhttp.RequestHeader(ctx)
+	assert.Nil(t, h)
+}
+
+func TestSetRequestHeader(t *testing.T) {
+	header := http.Header{}
+	header.Add("X-Personal", "1")
+	header.Add("X-Personal", "2")
+	header.Add("Content-Type", "2")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetRequestHeader(ctx, header)
+	h, _ := ctx.Value(fdhttp.RequestHeaderKey).(http.Header)
+	assert.Equal(t, header, h)
+}
+
+func TestGetAndSetRequestHeader(t *testing.T) {
+	header := http.Header{}
+	header.Add("X-Personal", "1")
+	header.Add("X-Personal", "2")
+	header.Add("Content-Type", "2")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetRequestHeader(ctx, header)
+	h := fdhttp.RequestHeader(ctx)
+	assert.Equal(t, header, h)
+}
+
+func TestResponseHeader(t *testing.T) {
+	header := http.Header{}
+	header.Add("X-Personal", "1")
+	header.Add("X-Personal", "2")
+	header.Add("Content-Type", "2")
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, fdhttp.ResponseHeaderKey, header)
+
+	h := fdhttp.ResponseHeader(ctx)
+	assert.Equal(t, header, h)
+}
+
+func TestResponseHeader_Empty(t *testing.T) {
+	ctx := context.Background()
+	h := fdhttp.ResponseHeader(ctx)
+	assert.Nil(t, h)
+}
+
+func TestSetResponseHeader(t *testing.T) {
+	header := http.Header{}
+	header.Add("X-Personal", "1")
+	header.Add("X-Personal", "2")
+	header.Add("Content-Type", "2")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetResponseHeader(ctx, header)
+	h, _ := ctx.Value(fdhttp.ResponseHeaderKey).(http.Header)
+	assert.Equal(t, header, h)
+}
+
+func TestGetAndSetResponseHeader(t *testing.T) {
+	header := http.Header{}
+	header.Add("X-Personal", "1")
+	header.Add("X-Personal", "2")
+	header.Add("Content-Type", "2")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetResponseHeader(ctx, header)
+	h := fdhttp.ResponseHeader(ctx)
+	assert.Equal(t, header, h)
 }

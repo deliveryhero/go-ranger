@@ -137,10 +137,10 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 		}
 
 		// Even in error case send all headers setted
-		header := RequestHeader(ctx)
+		header := ResponseHeader(ctx)
 		for header, values := range header {
 			for _, value := range values {
-				w.Header().Set(header, value)
+				w.Header().Add(header, value)
 			}
 		}
 
