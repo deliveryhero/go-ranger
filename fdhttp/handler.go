@@ -23,7 +23,7 @@ type Handler interface {
 type EndpointFunc func(context.Context) (int, interface{}, error)
 
 // RouteParamPrefixKey is used to avoid name clashing inside of context.Context.
-var RouteParamPrefixKey = "_fdhttp_router_param_"
+var RouteParamPrefixKey = "fdhttp_router_param_"
 
 // RouteParam get router param from context.
 func RouteParam(ctx context.Context, param string) string {
@@ -37,15 +37,15 @@ func SetRouteParam(ctx context.Context, param string, value interface{}) context
 }
 
 // RequestBodyKey is a key used inside of context.Context to save the request body
-var RequestBodyKey = "body"
+var RequestBodyKey = "fdhttp_body"
 
 // RequestBody get body from context.
 func RequestBody(ctx context.Context) io.Reader {
-	p, _ := ctx.Value(RequestBodyKey).(io.Reader)
-	return p
+	body, _ := ctx.Value(RequestBodyKey).(io.Reader)
+	return body
 }
 
-// RequestBody get body from context but deconding as JSON.
+// RequestBodyJSON get body from context but deconding as JSON.
 func RequestBodyJSON(ctx context.Context, v interface{}) error {
 	body := RequestBody(ctx)
 	return json.NewDecoder(body).Decode(v)
