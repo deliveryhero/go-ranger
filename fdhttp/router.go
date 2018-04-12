@@ -105,6 +105,8 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 			ctx = SetRouteParam(ctx, param.Key, param.Value)
 		}
 
+		ctx = SetRequestHeader(ctx, req.Header)
+
 		// Inject body on ctx
 		if req.Body != nil {
 			body, err := ioutil.ReadAll(req.Body)
@@ -131,6 +133,14 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 				resp = &ResponseError{
 					Message: err.Error(),
 				}
+			}
+		}
+
+		// Even in error case send all headers setted
+		header := RequestHeader(ctx)
+		for header, values := range header {
+			for _, value := range values {
+				w.Header().Set(header, value)
 			}
 		}
 

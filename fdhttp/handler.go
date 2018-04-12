@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net/http"
 )
 
 // A type that satisfies fdhttp.Handler can be registered as a handler on fdhttp.Router.
@@ -54,4 +55,18 @@ func RequestBodyJSON(ctx context.Context, v interface{}) error {
 // SetRequestBody set body into context.
 func SetRequestBody(ctx context.Context, value io.Reader) context.Context {
 	return context.WithValue(ctx, RequestBodyKey, value)
+}
+
+// RequestHeaderKey is a key used inside of context.Context to save the request headers
+var RequestHeaderKey = "fdhttp_header"
+
+// RequestHeader get header from context.
+func RequestHeader(ctx context.Context) http.Header {
+	header, _ := ctx.Value(RequestHeaderKey).(http.Header)
+	return header
+}
+
+// SetRequestHeader set header into context.
+func SetRequestHeader(ctx context.Context, value http.Header) context.Context {
+	return context.WithValue(ctx, RequestHeaderKey, value)
 }
