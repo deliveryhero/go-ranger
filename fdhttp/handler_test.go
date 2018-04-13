@@ -28,7 +28,7 @@ func TestSetRouteParam(t *testing.T) {
 	assert.Equal(t, "value", value)
 }
 
-func TestGetAndSetRouteParam(t *testing.T) {
+func TestSetAndGetRouteParam(t *testing.T) {
 	ctx := context.Background()
 	ctx = fdhttp.SetRouteParam(ctx, "get_set_test", "value")
 	assert.Equal(t, "value", fdhttp.RouteParam(ctx, "get_set_test"))
@@ -55,7 +55,7 @@ func TestSetRequestBody(t *testing.T) {
 	assert.Equal(t, "value", b.String())
 }
 
-func TestGetAndSetRequestBody(t *testing.T) {
+func TestSetAndGetRequestBody(t *testing.T) {
 	ctx := context.Background()
 	ctx = fdhttp.SetRequestBody(ctx, bytes.NewBufferString("value"))
 	b := fdhttp.RequestBody(ctx).(*bytes.Buffer)
@@ -79,9 +79,7 @@ func TestRequestBodyJSON(t *testing.T) {
 
 func TestRequestHeader(t *testing.T) {
 	header := http.Header{}
-	header.Add("X-Personal", "1")
-	header.Add("X-Personal", "2")
-	header.Add("Content-Type", "2")
+	header.Set("Content-Type", "application/xml")
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, fdhttp.RequestHeaderKey, header)
@@ -96,11 +94,32 @@ func TestRequestHeader_Empty(t *testing.T) {
 	assert.Nil(t, h)
 }
 
+func TestGetRequestHeaderByKey(t *testing.T) {
+	header := http.Header{}
+	header.Set("X-Personal", "personal")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetRequestHeader(ctx, header)
+
+	h := fdhttp.GetRequestHeaderByKey(ctx, "X-Personal")
+	assert.Equal(t, "personal", h)
+}
+
+func TestGetRequestHeaderByKey_Empty(t *testing.T) {
+	ctx := context.Background()
+	h := fdhttp.GetRequestHeaderByKey(ctx, "X-Personal")
+	assert.Empty(t, h)
+
+	header := http.Header{}
+	ctx = fdhttp.SetRequestHeader(ctx, header)
+
+	h = fdhttp.GetRequestHeaderByKey(ctx, "X-Personal")
+	assert.Empty(t, h)
+}
+
 func TestSetRequestHeader(t *testing.T) {
 	header := http.Header{}
-	header.Add("X-Personal", "1")
-	header.Add("X-Personal", "2")
-	header.Add("Content-Type", "2")
+	header.Set("X-Personal", "personal")
 
 	ctx := context.Background()
 	ctx = fdhttp.SetRequestHeader(ctx, header)
@@ -108,11 +127,9 @@ func TestSetRequestHeader(t *testing.T) {
 	assert.Equal(t, header, h)
 }
 
-func TestGetAndSetRequestHeader(t *testing.T) {
+func TestSetAndGetRequestHeader(t *testing.T) {
 	header := http.Header{}
-	header.Add("X-Personal", "1")
-	header.Add("X-Personal", "2")
-	header.Add("Content-Type", "2")
+	header.Set("X-Personal", "personal")
 
 	ctx := context.Background()
 	ctx = fdhttp.SetRequestHeader(ctx, header)
@@ -122,9 +139,7 @@ func TestGetAndSetRequestHeader(t *testing.T) {
 
 func TestResponseHeader(t *testing.T) {
 	header := http.Header{}
-	header.Add("X-Personal", "1")
-	header.Add("X-Personal", "2")
-	header.Add("Content-Type", "2")
+	header.Set("X-Personal", "personal")
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, fdhttp.ResponseHeaderKey, header)
@@ -141,9 +156,7 @@ func TestResponseHeader_Empty(t *testing.T) {
 
 func TestSetResponseHeader(t *testing.T) {
 	header := http.Header{}
-	header.Add("X-Personal", "1")
-	header.Add("X-Personal", "2")
-	header.Add("Content-Type", "2")
+	header.Set("X-Personal", "personal")
 
 	ctx := context.Background()
 	ctx = fdhttp.SetResponseHeader(ctx, header)
@@ -151,14 +164,31 @@ func TestSetResponseHeader(t *testing.T) {
 	assert.Equal(t, header, h)
 }
 
-func TestGetAndSetResponseHeader(t *testing.T) {
+func TestSetAndGetResponseHeader(t *testing.T) {
 	header := http.Header{}
-	header.Add("X-Personal", "1")
-	header.Add("X-Personal", "2")
-	header.Add("Content-Type", "2")
+	header.Set("X-Personal", "personal")
 
 	ctx := context.Background()
 	ctx = fdhttp.SetResponseHeader(ctx, header)
 	h := fdhttp.ResponseHeader(ctx)
 	assert.Equal(t, header, h)
+}
+
+func TestSetResponseHeaderByKey(t *testing.T) {
+	ctx := context.Background()
+	ctx = fdhttp.SetResponseHeader(ctx, http.Header{})
+	fdhttp.SetResponseHeaderByKey(ctx, "X-Personal", "personal")
+
+	header := fdhttp.ResponseHeader(ctx)
+	assert.Equal(t, "personal", header.Get("X-Personal"))
+}
+
+func TestAddResponseHeaderByKey(t *testing.T) {
+	ctx := context.Background()
+	ctx = fdhttp.SetResponseHeader(ctx, http.Header{})
+	fdhttp.AddResponseHeaderByKey(ctx, "X-Personal", "personal1")
+	fdhttp.AddResponseHeaderByKey(ctx, "X-Personal", "personal2")
+
+	header := fdhttp.ResponseHeader(ctx)
+	assert.Equal(t, []string{"personal1", "personal2"}, header["X-Personal"])
 }

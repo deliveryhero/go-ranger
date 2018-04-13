@@ -66,6 +66,12 @@ func RequestHeader(ctx context.Context) http.Header {
 	return header
 }
 
+// GetRequestHeaderByKey call header.Get for you without get the whole object using RequestHeader
+func GetRequestHeaderByKey(ctx context.Context, key string) string {
+	header := RequestHeader(ctx)
+	return header.Get(key)
+}
+
 // SetRequestHeader set header into context.
 func SetRequestHeader(ctx context.Context, value http.Header) context.Context {
 	return context.WithValue(ctx, RequestHeaderKey, value)
@@ -83,4 +89,16 @@ func ResponseHeader(ctx context.Context) http.Header {
 // SetResponseHeader set header into context.
 func SetResponseHeader(ctx context.Context, value http.Header) context.Context {
 	return context.WithValue(ctx, ResponseHeaderKey, value)
+}
+
+// SetResponseHeaderByKey call header.Set for you without get the whole object using ResponseHeader
+func SetResponseHeaderByKey(ctx context.Context, key, value string) {
+	header := ResponseHeader(ctx)
+	header.Set(key, value)
+}
+
+// AddResponseHeaderByKey call header.Add for you without get the whole object using ResponseHeader
+func AddResponseHeaderByKey(ctx context.Context, key, value string) {
+	header := ResponseHeader(ctx)
+	header.Add(key, value)
 }
