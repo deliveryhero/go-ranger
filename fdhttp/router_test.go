@@ -145,8 +145,7 @@ func TestRouter_MiddlewareIsCalledRightOrder(t *testing.T) {
 		},
 	}
 
-	r.Use(m1)
-	r.Use(m2)
+	r.Use(m1, m2)
 	r.Register(h)
 	r.Init()
 

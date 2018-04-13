@@ -66,13 +66,13 @@ func (r *Router) Init() {
 }
 
 // Use a middleware to wrap all http request
-func (r *Router) Use(m Middleware) {
-	r.middlewares = append(r.middlewares, m)
+func (r *Router) Use(m ...Middleware) {
+	r.middlewares = append(r.middlewares, m...)
 }
 
 // Register a handler that need to register all its own routes
-func (r *Router) Register(h Handler) {
-	r.handlers = append(r.handlers, h)
+func (r *Router) Register(h ...Handler) {
+	r.handlers = append(r.handlers, h...)
 }
 
 // StdGET register a standard http.HandlerFunc to handle GET method
