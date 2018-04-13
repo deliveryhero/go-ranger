@@ -31,9 +31,9 @@ func NewAPIClient(requestTimeout int) APIClientInterface {
 // Get is issueing a GET request to the given url
 func (client *apiClient) Get(url string) (*http.Response, error) {
 	res, err := client.client.Get(url)
-	if err != nil && res.StatusCode != http.StatusOK {
+	if err != nil && (res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusMultipleChoices) {
 		return nil, fmt.Errorf(
-			"ApiClient.Get=Bad request,StatusCode=%d, URL=%s, Header: %+v", res.StatusCode, url, res.Header,
+			"ApiClient.Get=%s,StatusCode=%d, URL=%s, Header: %+v", http.StatusText(res.StatusCode), res.StatusCode, url, res.Header,
 		)
 	}
 
