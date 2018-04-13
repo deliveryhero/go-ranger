@@ -122,6 +122,9 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 			defer req.Body.Close()
 		}
 
+		// Make response header available inside of context
+		ctx = SetResponseHeader(ctx, http.Header{})
+
 		// call user handler
 		statusCode, resp, err := fn(ctx)
 		if err != nil {
