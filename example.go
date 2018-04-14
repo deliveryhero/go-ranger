@@ -67,8 +67,8 @@ func main() {
 		// /health/check/lb and /health/check
 		// any instance of `func() ranger_http.HealthCheckService` sent as parameter of the configuration will be converted to JSON and printed
 		// if necessary, you also can add a prefix to the endpoints with WithPrefix("/prefix")
-		//     ex: WithHealthCheckFor(ranger_http.NewHealthCheckConfiguration(versionHealthCheck()).WithPrefix("/prefix"))
-		WithHealthCheckFor(ranger_http.NewHealthCheckConfiguration(versionHealthCheck(), etcdHealthCheck()))
+		//     ex: WithHealthCheckFor(ranger_http.NewHealthCheckConfiguration(someHealthCheck()).WithPrefix("/prefix"))
+		WithHealthCheckFor(ranger_http.NewHealthCheckConfiguration(etcdHealthCheck()).WithVersion("version.json"))
 
 	// add some endpoints. based on "github.com/julienschmidt/httprouter"
 	s.GET("/hello", helloEndpoint())
@@ -106,24 +106,6 @@ func helloEndpoint() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		json.NewEncoder(w).Encode("Hello world")
-	}
-}
-
-func versionHealthCheck() func() ranger_http.HealthCheckService {
-	type versionHealthCheck struct {
-		Tag    string `json:"tag"`
-		Commit string `json:"commit"`
-	}
-
-	return func() ranger_http.HealthCheckService {
-		return ranger_http.HealthCheckService{
-			Name:   "version",
-			Status: true,
-			Info: versionHealthCheck{
-				Tag:    "0.0.0",
-				Commit: "30ac4383d0260f517d7f171de244fa46c1879c67",
-			},
-		}
 	}
 }
 

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
 	"github.com/julienschmidt/httprouter"
+	"path/filepath"
+	"io/ioutil"
+	"os"
 )
 
 //HealthCheckService
@@ -20,12 +22,19 @@ type HealthCheckService struct {
 type healthCheckConfiguration struct {
 	Prefix   string
 	Services []func() HealthCheckService
+	Version  healthCheckVersion
+}
+
+type healthCheckVersion struct {
+	Tag 	string	`json:"tag"`
+	Commit  string  `json:"commit"`
 }
 
 //NewHealthCheckConfiguration
 func NewHealthCheckConfiguration(services ...func() HealthCheckService) healthCheckConfiguration {
 	return healthCheckConfiguration{
 		Services: services,
+		Version: healthCheckVersion{"n/a", "n/a"},
 	}
 }
 
@@ -36,15 +45,39 @@ func (configuration healthCheckConfiguration) WithPrefix(prefix string) healthCh
 	return configuration
 }
 
+// WithVersion expects the path to a json file for healthCheckVersion
+func (configuration healthCheckConfiguration) WithVersion(versionPath string) healthCheckConfiguration {
+
+	version := healthCheckVersion{}
+	configuration.Version = version
+
+	absPath, _ := filepath.Abs(versionPath)
+	fileBytes, err := ioutil.ReadFile(absPath)
+
+	if err != nil {
+		logger.Warning("Unable to load file " + versionPath, nil)
+	}
+	err = json.Unmarshal(fileBytes, &version)
+	if err != nil {
+		logger.Warning("Error parsing version file " + versionPath, nil)
+	}
+
+	configuration.Version = version
+
+	return configuration
+}
+
 type healthCheckResponse struct {
 	HTTPStatus int                    `json:"http-status"`
 	Time       float64                `json:"time"`
 	Services   map[string]interface{} `json:"checks"`
+	Version    healthCheckVersion     `json:"version"`
+	Host       string                 `json:"host"`
 }
 
 //WithHealthCheckFor ...
 func (s Server) WithHealthCheckFor(configuration healthCheckConfiguration) Server {
-	s.GET(fmt.Sprintf("%s/health/check", configuration.Prefix), HealthCheckHandler(configuration.Services))
+	s.GET(fmt.Sprintf("%s/health/check", configuration.Prefix), HealthCheckHandler(configuration))
 	s.GET(fmt.Sprintf("%s/health/check/lb", configuration.Prefix), HealthCheckHandlerLB())
 	return s
 }
@@ -64,10 +97,13 @@ type healthCheckServiceResponse struct {
 }
 
 // HealthCheckHandler to check the service and external dependencies
-func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle {
+func HealthCheckHandler(configuration healthCheckConfiguration) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.Header().Set("Cache-Control", "no-cache, private, max-age=0")
+
+		services := configuration.Services
+		hostname := GetHostname()
 
 		mapServices := make(map[string]interface{})
 
@@ -96,6 +132,8 @@ func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle 
 				HTTPStatus: statusCode,
 				Time:       ElapsedTimeSince(sAll),
 				Services:   mapServices,
+				Version:	configuration.Version,
+				Host:       hostname,
 			})
 	}
 }
@@ -103,4 +141,14 @@ func HealthCheckHandler(services []func() HealthCheckService) httprouter.Handle 
 //ElapsedTimeSince calculates the elapsed time from a given start
 func ElapsedTimeSince(s time.Time) float64 {
 	return float64(time.Since(s)) / float64(time.Second)
+}
+
+//GetHostname - Returns host name or empty string
+func GetHostname() string {
+	h, err := os.Hostname()
+	if err != nil {
+		return ""
+	}
+
+	return h
 }
