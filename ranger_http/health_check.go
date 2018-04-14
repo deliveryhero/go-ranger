@@ -3,12 +3,12 @@ package ranger_http
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"time"
 	"github.com/julienschmidt/httprouter"
-	"path/filepath"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"path/filepath"
+	"time"
 )
 
 //HealthCheckService
@@ -26,15 +26,15 @@ type healthCheckConfiguration struct {
 }
 
 type healthCheckVersion struct {
-	Tag 	string	`json:"tag"`
-	Commit  string  `json:"commit"`
+	Tag    string `json:"tag"`
+	Commit string `json:"commit"`
 }
 
 //NewHealthCheckConfiguration
 func NewHealthCheckConfiguration(services ...func() HealthCheckService) healthCheckConfiguration {
 	return healthCheckConfiguration{
 		Services: services,
-		Version: healthCheckVersion{"n/a", "n/a"},
+		Version:  healthCheckVersion{"n/a", "n/a"},
 	}
 }
 
@@ -55,11 +55,11 @@ func (configuration healthCheckConfiguration) WithVersion(versionPath string) he
 	fileBytes, err := ioutil.ReadFile(absPath)
 
 	if err != nil {
-		logger.Warning("Unable to load file " + versionPath, nil)
+		logger.Warning("Unable to load file "+versionPath, nil)
 	}
 	err = json.Unmarshal(fileBytes, &version)
 	if err != nil {
-		logger.Warning("Error parsing version file " + versionPath, nil)
+		logger.Warning("Error parsing version file "+versionPath, nil)
 	}
 
 	configuration.Version = version
@@ -132,7 +132,7 @@ func HealthCheckHandler(configuration healthCheckConfiguration) httprouter.Handl
 				HTTPStatus: statusCode,
 				Time:       ElapsedTimeSince(sAll),
 				Services:   mapServices,
-				Version:	configuration.Version,
+				Version:    configuration.Version,
 				Host:       hostname,
 			})
 	}
