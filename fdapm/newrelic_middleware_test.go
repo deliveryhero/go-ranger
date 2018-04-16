@@ -15,7 +15,7 @@ import (
 var newrelicApp newrelic.Application
 
 func init() {
-	config := newrelic.NewConfig("fdhttp-newrelic-test", strings.Repeat(" ", 40))
+	config := newrelic.NewConfig("fdapm-newrelic-test", strings.Repeat(" ", 40))
 
 	var err error
 
