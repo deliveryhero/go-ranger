@@ -103,7 +103,7 @@ func HealthCheckHandler(configuration healthCheckConfiguration) httprouter.Handl
 		w.Header().Set("Cache-Control", "no-cache, private, max-age=0")
 
 		services := configuration.Services
-		hostname := GetHostname()
+		hostname, _ := os.Hostname()
 
 		mapServices := make(map[string]interface{})
 
@@ -141,14 +141,4 @@ func HealthCheckHandler(configuration healthCheckConfiguration) httprouter.Handl
 //ElapsedTimeSince calculates the elapsed time from a given start
 func ElapsedTimeSince(s time.Time) float64 {
 	return float64(time.Since(s)) / float64(time.Second)
-}
-
-//GetHostname - Returns host name or empty string
-func GetHostname() string {
-	h, err := os.Hostname()
-	if err != nil {
-		return ""
-	}
-
-	return h
 }
