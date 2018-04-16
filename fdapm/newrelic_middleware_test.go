@@ -1,6 +1,7 @@
 package fdapm_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,8 +12,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var newrelicApp newrelic.Application
+
+func init() {
+	config := newrelic.NewConfig("fdhttp-newrelic-test", strings.Repeat(" ", 40))
+
+	var err error
+
+	newrelicApp, err = newrelic.NewApplication(config)
+	if err != nil {
+		panic(fmt.Errorf("Cannot create newrelic application: %s", err))
+	}
+}
+
 func TestNewRelicMiddleware(t *testing.T) {
-	newrelicMiddleware := fdapm.NewRelicMiddleware("fdhttp-newrelic-test", strings.Repeat(" ", 40))
+	newrelicMiddleware := fdapm.NewRelicMiddleware(newrelicApp)
 
 	called := false
 	handler := func(w http.ResponseWriter, req *http.Request) {
@@ -30,7 +44,7 @@ func TestNewRelicMiddleware(t *testing.T) {
 }
 
 func TestNewRelicMiddleware_InjectTransaction(t *testing.T) {
-	newrelicMiddleware := fdapm.NewRelicMiddleware("fdhttp-newrelic-test", strings.Repeat(" ", 40))
+	newrelicMiddleware := fdapm.NewRelicMiddleware(newrelicApp)
 
 	called := false
 	handler := func(w http.ResponseWriter, req *http.Request) {
@@ -63,7 +77,7 @@ func TestNewRelicTransaction_WithoutUseMiddleware(t *testing.T) {
 }
 
 func TestNewRelicStartSegment(t *testing.T) {
-	newrelicMiddleware := fdapm.NewRelicMiddleware("fdhttp-newrelic-test", strings.Repeat(" ", 40))
+	newrelicMiddleware := fdapm.NewRelicMiddleware(newrelicApp)
 
 	called := false
 	handler := func(w http.ResponseWriter, req *http.Request) {

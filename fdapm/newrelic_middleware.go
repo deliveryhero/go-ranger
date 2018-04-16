@@ -3,7 +3,6 @@ package fdapm
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/foodora/go-ranger/fdhttp"
@@ -11,13 +10,7 @@ import (
 )
 
 // NewRelicMiddleware create a newrelic middleware
-func NewRelicMiddleware(appName, license string) fdhttp.Middleware {
-	config := newrelic.NewConfig(appName, license)
-	app, err := newrelic.NewApplication(config)
-	if err != nil {
-		panic(fmt.Errorf("Cannot create newrelic application: %s", err))
-	}
-
+func NewRelicMiddleware(app newrelic.Application) fdhttp.Middleware {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, req *http.Request) {
 			txn := app.StartTransaction(req.URL.Path, w, req)
