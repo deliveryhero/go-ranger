@@ -2,9 +2,10 @@ package fdhttp
 
 import (
 	"net/http"
-	"time"
 )
 
+// Client is a wrap to http.Client where you can add different configurations, like
+// fdhttp.WithFallback(), fdhttp.WithBackoff(), etc.
 type Client struct {
 	http.Client
 
@@ -18,8 +19,4 @@ func NewClient() *Client {
 		Client: http.Client{},
 		Logger: defaultLogger,
 	}
-}
-
-func (c *Client) SetTimeout(d time.Duration) {
-	c.Timeout = d
 }
