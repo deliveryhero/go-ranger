@@ -1,4 +1,4 @@
-package fdhttp_test
+package fdapm_test
 
 import (
 	"net/http"
@@ -6,13 +6,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/foodora/go-ranger/fdhttp"
+	"github.com/foodora/go-ranger/fdapm"
 	newrelic "github.com/newrelic/go-agent"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewRelicMiddleware(t *testing.T) {
-	newrelicMiddleware := fdhttp.NewRelicMiddleware("fdhttp-newrelic-test", strings.Repeat(" ", 40))
+	newrelicMiddleware := fdapm.NewRelicMiddleware("fdhttp-newrelic-test", strings.Repeat(" ", 40))
 
 	called := false
 	handler := func(w http.ResponseWriter, req *http.Request) {
@@ -30,11 +30,11 @@ func TestNewRelicMiddleware(t *testing.T) {
 }
 
 func TestNewRelicMiddleware_InjectTransaction(t *testing.T) {
-	newrelicMiddleware := fdhttp.NewRelicMiddleware("fdhttp-newrelic-test", strings.Repeat(" ", 40))
+	newrelicMiddleware := fdapm.NewRelicMiddleware("fdhttp-newrelic-test", strings.Repeat(" ", 40))
 
 	called := false
 	handler := func(w http.ResponseWriter, req *http.Request) {
-		txn := fdhttp.NewRelicTransaction(req.Context())
+		txn := fdapm.NewRelicTransaction(req.Context())
 		assert.NotNil(t, txn)
 		assert.Equal(t, w, txn)
 		called = true
@@ -52,7 +52,7 @@ func TestNewRelicMiddleware_InjectTransaction(t *testing.T) {
 func TestNewRelicTransaction_WithoutUseMiddleware(t *testing.T) {
 	handler := func(w http.ResponseWriter, req *http.Request) {
 		assert.Panics(t, func() {
-			fdhttp.NewRelicTransaction(req.Context())
+			fdapm.NewRelicTransaction(req.Context())
 		})
 	}
 
@@ -63,11 +63,11 @@ func TestNewRelicTransaction_WithoutUseMiddleware(t *testing.T) {
 }
 
 func TestNewRelicStartSegment(t *testing.T) {
-	newrelicMiddleware := fdhttp.NewRelicMiddleware("fdhttp-newrelic-test", strings.Repeat(" ", 40))
+	newrelicMiddleware := fdapm.NewRelicMiddleware("fdhttp-newrelic-test", strings.Repeat(" ", 40))
 
 	called := false
 	handler := func(w http.ResponseWriter, req *http.Request) {
-		defer fdhttp.NewRelicStartSegment(req.Context(), "my-segment").End()
+		defer fdapm.NewRelicStartSegment(req.Context(), "my-segment").End()
 		called = true
 	}
 
