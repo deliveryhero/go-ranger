@@ -2,6 +2,7 @@ package fdhttp
 
 import (
 	"net/http"
+	"time"
 )
 
 // Client is a wrap to http.Client where you can add different configurations, like
@@ -14,9 +15,13 @@ type Client struct {
 	Logger Logger
 }
 
+var DefaultClientTimeout = 10 * time.Second
+
 func NewClient() *Client {
 	return &Client{
-		Client: http.Client{},
+		Client: http.Client{
+			Timeout: DefaultClientTimeout,
+		},
 		Logger: defaultLogger,
 	}
 }
