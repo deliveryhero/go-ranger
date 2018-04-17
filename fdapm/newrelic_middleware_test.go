@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/foodora/go-ranger/fdapm"
@@ -15,7 +14,8 @@ import (
 var newrelicApp newrelic.Application
 
 func init() {
-	config := newrelic.NewConfig("fdapm-newrelic-test", strings.Repeat(" ", 40))
+	config := newrelic.NewConfig("fdapm-newrelic-test", "")
+	config.Enabled = false
 
 	var err error
 
