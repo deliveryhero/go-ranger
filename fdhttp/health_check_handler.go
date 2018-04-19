@@ -3,6 +3,7 @@ package fdhttp
 import (
 	"context"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -14,13 +15,14 @@ type HealthCheckService interface {
 
 // HealthCheckResponse is the main json response from healthcheck endpoint
 type HealthCheckResponse struct {
-	Status  bool `json:"status"`
 	Version struct {
 		Tag    string `json:"tag"`
 		Commit string `json:"commit"`
 	} `json:"version"`
-	Elapsed time.Duration                         `json:"elapsed"`
-	Checks  map[string]HealthCheckServiceResponse `json:"checks,omitempty"`
+	Status   bool                                  `json:"status"`
+	Elapsed  time.Duration                         `json:"elapsed"`
+	Hostname string                                `json:"hostname"`
+	Checks   map[string]HealthCheckServiceResponse `json:"checks,omitempty"`
 }
 
 // HealthCheckServiceResponse is the return of each service that can provide
@@ -54,14 +56,18 @@ type HealchCheckHandler struct {
 
 	tag      string
 	commit   string
+	hostname string
 	services map[string]HealthCheckService
 }
 
 // NewHealthCheckHandler create a new healthcheck handler
 func NewHealthCheckHandler(tag, commit string) *HealchCheckHandler {
+	hostname, _ := os.Hostname()
+
 	return &HealchCheckHandler{
 		tag:      tag,
 		commit:   commit,
+		hostname: hostname,
 		services: make(map[string]HealthCheckService),
 	}
 }
@@ -83,8 +89,9 @@ func (h *HealchCheckHandler) Get(ctx context.Context) (int, interface{}, error) 
 
 	statusCode := http.StatusOK
 	resp := HealthCheckResponse{
-		Status: true,
-		Checks: make(map[string]HealthCheckServiceResponse),
+		Status:   true,
+		Hostname: h.hostname,
+		Checks:   make(map[string]HealthCheckServiceResponse),
 	}
 	resp.Version.Tag = h.tag
 	resp.Version.Commit = h.commit
