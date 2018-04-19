@@ -69,10 +69,11 @@ func (configuration healthCheckConfiguration) WithVersion(versionPath string) he
 
 type healthCheckResponse struct {
 	HTTPStatus int                    `json:"http-status"`
-	Time       float64                `json:"time"`
-	Services   map[string]interface{} `json:"checks"`
 	Version    healthCheckVersion     `json:"version"`
-	Host       string                 `json:"host"`
+	Time       float64                `json:"time"`
+	Status     bool                   `json:"status"`
+	Host       string                 `json:"hostname"`
+	Services   map[string]interface{} `json:"checks"`
 }
 
 //WithHealthCheckFor ...
@@ -130,10 +131,11 @@ func HealthCheckHandler(configuration healthCheckConfiguration) httprouter.Handl
 		json.NewEncoder(w).Encode(
 			healthCheckResponse{
 				HTTPStatus: statusCode,
-				Time:       ElapsedTimeSince(sAll),
-				Services:   mapServices,
 				Version:    configuration.Version,
+				Time:       ElapsedTimeSince(sAll),
+				Status:     service.Status,
 				Host:       hostname,
+				Services:   mapServices,
 			})
 	}
 }
