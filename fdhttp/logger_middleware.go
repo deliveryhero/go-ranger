@@ -66,6 +66,11 @@ func (m *LogMiddleware) SetLoggerFunc(fn LogByRequestFunc) {
 	*m = LogMiddleware(logMiddleware(fn))
 }
 
+// Middleware return LogMiddleware instance casted to Middleware
+func (m *LogMiddleware) Middleware() Middleware {
+	return Middleware(*m)
+}
+
 // LogResponse it's a wrap to be able read the status code
 type LogResponse struct {
 	http.ResponseWriter
