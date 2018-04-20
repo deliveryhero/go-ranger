@@ -111,7 +111,7 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 		if req.Body != nil {
 			body, err := ioutil.ReadAll(req.Body)
 			if err != nil {
-				ResponseJSON(w, http.StatusBadRequest, &ResponseError{
+				ResponseJSON(w, http.StatusBadRequest, &Error{
 					Code:    "invalid_body",
 					Message: err.Error(),
 				})
@@ -119,7 +119,6 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 			}
 
 			ctx = SetRequestBody(ctx, bytes.NewBuffer(body))
-			defer req.Body.Close()
 		}
 
 		// Make response header available inside of context
@@ -130,20 +129,20 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 		if err != nil {
 			// ignore response in case of error
 
-			if respErr, ok := err.(*ResponseError); ok {
+			if respErr, ok := err.(*Error); ok {
 				resp = respErr
 			} else {
-				resp = &ResponseError{
+				resp = &Error{
 					Message: err.Error(),
 				}
 			}
 		}
 
 		// Even in error case send all headers setted
-		header := ResponseHeader(ctx)
-		for header, values := range header {
-			for _, value := range values {
-				w.Header().Add(header, value)
+		headers := ResponseHeader(ctx)
+		for h, values := range headers {
+			for _, v := range values {
+				w.Header().Add(h, v)
 			}
 		}
 

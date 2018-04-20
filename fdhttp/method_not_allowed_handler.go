@@ -12,7 +12,7 @@ func NewMethodNotAllowedHandler() http.HandlerFunc {
 }
 
 func methodNotAllowedHandler(w http.ResponseWriter, req *http.Request) {
-	ResponseJSON(w, http.StatusMethodNotAllowed, &ResponseError{
+	ResponseJSON(w, http.StatusMethodNotAllowed, &Error{
 		Code:    "method_not_allowed",
 		Message: fmt.Sprintf("Method '%s' is not allowed to access '%s'", req.Method, req.URL.String()),
 	})

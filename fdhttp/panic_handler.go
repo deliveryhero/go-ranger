@@ -3,7 +3,7 @@ package fdhttp
 import (
 	"fmt"
 	"net/http"
-    "runtime/debug"
+	"runtime/debug"
 )
 
 // NewPanicHandler return a handler, used by default, to deal
@@ -13,10 +13,10 @@ func NewPanicHandler() func(http.ResponseWriter, *http.Request, interface{}) {
 }
 
 func panicHandler(w http.ResponseWriter, req *http.Request, rcv interface{}) {
-    // log stack trace
-    defaultLogger.Printf("%s", debug.Stack())
+	// log stack trace
+	defaultLogger.Printf("%s", debug.Stack())
 
-	ResponseJSON(w, http.StatusInternalServerError, &ResponseError{
+	ResponseJSON(w, http.StatusInternalServerError, &Error{
 		Code:    "panic",
 		Message: fmt.Sprint(rcv),
 	})

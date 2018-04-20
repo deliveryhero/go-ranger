@@ -12,7 +12,7 @@ func NewNotFoundHandler() http.HandlerFunc {
 }
 
 func notFoundHandler(w http.ResponseWriter, req *http.Request) {
-	ResponseJSON(w, http.StatusNotFound, &ResponseError{
+	ResponseJSON(w, http.StatusNotFound, &Error{
 		Code:    "not_found",
 		Message: fmt.Sprintf("URL '%s' was not found", req.URL.String()),
 	})

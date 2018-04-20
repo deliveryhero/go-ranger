@@ -7,8 +7,8 @@ import (
 	"sync"
 )
 
-// ResponseError is an error struct that can be used to return error as json
-type ResponseError struct {
+// Error is an error struct that can be used to return error as json
+type Error struct {
 	Code    string      `json:"code"`
 	Message string      `json:"message"`
 	Detail  interface{} `json:"detail,omitempty"`
@@ -16,9 +16,9 @@ type ResponseError struct {
 
 // Error implements error interface
 //  func ReturnError() error {
-//      return &ResponseError{Code: "not_found", Message: "invalid id"}
+//      return &Error{Code: "not_found", Message: "invalid id"}
 //  }
-func (err *ResponseError) Error() string {
+func (err *Error) Error() string {
 	return fmt.Sprintf("%s: %s", err.Code, err.Message)
 }
 

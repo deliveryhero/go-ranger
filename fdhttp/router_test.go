@@ -252,7 +252,7 @@ func TestRouter_SendResponseError(t *testing.T) {
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
 			r.GET("/get", func(ctx context.Context) (int, interface{}, error) {
-				return http.StatusOK, nil, &fdhttp.ResponseError{
+				return http.StatusOK, nil, &fdhttp.Error{
 					Code:    "123",
 					Message: "something went wrong",
 				}
@@ -299,7 +299,7 @@ func TestRouter_MethodNotAllowedHandler(t *testing.T) {
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
 			r.GET("/get", func(ctx context.Context) (int, interface{}, error) {
-				return http.StatusOK, nil, &fdhttp.ResponseError{
+				return http.StatusOK, nil, &fdhttp.Error{
 					Code:    "123",
 					Message: "something went wrong",
 				}
