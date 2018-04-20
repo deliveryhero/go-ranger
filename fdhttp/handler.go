@@ -57,6 +57,20 @@ func SetRequestBody(ctx context.Context, value io.Reader) context.Context {
 	return context.WithValue(ctx, RequestBodyKey, value)
 }
 
+// ResponseErrorKey is a key used inside of context.Context to save the request body
+var ResponseErrorKey = "fdhttp_response_error"
+
+// ResponseError get response error from context.
+func ResponseError(ctx context.Context) *Error {
+	respErr, _ := ctx.Value(ResponseErrorKey).(*Error)
+	return respErr
+}
+
+// SetResponseError set response error into context.
+func SetResponseError(ctx context.Context, respErr *Error) context.Context {
+	return context.WithValue(ctx, ResponseErrorKey, respErr)
+}
+
 // RequestHeaderKey is a key used inside of context.Context to save the request headers
 var RequestHeaderKey = "fdhttp_request_header"
 

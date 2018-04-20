@@ -77,6 +77,58 @@ func TestRequestBodyJSON(t *testing.T) {
 	assert.Equal(t, 1, resp.Data)
 }
 
+func TestResponseError(t *testing.T) {
+	respErr := &fdhttp.Error{
+		Code:    "code",
+		Message: "message",
+		Detail:  "detail",
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, fdhttp.ResponseErrorKey, respErr)
+
+	err := fdhttp.ResponseError(ctx)
+	assert.Equal(t, respErr.Code, err.Code)
+	assert.Equal(t, respErr.Message, err.Message)
+	assert.Equal(t, respErr.Detail, err.Detail)
+}
+
+func TestResponseError_Empty(t *testing.T) {
+	ctx := context.Background()
+	err := fdhttp.ResponseError(ctx)
+	assert.Nil(t, err)
+}
+
+func TestSetResponseError(t *testing.T) {
+	respErr := &fdhttp.Error{
+		Code:    "code",
+		Message: "message",
+		Detail:  "detail",
+	}
+
+	ctx := context.Background()
+	ctx = fdhttp.SetResponseError(ctx, respErr)
+	err, _ := ctx.Value(fdhttp.ResponseErrorKey).(*fdhttp.Error)
+	assert.Equal(t, respErr.Code, err.Code)
+	assert.Equal(t, respErr.Message, err.Message)
+	assert.Equal(t, respErr.Detail, err.Detail)
+}
+
+func TestSetAndGetResponseError(t *testing.T) {
+	respErr := &fdhttp.Error{
+		Code:    "code",
+		Message: "message",
+		Detail:  "detail",
+	}
+
+	ctx := context.Background()
+	ctx = fdhttp.SetResponseError(ctx, respErr)
+	err := fdhttp.ResponseError(ctx)
+	assert.Equal(t, respErr.Code, err.Code)
+	assert.Equal(t, respErr.Message, err.Message)
+	assert.Equal(t, respErr.Detail, err.Detail)
+}
+
 func TestRequestHeader(t *testing.T) {
 	header := http.Header{}
 	header.Set("Content-Type", "application/xml")
