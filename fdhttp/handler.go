@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 // A type that satisfies fdhttp.Handler can be registered as a handler on fdhttp.Router.
@@ -80,8 +81,8 @@ func RequestHeader(ctx context.Context) http.Header {
 	return header
 }
 
-// GetRequestHeaderByKey call header.Get for you without get the whole object using RequestHeader
-func GetRequestHeaderByKey(ctx context.Context, key string) string {
+// RequestHeaderValue call header.Get for you without get the whole object using RequestHeader
+func RequestHeaderValue(ctx context.Context, key string) string {
 	header := RequestHeader(ctx)
 	return header.Get(key)
 }
@@ -89,6 +90,46 @@ func GetRequestHeaderByKey(ctx context.Context, key string) string {
 // SetRequestHeader set header into context.
 func SetRequestHeader(ctx context.Context, value http.Header) context.Context {
 	return context.WithValue(ctx, RequestHeaderKey, value)
+}
+
+// RequestFormKey is a key used inside of context.Context to save the Request.Form
+var RequestFormKey = "fdhttp_request_form"
+
+// RequestForm get form from context.
+func RequestForm(ctx context.Context) url.Values {
+	form, _ := ctx.Value(RequestFormKey).(url.Values)
+	return form
+}
+
+// RequestFormValue call form.Get for you without get the whole object using RequestForm
+func RequestFormValue(ctx context.Context, key string) string {
+	form := RequestForm(ctx)
+	return form.Get(key)
+}
+
+// SetRequestForm set form into context.
+func SetRequestForm(ctx context.Context, value url.Values) context.Context {
+	return context.WithValue(ctx, RequestFormKey, value)
+}
+
+// RequestPostFormKey is a key used inside of context.Context to save the Request.Form
+var RequestPostFormKey = "fdhttp_request_form"
+
+// RequestPostForm get form from context.
+func RequestPostForm(ctx context.Context) url.Values {
+	form, _ := ctx.Value(RequestPostFormKey).(url.Values)
+	return form
+}
+
+// RequestPostFormValue call form.Get for you without get the whole object using RequestPostForm
+func RequestPostFormValue(ctx context.Context, key string) string {
+	form := RequestPostForm(ctx)
+	return form.Get(key)
+}
+
+// SetRequestPostForm set form into context.
+func SetRequestPostForm(ctx context.Context, value url.Values) context.Context {
+	return context.WithValue(ctx, RequestPostFormKey, value)
 }
 
 // ResponseHeaderKey is a key used inside of context.Context to save the request headers

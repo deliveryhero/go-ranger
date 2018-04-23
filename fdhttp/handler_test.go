@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/foodora/go-ranger/fdhttp"
@@ -146,26 +147,26 @@ func TestRequestHeader_Empty(t *testing.T) {
 	assert.Nil(t, h)
 }
 
-func TestGetRequestHeaderByKey(t *testing.T) {
+func TestRequestHeaderValue(t *testing.T) {
 	header := http.Header{}
 	header.Set("X-Personal", "personal")
 
 	ctx := context.Background()
 	ctx = fdhttp.SetRequestHeader(ctx, header)
 
-	h := fdhttp.GetRequestHeaderByKey(ctx, "X-Personal")
+	h := fdhttp.RequestHeaderValue(ctx, "X-Personal")
 	assert.Equal(t, "personal", h)
 }
 
-func TestGetRequestHeaderByKey_Empty(t *testing.T) {
+func TestRequestHeaderValue_Empty(t *testing.T) {
 	ctx := context.Background()
-	h := fdhttp.GetRequestHeaderByKey(ctx, "X-Personal")
+	h := fdhttp.RequestHeaderValue(ctx, "X-Personal")
 	assert.Empty(t, h)
 
 	header := http.Header{}
 	ctx = fdhttp.SetRequestHeader(ctx, header)
 
-	h = fdhttp.GetRequestHeaderByKey(ctx, "X-Personal")
+	h = fdhttp.RequestHeaderValue(ctx, "X-Personal")
 	assert.Empty(t, h)
 }
 
@@ -187,6 +188,126 @@ func TestSetAndGetRequestHeader(t *testing.T) {
 	ctx = fdhttp.SetRequestHeader(ctx, header)
 	h := fdhttp.RequestHeader(ctx)
 	assert.Equal(t, header, h)
+}
+
+func TestRequestForm(t *testing.T) {
+	form := url.Values{}
+	form.Set("field", "value")
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, fdhttp.RequestFormKey, form)
+
+	h := fdhttp.RequestForm(ctx)
+	assert.Equal(t, form, h)
+}
+
+func TestRequestForm_Empty(t *testing.T) {
+	ctx := context.Background()
+	h := fdhttp.RequestForm(ctx)
+	assert.Nil(t, h)
+}
+
+func TestRequestFormValue(t *testing.T) {
+	form := url.Values{}
+	form.Set("field", "value")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetRequestForm(ctx, form)
+
+	v := fdhttp.RequestFormValue(ctx, "field")
+	assert.Equal(t, "value", v)
+}
+
+func TestRequestFormValue_Empty(t *testing.T) {
+	ctx := context.Background()
+	v := fdhttp.RequestFormValue(ctx, "invalid-field")
+	assert.Empty(t, v)
+
+	form := url.Values{}
+	ctx = fdhttp.SetRequestForm(ctx, form)
+
+	v = fdhttp.RequestFormValue(ctx, "invalid-field")
+	assert.Empty(t, v)
+}
+
+func TestSetRequestForm(t *testing.T) {
+	form := url.Values{}
+	form.Set("field", "value")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetRequestForm(ctx, form)
+	v, _ := ctx.Value(fdhttp.RequestFormKey).(url.Values)
+	assert.Equal(t, form, v)
+}
+
+func TestSetAndGetRequestForm(t *testing.T) {
+	form := url.Values{}
+	form.Set("field", "value")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetRequestForm(ctx, form)
+	v := fdhttp.RequestForm(ctx)
+	assert.Equal(t, form, v)
+}
+
+func TestRequestPostForm(t *testing.T) {
+	form := url.Values{}
+	form.Set("field", "value")
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, fdhttp.RequestPostFormKey, form)
+
+	h := fdhttp.RequestPostForm(ctx)
+	assert.Equal(t, form, h)
+}
+
+func TestRequestPostForm_Empty(t *testing.T) {
+	ctx := context.Background()
+	h := fdhttp.RequestPostForm(ctx)
+	assert.Nil(t, h)
+}
+
+func TestRequestPostFormValue(t *testing.T) {
+	form := url.Values{}
+	form.Set("field", "value")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetRequestPostForm(ctx, form)
+
+	v := fdhttp.RequestPostFormValue(ctx, "field")
+	assert.Equal(t, "value", v)
+}
+
+func TestRequestPostFormValue_Empty(t *testing.T) {
+	ctx := context.Background()
+	v := fdhttp.RequestPostFormValue(ctx, "invalid-field")
+	assert.Empty(t, v)
+
+	form := url.Values{}
+	ctx = fdhttp.SetRequestPostForm(ctx, form)
+
+	v = fdhttp.RequestPostFormValue(ctx, "invalid-field")
+	assert.Empty(t, v)
+}
+
+func TestSetRequestPostForm(t *testing.T) {
+	form := url.Values{}
+	form.Set("field", "value")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetRequestPostForm(ctx, form)
+	v, _ := ctx.Value(fdhttp.RequestPostFormKey).(url.Values)
+	assert.Equal(t, form, v)
+}
+
+func TestSetAndGetRequestPostForm(t *testing.T) {
+	form := url.Values{}
+	form.Set("field", "value")
+
+	ctx := context.Background()
+	ctx = fdhttp.SetRequestPostForm(ctx, form)
+	v := fdhttp.RequestPostForm(ctx)
+	assert.Equal(t, form, v)
 }
 
 func TestResponseHeader(t *testing.T) {
