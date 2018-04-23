@@ -1,9 +1,8 @@
 package fddb
 
 import (
+	"errors"
 	"fmt"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
 type SQLConfig struct {
@@ -15,9 +14,27 @@ type SQLConfig struct {
 	DB       string
 }
 
+var availableDrivers = map[string]struct{}{
+	"mysql":    struct{}{},
+	"postgres": struct{}{},
+}
+
+// ErrNoDriverSpecified is returned when you call fddb.OpenSQL without
+// specificy the driver name.
+var ErrNoDriverSpecified = errors.New("fddb: sql driver was not specified")
+
+// ErrUnknownDriver is returned when you call fddb.OpenSQL specificing
+// a unknown driver name.
+var ErrUnknownDriver = errors.New("fddb: sql driver unknown")
+
+// DefaultConfig return a new config filling with default values
+// field that was not provided.
 func (c SQLConfig) DefaultConfig() SQLConfig {
 	if c.Driver == "" {
-		panic("fddb: sql driver was not specified")
+		panic(ErrNoDriverSpecified)
+	}
+	if _, ok := availableDrivers[c.Driver]; !ok {
+		panic(ErrUnknownDriver)
 	}
 
 	if c.User == "" {
