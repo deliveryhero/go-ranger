@@ -2,6 +2,7 @@ package fdhttp
 
 import (
 	"bytes"
+	"context"
 	"html/template"
 	"net"
 	"net/http"
@@ -37,7 +38,7 @@ func logMiddleware(logFn LogByRequestFunc) Middleware {
 		fn := func(w http.ResponseWriter, req *http.Request) {
 			started := time.Now()
 
-			lr := &LogResponse{ResponseWriter: w}
+			lr := &LogResponse{ResponseWriter: w, ctx: req.Context()}
 			next.ServeHTTP(lr, req)
 
 			lr.Elapsed = time.Since(started)
@@ -74,6 +75,7 @@ func (m *LogMiddleware) Middleware() Middleware {
 // LogResponse it's a wrap to be able read the status code
 type LogResponse struct {
 	http.ResponseWriter
+	ctx        context.Context
 	StatusCode int
 	Elapsed    time.Duration
 }
@@ -93,6 +95,10 @@ func (lr *LogResponse) WriteHeader(code int) {
 
 func (lr *LogResponse) StatusText() string {
 	return http.StatusText(lr.StatusCode)
+}
+
+func (lr *LogResponse) Err() *Error {
+	return ResponseError(lr.ctx)
 }
 
 // withLogger is a wrap to log using fdhttp.Logger
