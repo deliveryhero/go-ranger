@@ -171,7 +171,7 @@ func TestRouter_RouteParamsAreSentInsideContext(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/get/:id", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/:id", func(ctx context.Context) (int, interface{}, error) {
 				id := fdhttp.RouteParam(ctx, "id")
 				assert.Equal(t, "123", id)
 				return http.StatusOK, nil, nil
@@ -185,7 +185,7 @@ func TestRouter_RouteParamsAreSentInsideContext(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/get/123")
+	res, err := http.Get(ts.URL + "/123")
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 	res.Body.Close()
@@ -269,6 +269,31 @@ func TestRouter_PostFormAreSentInsideContext(t *testing.T) {
 	res, err := http.PostForm(ts.URL+"/?field=from+query+string", post)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode)
+	res.Body.Close()
+}
+
+func TestRouter_HeaderAreSentBackToClients(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+				fdhttp.SetResponseHeaderValue(ctx, "X-Personal", "value")
+				return http.StatusOK, nil, nil
+			})
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	res, err := http.Get(ts.URL + "")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	assert.Equal(t, "value", res.Header.Get("x-personal"))
 	res.Body.Close()
 }
 
