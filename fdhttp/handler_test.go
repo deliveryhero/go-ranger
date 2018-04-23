@@ -347,20 +347,20 @@ func TestSetAndGetResponseHeader(t *testing.T) {
 	assert.Equal(t, header, h)
 }
 
-func TestSetResponseHeaderByKey(t *testing.T) {
+func TestSetResponseHeaderValue(t *testing.T) {
 	ctx := context.Background()
 	ctx = fdhttp.SetResponseHeader(ctx, http.Header{})
-	fdhttp.SetResponseHeaderByKey(ctx, "X-Personal", "personal")
+	fdhttp.SetResponseHeaderValue(ctx, "X-Personal", "personal")
 
 	header := fdhttp.ResponseHeader(ctx)
 	assert.Equal(t, "personal", header.Get("X-Personal"))
 }
 
-func TestAddResponseHeaderByKey(t *testing.T) {
+func TestAddResponseHeaderValue(t *testing.T) {
 	ctx := context.Background()
 	ctx = fdhttp.SetResponseHeader(ctx, http.Header{})
-	fdhttp.AddResponseHeaderByKey(ctx, "X-Personal", "personal1")
-	fdhttp.AddResponseHeaderByKey(ctx, "X-Personal", "personal2")
+	fdhttp.AddResponseHeaderValue(ctx, "X-Personal", "personal1")
+	fdhttp.AddResponseHeaderValue(ctx, "X-Personal", "personal2")
 
 	header := fdhttp.ResponseHeader(ctx)
 	assert.Equal(t, []string{"personal1", "personal2"}, header["X-Personal"])

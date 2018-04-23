@@ -146,14 +146,14 @@ func SetResponseHeader(ctx context.Context, value http.Header) context.Context {
 	return context.WithValue(ctx, ResponseHeaderKey, value)
 }
 
-// SetResponseHeaderByKey call header.Set for you without get the whole object using ResponseHeader
-func SetResponseHeaderByKey(ctx context.Context, key, value string) {
+// SetResponseHeaderValue call header.Set for you without get the whole object using ResponseHeader
+func SetResponseHeaderValue(ctx context.Context, key, value string) {
 	header := ResponseHeader(ctx)
 	header.Set(key, value)
 }
 
-// AddResponseHeaderByKey call header.Add for you without get the whole object using ResponseHeader
-func AddResponseHeaderByKey(ctx context.Context, key, value string) {
+// AddResponseHeaderValue call header.Add for you without get the whole object using ResponseHeader
+func AddResponseHeaderValue(ctx context.Context, key, value string) {
 	header := ResponseHeader(ctx)
 	header.Add(key, value)
 }
