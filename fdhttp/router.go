@@ -26,6 +26,10 @@ type Router struct {
 
 var _ http.Handler = &Router{}
 
+const (
+	defaultMaxMemory = 32 << 20 // 32 MB
+)
+
 // NewRouter create a new route instance
 func NewRouter() *Router {
 	return &Router{
@@ -106,6 +110,17 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 		}
 
 		ctx = SetRequestHeader(ctx, req.Header)
+
+		// Inject Form and PostForm
+		if req.Form == nil {
+			req.ParseMultipartForm(defaultMaxMemory)
+			if req.Form != nil {
+				ctx = SetRequestForm(ctx, req.Form)
+			}
+			if req.PostForm != nil {
+				ctx = SetRequestPostForm(ctx, req.PostForm)
+			}
+		}
 
 		// Inject body on ctx
 		if req.Body != nil {

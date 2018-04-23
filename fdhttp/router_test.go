@@ -1,11 +1,13 @@
 package fdhttp_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/foodora/go-ranger/fdhttp"
@@ -171,7 +173,6 @@ func TestRouter_RouteParamsAreSentInsideContext(t *testing.T) {
 		initFunc: func(r *fdhttp.Router) {
 			r.GET("/get/:id", func(ctx context.Context) (int, interface{}, error) {
 				id := fdhttp.RouteParam(ctx, "id")
-
 				assert.Equal(t, "123", id)
 				return http.StatusOK, nil, nil
 			})
@@ -186,6 +187,88 @@ func TestRouter_RouteParamsAreSentInsideContext(t *testing.T) {
 
 	res, err := http.Get(ts.URL + "/get/123")
 	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	res.Body.Close()
+}
+
+func TestRouter_HeadersAreSentInsideContext(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+				token := fdhttp.RequestHeaderValue(ctx, "x-token")
+				assert.Equal(t, "my-token", token)
+				return http.StatusOK, nil, nil
+			})
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	req, _ := http.NewRequest("GET", ts.URL, bytes.NewBuffer(nil))
+	req.Header.Add("X-Token", "my-token")
+
+	res, err := http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	res.Body.Close()
+}
+
+func TestRouter_FormAreSentInsideContext(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+				query := fdhttp.RequestFormValue(ctx, "query")
+				assert.Equal(t, "string", query)
+				return http.StatusOK, nil, nil
+			})
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	res, err := http.Get(ts.URL + "/?query=string")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	res.Body.Close()
+}
+
+func TestRouter_PostFormAreSentInsideContext(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.POST("/", func(ctx context.Context) (int, interface{}, error) {
+				value := fdhttp.RequestPostFormValue(ctx, "field")
+				assert.Equal(t, "from-body", value)
+				return http.StatusOK, nil, nil
+			})
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	post := url.Values{}
+	post.Add("field", "from-body")
+
+	res, err := http.PostForm(ts.URL+"/?field=from+query+string", post)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
 	res.Body.Close()
 }
 
