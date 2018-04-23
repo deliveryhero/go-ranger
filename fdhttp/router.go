@@ -151,6 +151,8 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 					Message: err.Error(),
 				}
 			}
+
+			ctx = SetResponseError(ctx, resp.(*Error))
 		}
 
 		// Even in error case send all headers setted
@@ -160,6 +162,9 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 				w.Header().Add(h, v)
 			}
 		}
+
+		// Override request, with that middlewares can access the whole ctx
+		*req = *req.WithContext(ctx)
 
 		ResponseJSON(w, statusCode, resp)
 	})

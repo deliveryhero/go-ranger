@@ -54,7 +54,7 @@ func TestRouter_StdHandlerIsCalled(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.StdGET("/get", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			r.StdGET("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				handlerCalled = true
 			}))
 		},
@@ -66,7 +66,7 @@ func TestRouter_StdHandlerIsCalled(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/get")
+	res, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 	res.Body.Close()
 
@@ -80,7 +80,7 @@ func TestRouter_HandlerIsCalled(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/get", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
 				handlerCalled = true
 				return http.StatusOK, nil, nil
 			})
@@ -93,7 +93,7 @@ func TestRouter_HandlerIsCalled(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/get")
+	res, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 	res.Body.Close()
 
@@ -108,7 +108,7 @@ func TestRouter_MiddlewareIsCalled(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.StdGET("/get", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			r.StdGET("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.Write([]byte("handler"))
 			}))
 		},
@@ -121,7 +121,7 @@ func TestRouter_MiddlewareIsCalled(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/get")
+	res, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
 	body, _ := ioutil.ReadAll(res.Body)
@@ -141,7 +141,7 @@ func TestRouter_MiddlewareIsCalledRightOrder(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.StdGET("/get", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			r.StdGET("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.Write([]byte("handler"))
 			}))
 		},
@@ -154,7 +154,7 @@ func TestRouter_MiddlewareIsCalledRightOrder(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/get")
+	res, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
 	body, _ := ioutil.ReadAll(res.Body)
@@ -302,7 +302,7 @@ func TestRouter_SendResponseAsJSON(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/get", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
 				return http.StatusOK, map[string]interface{}{
 					"success": true,
 					"data": map[string]interface{}{
@@ -319,7 +319,7 @@ func TestRouter_SendResponseAsJSON(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/get")
+	res, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
 	body, _ := ioutil.ReadAll(res.Body)
@@ -333,7 +333,7 @@ func TestRouter_SendErrorAsJSON(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/get", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
 				return http.StatusOK, nil, errors.New("my error")
 			})
 		},
@@ -345,7 +345,7 @@ func TestRouter_SendErrorAsJSON(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/get")
+	res, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
 	body, _ := ioutil.ReadAll(res.Body)
@@ -359,8 +359,8 @@ func TestRouter_SendResponseError(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/get", func(ctx context.Context) (int, interface{}, error) {
-				return http.StatusOK, nil, &fdhttp.Error{
+			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+				return http.StatusBadRequest, nil, &fdhttp.Error{
 					Code:    "123",
 					Message: "something went wrong",
 				}
@@ -374,12 +374,50 @@ func TestRouter_SendResponseError(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/get")
+	res, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 
 	body, _ := ioutil.ReadAll(res.Body)
 	assert.Equal(t, `{"code":"123","message":"something went wrong"}`+"\n", string(body))
 
+	res.Body.Close()
+}
+
+func TestRouter_ErrorIsAvailableInsideContext(t *testing.T) {
+	handlerErr := &fdhttp.Error{
+		Code:    "123",
+		Message: "something went wrong",
+	}
+
+	r := fdhttp.NewRouter()
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+				return http.StatusBadRequest, nil, handlerErr
+			})
+		},
+	}
+	r.Register(h)
+
+	var mCalled bool
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			mCalled = true
+			next.ServeHTTP(w, req)
+			assert.Equal(t, handlerErr, fdhttp.ResponseError(req.Context()))
+		})
+	})
+
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	res, err := http.Get(ts.URL + "/")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+	assert.True(t, mCalled)
 	res.Body.Close()
 }
 
@@ -390,13 +428,13 @@ func TestRouter_NotFoundHandler(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/get")
+	res, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
 	assert.Equal(t, http.StatusNotFound, res.StatusCode)
 
 	body, _ := ioutil.ReadAll(res.Body)
-	assert.Equal(t, `{"code":"not_found","message":"URL '/get' was not found"}`+"\n", string(body))
+	assert.Equal(t, `{"code":"not_found","message":"URL '/' was not found"}`+"\n", string(body))
 
 	res.Body.Close()
 }
@@ -406,11 +444,8 @@ func TestRouter_MethodNotAllowedHandler(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/get", func(ctx context.Context) (int, interface{}, error) {
-				return http.StatusOK, nil, &fdhttp.Error{
-					Code:    "123",
-					Message: "something went wrong",
-				}
+			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+				return http.StatusBadRequest, nil, nil
 			})
 		},
 	}
@@ -421,13 +456,13 @@ func TestRouter_MethodNotAllowedHandler(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Post(ts.URL+"/get", "", nil)
+	res, err := http.Post(ts.URL+"/", "", nil)
 	assert.NoError(t, err)
 
 	assert.Equal(t, http.StatusMethodNotAllowed, res.StatusCode)
 
 	body, _ := ioutil.ReadAll(res.Body)
-	assert.Equal(t, `{"code":"method_not_allowed","message":"Method 'POST' is not allowed to access '/get'"}`+"\n", string(body))
+	assert.Equal(t, `{"code":"method_not_allowed","message":"Method 'POST' is not allowed to access '/'"}`+"\n", string(body))
 
 	res.Body.Close()
 }
@@ -437,7 +472,7 @@ func TestRouter_PanicHandler(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/get", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
 				panic(errors.New("something bad happended"))
 			})
 		},
@@ -449,7 +484,7 @@ func TestRouter_PanicHandler(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/get")
+	res, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
 	assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
