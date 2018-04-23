@@ -113,7 +113,7 @@ func SetRequestForm(ctx context.Context, value url.Values) context.Context {
 }
 
 // RequestPostFormKey is a key used inside of context.Context to save the Request.Form
-var RequestPostFormKey = "fdhttp_request_form"
+var RequestPostFormKey = "fdhttp_request_post_form"
 
 // RequestPostForm get form from context.
 func RequestPostForm(ctx context.Context) url.Values {
