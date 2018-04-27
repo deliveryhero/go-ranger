@@ -41,16 +41,16 @@ type HealthCheckServiceError interface {
 	Detail() interface{}
 }
 
-var _ Handler = &HealchCheckHandler{}
+var _ Handler = &HealthCheckHandler{}
 
 // DefaultHealthCheckURL is the urlto access your health check.
-// Note you can specify a Prefix (inside of HealchCheckHandler object)
+// Note you can specify a Prefix (inside of HealthCheckHandler object)
 // and you also can check a specific service using: Prefix + DefaultHealthCheckURL + "/<service-name>"
 var DefaultHealthCheckURL = "/health/check"
 
-// HealchCheckHandler is a valid http handler to export app version and it also checks
+// HealthCheckHandler is a valid http handler to export app version and it also checks
 // service registred.
-type HealchCheckHandler struct {
+type HealthCheckHandler struct {
 	// Prefix will be prefix the fdhttp.DefaultHealthCheckURL.
 	Prefix string
 
@@ -61,10 +61,10 @@ type HealchCheckHandler struct {
 }
 
 // NewHealthCheckHandler create a new healthcheck handler
-func NewHealthCheckHandler(tag, commit string) *HealchCheckHandler {
+func NewHealthCheckHandler(tag, commit string) *HealthCheckHandler {
 	hostname, _ := os.Hostname()
 
-	return &HealchCheckHandler{
+	return &HealthCheckHandler{
 		tag:      tag,
 		commit:   commit,
 		hostname: hostname,
@@ -72,17 +72,17 @@ func NewHealthCheckHandler(tag, commit string) *HealchCheckHandler {
 	}
 }
 
-func (h *HealchCheckHandler) Init(r *Router) {
+func (h *HealthCheckHandler) Init(r *Router) {
 	r.GET(h.Prefix+DefaultHealthCheckURL, h.Get)
 	r.GET(h.Prefix+DefaultHealthCheckURL+"/:service", h.Get)
 }
 
 // Register a new healthcheck Service
-func (h *HealchCheckHandler) Register(name string, s HealthCheckService) {
+func (h *HealthCheckHandler) Register(name string, s HealthCheckService) {
 	h.services[name] = s
 }
 
-func (h *HealchCheckHandler) Get(ctx context.Context) (int, interface{}, error) {
+func (h *HealthCheckHandler) Get(ctx context.Context) (int, interface{}, error) {
 	started := time.Now()
 
 	serviceParam := RouteParam(ctx, "service")
