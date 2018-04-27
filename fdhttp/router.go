@@ -22,6 +22,7 @@ type Router struct {
 	middlewares []Middleware
 	handlers    []Handler
 	rootHandler http.Handler
+	methods     map[string]struct{}
 }
 
 var _ http.Handler = &Router{}
@@ -34,6 +35,14 @@ const (
 func NewRouter() *Router {
 	return &Router{
 		httprouter: httprouter.New(),
+		methods:    make(map[string]struct{}),
+	}
+}
+
+// allowMethod save this method as allowed to be returned in CORS header
+func (r *Router) allowMethod(method string) {
+	if _, ok := r.methods[method]; !ok {
+		r.methods[method] = struct{}{}
 	}
 }
 
@@ -79,28 +88,39 @@ func (r *Router) Register(h ...Handler) {
 	r.handlers = append(r.handlers, h...)
 }
 
+func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) {
+	r.allowMethod(method)
+	r.httprouter.Handler(method, path, handler)
+}
+
 // StdGET register a standard http.HandlerFunc to handle GET method
 func (r *Router) StdGET(path string, handler http.HandlerFunc) {
-	r.httprouter.Handler("GET", path, handler)
+	r.StdHandler("GET", path, handler)
 }
 
 // StdPOST register a standard http.HandlerFunc to handle POST method
 func (r *Router) StdPOST(path string, handler http.HandlerFunc) {
-	r.httprouter.Handler("POST", path, handler)
+	r.StdHandler("POST", path, handler)
 }
 
 // StdPUT register a standard http.HandlerFunc to handle PUT method
 func (r *Router) StdPUT(path string, handler http.HandlerFunc) {
-	r.httprouter.Handler("PUT", path, handler)
+	r.StdHandler("PUT", path, handler)
 }
 
 // StdDELETE register a standard http.HandlerFunc to handle DELETE method
 func (r *Router) StdDELETE(path string, handler http.HandlerFunc) {
-	r.httprouter.Handler("DELETE", path, handler)
+	r.StdHandler("DELETE", path, handler)
+}
+
+// StdOPTIONS register a standard http.HandlerFunc to handle OPTIONS method
+func (r *Router) StdOPTIONS(path string, handler http.HandlerFunc) {
+	r.StdHandler("OPTIONS", path, handler)
 }
 
 // Handler register the method and path with fdhttp.EndpointFunc
 func (r *Router) Handler(method, path string, fn EndpointFunc) {
+	r.allowMethod(method)
 	r.httprouter.Handle(method, path, func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		ctx := req.Context()
 
@@ -185,6 +205,11 @@ func (r *Router) PUT(path string, fn EndpointFunc) {
 // DELETE register a fdhttp.EndpointFunc to handle DELETE method
 func (r *Router) DELETE(path string, fn EndpointFunc) {
 	r.Handler("DELETE", path, fn)
+}
+
+// OPTIONS register a fdhttp.EndpointFunc to handle OPTIONS method
+func (r *Router) OPTIONS(path string, fn EndpointFunc) {
+	r.Handler("OPTIONS", path, fn)
 }
 
 // ServeHTTP makes this struct a valid implementation of http.Handler
