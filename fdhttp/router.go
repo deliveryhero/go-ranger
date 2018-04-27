@@ -123,23 +123,9 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 	r.allowMethod(method)
 	r.httprouter.Handle(method, path, func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		ctx := req.Context()
-
 		// Inject route param on ctx
 		for _, param := range params {
 			ctx = SetRouteParam(ctx, param.Key, param.Value)
-		}
-
-		ctx = SetRequestHeader(ctx, req.Header)
-
-		// Inject Form and PostForm
-		if req.Form == nil {
-			req.ParseMultipartForm(defaultMaxMemory)
-			if req.Form != nil {
-				ctx = SetRequestForm(ctx, req.Form)
-			}
-			if req.PostForm != nil {
-				ctx = SetRequestPostForm(ctx, req.PostForm)
-			}
 		}
 
 		// Inject body on ctx
@@ -155,9 +141,6 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 
 			ctx = SetRequestBody(ctx, bytes.NewBuffer(body))
 		}
-
-		// Make response header available inside of context
-		ctx = SetResponseHeader(ctx, http.Header{})
 
 		// call user handler
 		statusCode, resp := fn(ctx)
@@ -218,5 +201,24 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.Init()
 	}
 
-	r.rootHandler.ServeHTTP(w, req)
+	ctx := req.Context()
+	ctx = SetRequestHeader(ctx, req.Header)
+	ctx = SetResponseHeader(ctx, http.Header{})
+
+	// Inject Form and PostForm
+	if req.Form == nil {
+		req.ParseMultipartForm(defaultMaxMemory)
+		if req.Form != nil {
+			ctx = SetRequestForm(ctx, req.Form)
+		}
+		if req.PostForm != nil {
+			ctx = SetRequestPostForm(ctx, req.PostForm)
+		}
+	}
+
+	r.rootHandler.ServeHTTP(w, req.WithContext(ctx))
+
+	// TODO send header and body here, with this even standard handler can use
+	// our helper function, like AddResponseHeader, SetResponseHeader
+	// Problem is how identify that handler didn't send some data already
 }

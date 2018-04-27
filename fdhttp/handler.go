@@ -39,7 +39,7 @@ func SetRouteParam(ctx context.Context, param string, value interface{}) context
 }
 
 // RequestBodyKey is a key used inside of context.Context to save the request body
-var RequestBodyKey = "fdhttp_body"
+var RequestBodyKey = "fdhttp_request_body"
 
 // RequestBody get body from context.
 func RequestBody(ctx context.Context) io.Reader {

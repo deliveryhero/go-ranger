@@ -66,9 +66,9 @@ func TestRouter_StdHandlerIsCalled(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/")
+	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
-	res.Body.Close()
+	resp.Body.Close()
 
 	assert.True(t, handlerCalled)
 }
@@ -93,9 +93,9 @@ func TestRouter_HandlerIsCalled(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/")
+	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
-	res.Body.Close()
+	resp.Body.Close()
 
 	assert.True(t, handlerCalled)
 }
@@ -121,12 +121,12 @@ func TestRouter_MiddlewareIsCalled(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/")
+	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 	assert.Equal(t, "middlewarehandler", string(body))
-	res.Body.Close()
+	resp.Body.Close()
 
 	assert.True(t, mCalled)
 }
@@ -154,13 +154,13 @@ func TestRouter_MiddlewareIsCalledRightOrder(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/")
+	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 	assert.Equal(t, "m1m2handler", string(body))
 
-	res.Body.Close()
+	resp.Body.Close()
 
 	assert.True(t, m1Called)
 	assert.True(t, m2Called)
@@ -185,10 +185,10 @@ func TestRouter_RouteParamsAreSentInsideContext(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/123")
+	resp, err := http.Get(ts.URL + "/123")
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, res.StatusCode)
-	res.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
 }
 
 func TestRouter_HeadersAreSentInsideContext(t *testing.T) {
@@ -213,10 +213,10 @@ func TestRouter_HeadersAreSentInsideContext(t *testing.T) {
 	req, _ := http.NewRequest("GET", ts.URL, bytes.NewBuffer(nil))
 	req.Header.Add("X-Token", "my-token")
 
-	res, err := http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, res.StatusCode)
-	res.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
 }
 
 func TestRouter_FormAreSentInsideContext(t *testing.T) {
@@ -238,10 +238,10 @@ func TestRouter_FormAreSentInsideContext(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/?query=string")
+	resp, err := http.Get(ts.URL + "/?query=string")
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, res.StatusCode)
-	res.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
 }
 
 func TestRouter_PostFormAreSentInsideContext(t *testing.T) {
@@ -266,10 +266,10 @@ func TestRouter_PostFormAreSentInsideContext(t *testing.T) {
 	post := url.Values{}
 	post.Add("field", "from-body")
 
-	res, err := http.PostForm(ts.URL+"/?field=from+query+string", post)
+	resp, err := http.PostForm(ts.URL+"/?field=from+query+string", post)
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, res.StatusCode)
-	res.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
 }
 
 func TestRouter_HeaderAreSentBackToClients(t *testing.T) {
@@ -290,11 +290,11 @@ func TestRouter_HeaderAreSentBackToClients(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "")
+	resp, err := http.Get(ts.URL + "")
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, res.StatusCode)
-	assert.Equal(t, "value", res.Header.Get("x-personal"))
-	res.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "value", resp.Header.Get("x-personal"))
+	resp.Body.Close()
 }
 
 func TestRouter_SendResponseAsJSON(t *testing.T) {
@@ -319,13 +319,13 @@ func TestRouter_SendResponseAsJSON(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/")
+	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 	assert.Equal(t, `{"data":{"id":123},"success":true}`+"\n", string(body))
 
-	res.Body.Close()
+	resp.Body.Close()
 }
 
 func TestRouter_SendErrorAsJSON(t *testing.T) {
@@ -345,13 +345,13 @@ func TestRouter_SendErrorAsJSON(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/")
+	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 	assert.Equal(t, `{"code":"","message":"my error"}`+"\n", string(body))
 
-	res.Body.Close()
+	resp.Body.Close()
 }
 
 func TestRouter_SendResponseError(t *testing.T) {
@@ -374,14 +374,14 @@ func TestRouter_SendResponseError(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/")
+	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 	assert.Equal(t, `{"code":"123","message":"something went wrong"}`+"\n", string(body))
 
-	res.Body.Close()
+	resp.Body.Close()
 }
 
 func TestRouter_ErrorIsAvailableInsideContext(t *testing.T) {
@@ -414,11 +414,11 @@ func TestRouter_ErrorIsAvailableInsideContext(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/")
+	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	assert.True(t, mCalled)
-	res.Body.Close()
+	resp.Body.Close()
 }
 
 func TestRouter_NotFoundHandler(t *testing.T) {
@@ -428,15 +428,15 @@ func TestRouter_NotFoundHandler(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/")
+	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
-	assert.Equal(t, http.StatusNotFound, res.StatusCode)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 	assert.Equal(t, `{"code":"not_found","message":"URL '/' was not found"}`+"\n", string(body))
 
-	res.Body.Close()
+	resp.Body.Close()
 }
 
 func TestRouter_MethodNotAllowedHandler(t *testing.T) {
@@ -456,15 +456,15 @@ func TestRouter_MethodNotAllowedHandler(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Post(ts.URL+"/", "", nil)
+	resp, err := http.Post(ts.URL+"/", "", nil)
 	assert.NoError(t, err)
 
-	assert.Equal(t, http.StatusMethodNotAllowed, res.StatusCode)
+	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 	assert.Equal(t, `{"code":"method_not_allowed","message":"Method 'POST' is not allowed to access '/'"}`+"\n", string(body))
 
-	res.Body.Close()
+	resp.Body.Close()
 }
 
 func TestRouter_PanicHandler(t *testing.T) {
@@ -484,13 +484,13 @@ func TestRouter_PanicHandler(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "/")
+	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
 
-	assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 	assert.Equal(t, `{"code":"panic","message":"something bad happended"}`+"\n", string(body))
 
-	res.Body.Close()
+	resp.Body.Close()
 }
