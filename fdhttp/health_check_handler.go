@@ -82,7 +82,7 @@ func (h *HealthCheckHandler) Register(name string, s HealthCheckService) {
 	h.services[name] = s
 }
 
-func (h *HealthCheckHandler) Get(ctx context.Context) (int, interface{}, error) {
+func (h *HealthCheckHandler) Get(ctx context.Context) (int, interface{}) {
 	started := time.Now()
 
 	serviceParam := RouteParam(ctx, "service")
@@ -128,5 +128,5 @@ func (h *HealthCheckHandler) Get(ctx context.Context) (int, interface{}, error) 
 
 	resp.Elapsed = time.Since(started) / time.Millisecond
 
-	return statusCode, resp, nil
+	return statusCode, resp
 }

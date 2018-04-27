@@ -22,8 +22,11 @@ func (h *myHandler) Init(router *fdhttp.Router) {
 	// router.StdDELETE("/std-delete", h.StdDelete)
 }
 
-func (h *myHandler) Get(ctx context.Context) (int, interface{}, error) {
-	return http.StatusNotImplemented, nil, errors.New("method not implemented")
+func (h *myHandler) Get(ctx context.Context) (int, interface{}) {
+	return http.StatusNotImplemented, fdhttp.Error{
+		Code:    "not_implemented",
+		Message: "Method not implemented",
+	}
 }
 
 func (h *myHandler) StdGet(w http.ResponseWriter, req *http.Request) {

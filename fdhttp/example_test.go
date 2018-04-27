@@ -21,20 +21,20 @@ func (h *testHandler) Init(router *fdhttp.Router) {
 	router.PUT("/entity/:id", h.PutHandler)
 }
 
-func (h *testHandler) PutHandler(ctx context.Context) (int, interface{}, error) {
+func (h *testHandler) PutHandler(ctx context.Context) (int, interface{}) {
 	id := fdhttp.RouteParam(ctx, "id")
 
 	var bodyReq map[string]interface{}
 
 	err := fdhttp.RequestBodyJSON(ctx, &bodyReq)
 	if err != nil {
-		return http.StatusBadRequest, nil, err
+		return http.StatusBadRequest, err
 	}
 
 	return http.StatusOK, map[string]interface{}{
 		"id":   id,
 		"body": bodyReq,
-	}, nil
+	}
 }
 
 func Example() {

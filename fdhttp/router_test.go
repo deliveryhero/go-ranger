@@ -80,9 +80,9 @@ func TestRouter_HandlerIsCalled(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
 				handlerCalled = true
-				return http.StatusOK, nil, nil
+				return http.StatusOK, nil
 			})
 		},
 	}
@@ -171,10 +171,10 @@ func TestRouter_RouteParamsAreSentInsideContext(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/:id", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/:id", func(ctx context.Context) (int, interface{}) {
 				id := fdhttp.RouteParam(ctx, "id")
 				assert.Equal(t, "123", id)
-				return http.StatusOK, nil, nil
+				return http.StatusOK, nil
 			})
 		},
 	}
@@ -196,10 +196,10 @@ func TestRouter_HeadersAreSentInsideContext(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
 				token := fdhttp.RequestHeaderValue(ctx, "x-token")
 				assert.Equal(t, "my-token", token)
-				return http.StatusOK, nil, nil
+				return http.StatusOK, nil
 			})
 		},
 	}
@@ -224,10 +224,10 @@ func TestRouter_FormAreSentInsideContext(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
 				query := fdhttp.RequestFormValue(ctx, "query")
 				assert.Equal(t, "string", query)
-				return http.StatusOK, nil, nil
+				return http.StatusOK, nil
 			})
 		},
 	}
@@ -249,10 +249,10 @@ func TestRouter_PostFormAreSentInsideContext(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.POST("/", func(ctx context.Context) (int, interface{}, error) {
+			r.POST("/", func(ctx context.Context) (int, interface{}) {
 				value := fdhttp.RequestPostFormValue(ctx, "field")
 				assert.Equal(t, "from-body", value)
-				return http.StatusOK, nil, nil
+				return http.StatusOK, nil
 			})
 		},
 	}
@@ -277,9 +277,9 @@ func TestRouter_HeaderAreSentBackToClients(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
 				fdhttp.SetResponseHeaderValue(ctx, "X-Personal", "value")
-				return http.StatusOK, nil, nil
+				return http.StatusOK, nil
 			})
 		},
 	}
@@ -302,13 +302,13 @@ func TestRouter_SendResponseAsJSON(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
 				return http.StatusOK, map[string]interface{}{
 					"success": true,
 					"data": map[string]interface{}{
 						"id": 123,
 					},
-				}, nil
+				}
 			})
 		},
 	}
@@ -333,8 +333,8 @@ func TestRouter_SendErrorAsJSON(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
-				return http.StatusOK, nil, errors.New("my error")
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
+				return http.StatusOK, errors.New("my error")
 			})
 		},
 	}
@@ -359,8 +359,8 @@ func TestRouter_SendResponseError(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
-				return http.StatusBadRequest, nil, &fdhttp.Error{
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
+				return http.StatusBadRequest, &fdhttp.Error{
 					Code:    "123",
 					Message: "something went wrong",
 				}
@@ -393,8 +393,8 @@ func TestRouter_ErrorIsAvailableInsideContext(t *testing.T) {
 	r := fdhttp.NewRouter()
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
-				return http.StatusBadRequest, nil, handlerErr
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
+				return http.StatusBadRequest, handlerErr
 			})
 		},
 	}
@@ -444,8 +444,8 @@ func TestRouter_MethodNotAllowedHandler(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
-				return http.StatusBadRequest, nil, nil
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
+				return http.StatusBadRequest, nil
 			})
 		},
 	}
@@ -472,7 +472,7 @@ func TestRouter_PanicHandler(t *testing.T) {
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}, error) {
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
 				panic(errors.New("something bad happended"))
 			})
 		},

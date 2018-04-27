@@ -22,7 +22,7 @@ type Handler interface {
 // Router.GET(), Router.POST(), Router.PUT(), Router.DELETE()
 // or functions that are compatible with standard library
 // Router.StdGET(), Router.StdPOST(), Router.StdPUT(), Router.StdDELETE()
-type EndpointFunc func(context.Context) (int, interface{}, error)
+type EndpointFunc func(context.Context) (int, interface{})
 
 // RouteParamPrefixKey is used to avoid name clashing inside of context.Context.
 var RouteParamPrefixKey = "fdhttp_router_param_"

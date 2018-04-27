@@ -140,19 +140,16 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 		ctx = SetResponseHeader(ctx, http.Header{})
 
 		// call user handler
-		statusCode, resp, err := fn(ctx)
-		if err != nil {
-			// ignore response in case of error
-
-			if respErr, ok := err.(*Error); ok {
-				resp = respErr
-			} else {
-				resp = &Error{
-					Message: err.Error(),
-				}
+		statusCode, resp := fn(ctx)
+		if respErr, ok := resp.(*Error); ok {
+			ctx = SetResponseError(ctx, respErr)
+		} else if err, ok := resp.(error); ok {
+			// If it's a error let's convert to fdhttp.Error and return as JSON
+			respErr := &Error{
+				Message: err.Error(),
 			}
-
-			ctx = SetResponseError(ctx, resp.(*Error))
+			ctx = SetResponseError(ctx, respErr)
+			resp = respErr
 		}
 
 		// Even in error case send all headers setted
