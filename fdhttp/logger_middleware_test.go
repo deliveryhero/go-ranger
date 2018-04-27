@@ -1,6 +1,7 @@
 package fdhttp_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -81,4 +82,31 @@ func TestNewLogMiddleware_CallFuncInEachRequest(t *testing.T) {
 
 	assert.True(t, called)
 	assert.Equal(t, "GET /foo 200", logger.PrintfMsg)
+}
+
+func TestNewLogMiddleware_CanGetError(t *testing.T) {
+	logger := &dummyLog{}
+	logMiddleware := fdhttp.NewLogMiddleware()
+	logMiddleware.SetLoggerFunc(func(logReq *fdhttp.LogRequest) {
+		logger.Printf("%s", logReq.Response.Err())
+	})
+
+	handlerErr := &fdhttp.Error{
+		Code:    "my_error",
+		Message: "details",
+	}
+
+	router := fdhttp.NewRouter()
+	router.Use(logMiddleware.Middleware())
+	router.GET("/foo", func(ctx context.Context) (int, interface{}) {
+		return http.StatusBadRequest, handlerErr
+	})
+	router.Init()
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	http.Get(ts.URL + "/foo")
+
+	assert.Equal(t, handlerErr.Error(), logger.PrintfMsg)
 }
