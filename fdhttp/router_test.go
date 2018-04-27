@@ -391,14 +391,9 @@ func TestRouter_ErrorIsAvailableInsideContext(t *testing.T) {
 	}
 
 	r := fdhttp.NewRouter()
-	h := &dummyHandler{
-		initFunc: func(r *fdhttp.Router) {
-			r.GET("/", func(ctx context.Context) (int, interface{}) {
-				return http.StatusBadRequest, handlerErr
-			})
-		},
-	}
-	r.Register(h)
+	r.GET("/", func(ctx context.Context) (int, interface{}) {
+		return http.StatusBadRequest, handlerErr
+	})
 
 	var mCalled bool
 	r.Use(func(next http.Handler) http.Handler {
