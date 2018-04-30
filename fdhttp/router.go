@@ -121,12 +121,14 @@ func (r *Router) StdOPTIONS(path string, handler http.HandlerFunc) {
 // Handler register the method and path with fdhttp.EndpointFunc
 func (r *Router) Handler(method, path string, fn EndpointFunc) {
 	r.allowMethod(method)
-	r.httprouter.Handle(method, path, func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+	r.httprouter.Handle(method, path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		ctx := req.Context()
 		// Inject route param on ctx
-		for _, param := range params {
-			ctx = SetRouteParam(ctx, param.Key, param.Value)
+		params := map[string]string{}
+		for _, p := range ps {
+			params[p.Key] = p.Value
 		}
+		ctx = SetRouteParams(ctx, params)
 
 		// Inject body on ctx
 		if req.Body != nil {

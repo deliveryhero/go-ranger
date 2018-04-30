@@ -11,60 +11,63 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRouteParams(t *testing.T) {
+	ctx := context.Background()
+	assert.Equal(t, "", fdhttp.RouteParams(ctx)["invalid"])
+
+	ctx = fdhttp.SetRouteParams(ctx, map[string]string{"get": "value"})
+	assert.Equal(t, "value", fdhttp.RouteParams(ctx)["get"])
+	assert.Equal(t, "", fdhttp.RouteParams(ctx)["invalid"])
+}
+
 func TestRouteParam(t *testing.T) {
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, fdhttp.RouteParamPrefixKey+"get_test", "value")
-	assert.Equal(t, "value", fdhttp.RouteParam(ctx, "get_test"))
+	assert.Equal(t, "", fdhttp.RouteParam(ctx, "invalid"))
+
+	ctx = fdhttp.SetRouteParams(ctx, map[string]string{"get": "value"})
+	assert.Equal(t, "value", fdhttp.RouteParam(ctx, "get"))
+	assert.Equal(t, "", fdhttp.RouteParam(ctx, "invalid"))
 }
 
-func TestRouteParam_Empty(t *testing.T) {
+func TestRequestHeader(t *testing.T) {
 	ctx := context.Background()
-	assert.Equal(t, "", fdhttp.RouteParam(ctx, "unknown"))
+	assert.NotNil(t, fdhttp.RequestHeader(ctx))
+	assert.IsType(t, http.Header{}, fdhttp.RequestHeader(ctx))
+	assert.Equal(t, "", fdhttp.RequestHeader(ctx).Get("invalid"))
+
+	header := http.Header{}
+	header.Set("Content-Type", "application/xml")
+
+	ctx = fdhttp.SetRequestHeader(ctx, header)
+	assert.Equal(t, header, fdhttp.RequestHeader(ctx))
+	assert.Equal(t, "application/xml", fdhttp.RequestHeader(ctx).Get("Content-Type"))
+	assert.Equal(t, "", fdhttp.RequestHeader(ctx).Get("invalid"))
 }
 
-func TestSetRouteParam(t *testing.T) {
+func TestRequestHeaderValue(t *testing.T) {
 	ctx := context.Background()
-	ctx = fdhttp.SetRouteParam(ctx, "set_test", "value")
-	value, _ := ctx.Value(fdhttp.RouteParamPrefixKey + "set_test").(string)
-	assert.Equal(t, "value", value)
-}
+	assert.Equal(t, "", fdhttp.RequestHeaderValue(ctx, "invalid"))
 
-func TestSetAndGetRouteParam(t *testing.T) {
-	ctx := context.Background()
-	ctx = fdhttp.SetRouteParam(ctx, "get_set_test", "value")
-	assert.Equal(t, "value", fdhttp.RouteParam(ctx, "get_set_test"))
+	header := http.Header{}
+	header.Set("Content-Type", "application/xml")
+
+	ctx = fdhttp.SetRequestHeader(ctx, header)
+	assert.Equal(t, "application/xml", fdhttp.RequestHeaderValue(ctx, "Content-Type"))
+	assert.Equal(t, "", fdhttp.RequestHeaderValue(ctx, "invalid"))
 }
 
 func TestRequestBody(t *testing.T) {
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, fdhttp.RequestBodyKey, bytes.NewBufferString("value"))
+	assert.Nil(t, fdhttp.RequestBody(ctx))
 
-	b := fdhttp.RequestBody(ctx).(*bytes.Buffer)
-	assert.Equal(t, "value", b.String())
-}
-
-func TestRequestBody_Empty(t *testing.T) {
-	ctx := context.Background()
-	b := fdhttp.RequestBody(ctx)
-	assert.Nil(t, b)
-}
-
-func TestSetRequestBody(t *testing.T) {
-	ctx := context.Background()
 	ctx = fdhttp.SetRequestBody(ctx, bytes.NewBufferString("value"))
-	b, _ := ctx.Value(fdhttp.RequestBodyKey).(*bytes.Buffer)
-	assert.Equal(t, "value", b.String())
-}
-
-func TestSetAndGetRequestBody(t *testing.T) {
-	ctx := context.Background()
-	ctx = fdhttp.SetRequestBody(ctx, bytes.NewBufferString("value"))
-	b := fdhttp.RequestBody(ctx).(*bytes.Buffer)
-	assert.Equal(t, "value", b.String())
+	assert.Equal(t, "value", fdhttp.RequestBody(ctx).(*bytes.Buffer).String())
 }
 
 func TestRequestBodyJSON(t *testing.T) {
 	ctx := context.Background()
+	assert.Nil(t, fdhttp.RequestBody(ctx))
+
 	ctx = fdhttp.SetRequestBody(ctx, bytes.NewBufferString(`{"success":true,"data":1}`))
 
 	var resp struct {
@@ -78,290 +81,117 @@ func TestRequestBodyJSON(t *testing.T) {
 	assert.Equal(t, 1, resp.Data)
 }
 
-func TestResponseError(t *testing.T) {
-	respErr := &fdhttp.Error{
-		Code:    "code",
-		Message: "message",
-		Detail:  "detail",
-	}
-
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, fdhttp.ResponseErrorKey, respErr)
-
-	err := fdhttp.ResponseError(ctx)
-	assert.Equal(t, respErr.Code, err.Code)
-	assert.Equal(t, respErr.Message, err.Message)
-	assert.Equal(t, respErr.Detail, err.Detail)
-}
-
-func TestResponseError_Empty(t *testing.T) {
-	ctx := context.Background()
-	err := fdhttp.ResponseError(ctx)
-	assert.Nil(t, err)
-}
-
-func TestSetResponseError(t *testing.T) {
-	respErr := &fdhttp.Error{
-		Code:    "code",
-		Message: "message",
-		Detail:  "detail",
-	}
-
-	ctx := context.Background()
-	ctx = fdhttp.SetResponseError(ctx, respErr)
-	err, _ := ctx.Value(fdhttp.ResponseErrorKey).(*fdhttp.Error)
-	assert.Equal(t, respErr.Code, err.Code)
-	assert.Equal(t, respErr.Message, err.Message)
-	assert.Equal(t, respErr.Detail, err.Detail)
-}
-
-func TestSetAndGetResponseError(t *testing.T) {
-	respErr := &fdhttp.Error{
-		Code:    "code",
-		Message: "message",
-		Detail:  "detail",
-	}
-
-	ctx := context.Background()
-	ctx = fdhttp.SetResponseError(ctx, respErr)
-	err := fdhttp.ResponseError(ctx)
-	assert.Equal(t, respErr.Code, err.Code)
-	assert.Equal(t, respErr.Message, err.Message)
-	assert.Equal(t, respErr.Detail, err.Detail)
-}
-
-func TestRequestHeader(t *testing.T) {
-	header := http.Header{}
-	header.Set("Content-Type", "application/xml")
-
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, fdhttp.RequestHeaderKey, header)
-
-	h := fdhttp.RequestHeader(ctx)
-	assert.Equal(t, header, h)
-}
-
-func TestRequestHeader_Empty(t *testing.T) {
-	ctx := context.Background()
-	h := fdhttp.RequestHeader(ctx)
-	assert.Nil(t, h)
-}
-
-func TestRequestHeaderValue(t *testing.T) {
-	header := http.Header{}
-	header.Set("X-Personal", "personal")
-
-	ctx := context.Background()
-	ctx = fdhttp.SetRequestHeader(ctx, header)
-
-	h := fdhttp.RequestHeaderValue(ctx, "X-Personal")
-	assert.Equal(t, "personal", h)
-}
-
-func TestRequestHeaderValue_Empty(t *testing.T) {
-	ctx := context.Background()
-	h := fdhttp.RequestHeaderValue(ctx, "X-Personal")
-	assert.Empty(t, h)
-
-	header := http.Header{}
-	ctx = fdhttp.SetRequestHeader(ctx, header)
-
-	h = fdhttp.RequestHeaderValue(ctx, "X-Personal")
-	assert.Empty(t, h)
-}
-
-func TestSetRequestHeader(t *testing.T) {
-	header := http.Header{}
-	header.Set("X-Personal", "personal")
-
-	ctx := context.Background()
-	ctx = fdhttp.SetRequestHeader(ctx, header)
-	h, _ := ctx.Value(fdhttp.RequestHeaderKey).(http.Header)
-	assert.Equal(t, header, h)
-}
-
-func TestSetAndGetRequestHeader(t *testing.T) {
-	header := http.Header{}
-	header.Set("X-Personal", "personal")
-
-	ctx := context.Background()
-	ctx = fdhttp.SetRequestHeader(ctx, header)
-	h := fdhttp.RequestHeader(ctx)
-	assert.Equal(t, header, h)
-}
-
 func TestRequestForm(t *testing.T) {
+	ctx := context.Background()
+	assert.NotNil(t, fdhttp.RequestForm(ctx))
+	assert.IsType(t, url.Values{}, fdhttp.RequestForm(ctx))
+	assert.Equal(t, "", fdhttp.RequestForm(ctx).Get("invalid"))
+
 	form := url.Values{}
 	form.Set("field", "value")
 
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, fdhttp.RequestFormKey, form)
-
-	h := fdhttp.RequestForm(ctx)
-	assert.Equal(t, form, h)
-}
-
-func TestRequestForm_Empty(t *testing.T) {
-	ctx := context.Background()
-	h := fdhttp.RequestForm(ctx)
-	assert.Nil(t, h)
+	ctx = fdhttp.SetRequestForm(ctx, form)
+	assert.Equal(t, form, fdhttp.RequestForm(ctx))
+	assert.Equal(t, "value", fdhttp.RequestForm(ctx).Get("field"))
+	assert.Equal(t, "", fdhttp.RequestForm(ctx).Get("invalid"))
 }
 
 func TestRequestFormValue(t *testing.T) {
+	ctx := context.Background()
+	assert.Equal(t, "", fdhttp.RequestFormValue(ctx, "invalid"))
+
 	form := url.Values{}
 	form.Set("field", "value")
 
-	ctx := context.Background()
 	ctx = fdhttp.SetRequestForm(ctx, form)
-
-	v := fdhttp.RequestFormValue(ctx, "field")
-	assert.Equal(t, "value", v)
-}
-
-func TestRequestFormValue_Empty(t *testing.T) {
-	ctx := context.Background()
-	v := fdhttp.RequestFormValue(ctx, "invalid-field")
-	assert.Empty(t, v)
-
-	form := url.Values{}
-	ctx = fdhttp.SetRequestForm(ctx, form)
-
-	v = fdhttp.RequestFormValue(ctx, "invalid-field")
-	assert.Empty(t, v)
-}
-
-func TestSetRequestForm(t *testing.T) {
-	form := url.Values{}
-	form.Set("field", "value")
-
-	ctx := context.Background()
-	ctx = fdhttp.SetRequestForm(ctx, form)
-	v, _ := ctx.Value(fdhttp.RequestFormKey).(url.Values)
-	assert.Equal(t, form, v)
-}
-
-func TestSetAndGetRequestForm(t *testing.T) {
-	form := url.Values{}
-	form.Set("field", "value")
-
-	ctx := context.Background()
-	ctx = fdhttp.SetRequestForm(ctx, form)
-	v := fdhttp.RequestForm(ctx)
-	assert.Equal(t, form, v)
+	assert.Equal(t, "value", fdhttp.RequestFormValue(ctx, "field"))
+	assert.Equal(t, "", fdhttp.RequestFormValue(ctx, "invalid"))
 }
 
 func TestRequestPostForm(t *testing.T) {
+	ctx := context.Background()
+	assert.NotNil(t, fdhttp.RequestPostForm(ctx))
+	assert.IsType(t, url.Values{}, fdhttp.RequestPostForm(ctx))
+	assert.Equal(t, "", fdhttp.RequestPostForm(ctx).Get("invalid"))
+
 	form := url.Values{}
 	form.Set("field", "value")
 
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, fdhttp.RequestPostFormKey, form)
-
-	h := fdhttp.RequestPostForm(ctx)
-	assert.Equal(t, form, h)
-}
-
-func TestRequestPostForm_Empty(t *testing.T) {
-	ctx := context.Background()
-	h := fdhttp.RequestPostForm(ctx)
-	assert.Nil(t, h)
+	ctx = fdhttp.SetRequestPostForm(ctx, form)
+	assert.Equal(t, form, fdhttp.RequestPostForm(ctx))
+	assert.Equal(t, "value", fdhttp.RequestPostForm(ctx).Get("field"))
+	assert.Equal(t, "", fdhttp.RequestPostForm(ctx).Get("invalid"))
 }
 
 func TestRequestPostFormValue(t *testing.T) {
+	ctx := context.Background()
+	assert.Equal(t, "", fdhttp.RequestPostFormValue(ctx, "invalid"))
+
 	form := url.Values{}
 	form.Set("field", "value")
 
-	ctx := context.Background()
 	ctx = fdhttp.SetRequestPostForm(ctx, form)
-
-	v := fdhttp.RequestPostFormValue(ctx, "field")
-	assert.Equal(t, "value", v)
+	assert.Equal(t, "value", fdhttp.RequestPostFormValue(ctx, "field"))
+	assert.Equal(t, "", fdhttp.RequestPostFormValue(ctx, "invalid"))
 }
 
-func TestRequestPostFormValue_Empty(t *testing.T) {
+func TestResponseError(t *testing.T) {
 	ctx := context.Background()
-	v := fdhttp.RequestPostFormValue(ctx, "invalid-field")
-	assert.Empty(t, v)
+	assert.Nil(t, fdhttp.ResponseError(ctx))
 
-	form := url.Values{}
-	ctx = fdhttp.SetRequestPostForm(ctx, form)
+	expErr := &fdhttp.Error{
+		Code:    "code",
+		Message: "message",
+		Detail:  "detail",
+	}
+	ctx = fdhttp.SetResponseError(ctx, expErr)
 
-	v = fdhttp.RequestPostFormValue(ctx, "invalid-field")
-	assert.Empty(t, v)
-}
-
-func TestSetRequestPostForm(t *testing.T) {
-	form := url.Values{}
-	form.Set("field", "value")
-
-	ctx := context.Background()
-	ctx = fdhttp.SetRequestPostForm(ctx, form)
-	v, _ := ctx.Value(fdhttp.RequestPostFormKey).(url.Values)
-	assert.Equal(t, form, v)
-}
-
-func TestSetAndGetRequestPostForm(t *testing.T) {
-	form := url.Values{}
-	form.Set("field", "value")
-
-	ctx := context.Background()
-	ctx = fdhttp.SetRequestPostForm(ctx, form)
-	v := fdhttp.RequestPostForm(ctx)
-	assert.Equal(t, form, v)
+	err := fdhttp.ResponseError(ctx)
+	assert.Equal(t, expErr, err)
 }
 
 func TestResponseHeader(t *testing.T) {
+	ctx := context.Background()
+	assert.Nil(t, fdhttp.ResponseHeader(ctx))
+	assert.IsType(t, http.Header{}, fdhttp.ResponseHeader(ctx))
+	assert.Equal(t, "", fdhttp.ResponseHeader(ctx).Get("invalid"))
+
 	header := http.Header{}
-	header.Set("X-Personal", "personal")
+	header.Set("Content-Type", "application/xml")
 
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, fdhttp.ResponseHeaderKey, header)
-
-	h := fdhttp.ResponseHeader(ctx)
-	assert.Equal(t, header, h)
-}
-
-func TestResponseHeader_Empty(t *testing.T) {
-	ctx := context.Background()
-	h := fdhttp.ResponseHeader(ctx)
-	assert.Nil(t, h)
-}
-
-func TestSetResponseHeader(t *testing.T) {
-	header := http.Header{}
-	header.Set("X-Personal", "personal")
-
-	ctx := context.Background()
 	ctx = fdhttp.SetResponseHeader(ctx, header)
-	h, _ := ctx.Value(fdhttp.ResponseHeaderKey).(http.Header)
-	assert.Equal(t, header, h)
-}
-
-func TestSetAndGetResponseHeader(t *testing.T) {
-	header := http.Header{}
-	header.Set("X-Personal", "personal")
-
-	ctx := context.Background()
-	ctx = fdhttp.SetResponseHeader(ctx, header)
-	h := fdhttp.ResponseHeader(ctx)
-	assert.Equal(t, header, h)
+	assert.Equal(t, header, fdhttp.ResponseHeader(ctx))
+	assert.Equal(t, "application/xml", fdhttp.ResponseHeader(ctx).Get("Content-Type"))
+	assert.Equal(t, "", fdhttp.ResponseHeader(ctx).Get("invalid"))
 }
 
 func TestSetResponseHeaderValue(t *testing.T) {
 	ctx := context.Background()
-	ctx = fdhttp.SetResponseHeader(ctx, http.Header{})
-	fdhttp.SetResponseHeaderValue(ctx, "X-Personal", "personal")
+
+	expHeader := http.Header{}
+	expHeader.Set("Content-Type", "application/xml")
+
+	ctx = fdhttp.SetResponseHeader(ctx, expHeader)
+	fdhttp.SetResponseHeaderValue(ctx, "Etag", "c561c68d0ba92bbeb8b0f612a9199f722e3a621a")
 
 	header := fdhttp.ResponseHeader(ctx)
-	assert.Equal(t, "personal", header.Get("X-Personal"))
+	assert.Equal(t, "application/xml", header.Get("Content-Type"))
+	assert.Equal(t, "c561c68d0ba92bbeb8b0f612a9199f722e3a621a", header.Get("Etag"))
 }
 
 func TestAddResponseHeaderValue(t *testing.T) {
 	ctx := context.Background()
-	ctx = fdhttp.SetResponseHeader(ctx, http.Header{})
-	fdhttp.AddResponseHeaderValue(ctx, "X-Personal", "personal1")
-	fdhttp.AddResponseHeaderValue(ctx, "X-Personal", "personal2")
+
+	expHeader := http.Header{}
+	expHeader.Set("X-Personal", "1")
+
+	ctx = fdhttp.SetResponseHeader(ctx, expHeader)
+	fdhttp.AddResponseHeaderValue(ctx, "X-Personal", "2")
+	fdhttp.AddResponseHeaderValue(ctx, "X-Personal", "3")
 
 	header := fdhttp.ResponseHeader(ctx)
-	assert.Equal(t, []string{"personal1", "personal2"}, header["X-Personal"])
+	assert.Len(t, header["X-Personal"], 3)
+	assert.Equal(t, "1", header["X-Personal"][0])
+	assert.Equal(t, "2", header["X-Personal"][1])
+	assert.Equal(t, "3", header["X-Personal"][2])
 }

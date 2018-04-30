@@ -24,60 +24,61 @@ type Handler interface {
 // Router.StdGET(), Router.StdPOST(), Router.StdPUT(), Router.StdDELETE()
 type EndpointFunc func(context.Context) (int, interface{})
 
-// RouteParamPrefixKey is used to avoid name clashing inside of context.Context.
-var RouteParamPrefixKey = "fdhttp_router_param_"
+// contextKey is a value for use with context.WithValue.
+type contextKey struct {
+	name string
+}
 
-// RouteParam get router param from context.
-func RouteParam(ctx context.Context, param string) string {
-	v, _ := ctx.Value(RouteParamPrefixKey + param).(string)
+func (c contextKey) String() string {
+	return "fdhttp context key " + c.name
+}
+
+var (
+	// RouteParamContextKey is the key used to save route params.
+	RouteParamContextKey = &contextKey{"route-params"}
+
+	// RequestHeaderContextKey is the key used to save request header.
+	RequestHeaderContextKey = &contextKey{"request-header"}
+
+	// RequestBodyContextKey is the key used to save the body request.
+	RequestBodyContextKey = &contextKey{"request-body"}
+
+	// RequestFormContextKey is the key used to save the form with query string and post data.
+	RequestFormContextKey = &contextKey{"request-form"}
+
+	// RequestPostFormContextKey is the key used to save the post data.
+	RequestPostFormContextKey = &contextKey{"request-post-form"}
+
+	// ResponseHeaderContextKey is the key used to save the response header.
+	ResponseHeaderContextKey = &contextKey{"response-header"}
+
+	// ResponseErrorContextKey is the key used to save the response error.
+	ResponseErrorContextKey = &contextKey{"response-error"}
+)
+
+// RouteParams set route params to context.
+func RouteParams(ctx context.Context) map[string]string {
+	v, _ := ctx.Value(RouteParamContextKey).(map[string]string)
 	return v
 }
 
-// SetRouteParam set router param into context.
-func SetRouteParam(ctx context.Context, param string, value interface{}) context.Context {
-	return context.WithValue(ctx, RouteParamPrefixKey+param, value)
+// RouteParam get route params from context.
+func SetRouteParams(ctx context.Context, params map[string]string) context.Context {
+	return context.WithValue(ctx, RouteParamContextKey, params)
 }
 
-// RequestBodyKey is a key used inside of context.Context to save the request body
-var RequestBodyKey = "fdhttp_request_body"
-
-// RequestBody get body from context.
-func RequestBody(ctx context.Context) io.Reader {
-	body, _ := ctx.Value(RequestBodyKey).(io.Reader)
-	return body
+// RouteParam get a specific route param from context.
+func RouteParam(ctx context.Context, param string) string {
+	v, _ := RouteParams(ctx)[param]
+	return v
 }
-
-// RequestBodyJSON get body from context but deconding as JSON.
-func RequestBodyJSON(ctx context.Context, v interface{}) error {
-	body := RequestBody(ctx)
-	return json.NewDecoder(body).Decode(v)
-}
-
-// SetRequestBody set body into context.
-func SetRequestBody(ctx context.Context, value io.Reader) context.Context {
-	return context.WithValue(ctx, RequestBodyKey, value)
-}
-
-// ResponseErrorKey is a key used inside of context.Context to save the request body
-var ResponseErrorKey = "fdhttp_response_error"
-
-// ResponseError get response error from context.
-func ResponseError(ctx context.Context) *Error {
-	respErr, _ := ctx.Value(ResponseErrorKey).(*Error)
-	return respErr
-}
-
-// SetResponseError set response error into context.
-func SetResponseError(ctx context.Context, respErr *Error) context.Context {
-	return context.WithValue(ctx, ResponseErrorKey, respErr)
-}
-
-// RequestHeaderKey is a key used inside of context.Context to save the request headers
-var RequestHeaderKey = "fdhttp_request_header"
 
 // RequestHeader get header from context.
 func RequestHeader(ctx context.Context) http.Header {
-	header, _ := ctx.Value(RequestHeaderKey).(http.Header)
+	header, _ := ctx.Value(RequestHeaderContextKey).(http.Header)
+	if header == nil {
+		return http.Header{}
+	}
 	return header
 }
 
@@ -89,15 +90,32 @@ func RequestHeaderValue(ctx context.Context, key string) string {
 
 // SetRequestHeader set header into context.
 func SetRequestHeader(ctx context.Context, value http.Header) context.Context {
-	return context.WithValue(ctx, RequestHeaderKey, value)
+	return context.WithValue(ctx, RequestHeaderContextKey, value)
 }
 
-// RequestFormKey is a key used inside of context.Context to save the Request.Form
-var RequestFormKey = "fdhttp_request_form"
+// RequestBody get body from context.
+func RequestBody(ctx context.Context) io.Reader {
+	body, _ := ctx.Value(RequestBodyContextKey).(io.Reader)
+	return body
+}
+
+// RequestBodyJSON get body from context but deconding as JSON.
+func RequestBodyJSON(ctx context.Context, v interface{}) error {
+	body := RequestBody(ctx)
+	return json.NewDecoder(body).Decode(v)
+}
+
+// SetRequestBody set body into context.
+func SetRequestBody(ctx context.Context, value io.Reader) context.Context {
+	return context.WithValue(ctx, RequestBodyContextKey, value)
+}
 
 // RequestForm get form from context.
 func RequestForm(ctx context.Context) url.Values {
-	form, _ := ctx.Value(RequestFormKey).(url.Values)
+	form, _ := ctx.Value(RequestFormContextKey).(url.Values)
+	if form == nil {
+		return url.Values{}
+	}
 	return form
 }
 
@@ -109,15 +127,15 @@ func RequestFormValue(ctx context.Context, key string) string {
 
 // SetRequestForm set form into context.
 func SetRequestForm(ctx context.Context, value url.Values) context.Context {
-	return context.WithValue(ctx, RequestFormKey, value)
+	return context.WithValue(ctx, RequestFormContextKey, value)
 }
-
-// RequestPostFormKey is a key used inside of context.Context to save the Request.Form
-var RequestPostFormKey = "fdhttp_request_post_form"
 
 // RequestPostForm get form from context.
 func RequestPostForm(ctx context.Context) url.Values {
-	form, _ := ctx.Value(RequestPostFormKey).(url.Values)
+	form, _ := ctx.Value(RequestPostFormContextKey).(url.Values)
+	if form == nil {
+		return url.Values{}
+	}
 	return form
 }
 
@@ -129,21 +147,29 @@ func RequestPostFormValue(ctx context.Context, key string) string {
 
 // SetRequestPostForm set form into context.
 func SetRequestPostForm(ctx context.Context, value url.Values) context.Context {
-	return context.WithValue(ctx, RequestPostFormKey, value)
+	return context.WithValue(ctx, RequestPostFormContextKey, value)
 }
 
-// ResponseHeaderKey is a key used inside of context.Context to save the request headers
-var ResponseHeaderKey = "fdhttp_response_header"
+// ResponseError get response error from context.
+func ResponseError(ctx context.Context) *Error {
+	respErr, _ := ctx.Value(ResponseErrorContextKey).(*Error)
+	return respErr
+}
+
+// SetResponseError set response error into context.
+func SetResponseError(ctx context.Context, respErr *Error) context.Context {
+	return context.WithValue(ctx, ResponseErrorContextKey, respErr)
+}
 
 // ResponseHeader get header from context.
 func ResponseHeader(ctx context.Context) http.Header {
-	header, _ := ctx.Value(ResponseHeaderKey).(http.Header)
+	header, _ := ctx.Value(ResponseHeaderContextKey).(http.Header)
 	return header
 }
 
 // SetResponseHeader set header into context.
 func SetResponseHeader(ctx context.Context, value http.Header) context.Context {
-	return context.WithValue(ctx, ResponseHeaderKey, value)
+	return context.WithValue(ctx, ResponseHeaderContextKey, value)
 }
 
 // SetResponseHeaderValue call header.Set for you without get the whole object using ResponseHeader
