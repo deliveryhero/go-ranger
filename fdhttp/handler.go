@@ -24,6 +24,10 @@ type Handler interface {
 // Router.StdGET(), Router.StdPOST(), Router.StdPUT(), Router.StdDELETE()
 type EndpointFunc func(context.Context) (int, interface{})
 
+type JSONer interface {
+	JSON() interface{}
+}
+
 // contextKey is a value for use with context.WithValue.
 type contextKey struct {
 	name string

@@ -148,9 +148,12 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 		statusCode, resp := fn(ctx)
 		if respErr, ok := resp.(*Error); ok {
 			ctx = SetResponseError(ctx, respErr)
+		} else if j, ok := resp.(JSONer); ok {
+			resp = j.JSON()
 		} else if err, ok := resp.(error); ok {
 			// If it's a error let's convert to fdhttp.Error and return as JSON
 			respErr := &Error{
+				Code:    "unknown",
 				Message: err.Error(),
 			}
 			ctx = SetResponseError(ctx, respErr)

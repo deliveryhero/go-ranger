@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -349,7 +350,50 @@ func TestRouter_SendErrorAsJSON(t *testing.T) {
 	assert.NoError(t, err)
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	assert.Equal(t, `{"code":"","message":"my error"}`+"\n", string(body))
+	assert.Equal(t, `{"code":"unknown","message":"my error"}`+"\n", string(body))
+
+	resp.Body.Close()
+}
+
+type dummyError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (e *dummyError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Code, e.Message)
+}
+
+func (e *dummyError) JSON() interface{} {
+	return e
+}
+
+func TestRouter_SendCustomErrorAsJSON(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
+				return http.StatusBadRequest, dummyError{
+					Code:    "123",
+					Message: "something went wrong",
+				}
+			})
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	assert.Equal(t, `{"code":"123","message":"something went wrong"}`+"\n", string(body))
 
 	resp.Body.Close()
 }
