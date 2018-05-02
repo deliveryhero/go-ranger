@@ -14,19 +14,25 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/go-sql-driver/mysql"
+  packages = ["."]
+  revision = "a0583e0143b1624142adab07e0e97fe106d99561"
+  version = "v1.3"
+
+[[projects]]
   branch = "master"
   name = "github.com/hashicorp/golang-lru"
   packages = [
     ".",
     "simplelru"
   ]
-  revision = "0a025b7e63adc15a622f29b0b2c4c3848243bbf6"
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
   branch = "master"
   name = "github.com/johntdyer/slack-go"
   packages = ["."]
-  revision = "88ef3038545fa084d81f36e4a6943d112cdd74f6"
+  revision = "95fac1160b220c5abcf8b0ef88e9c3cb213c09f4"
 
 [[projects]]
   branch = "master"
@@ -45,6 +51,15 @@
   name = "github.com/justinas/alice"
   packages = ["."]
   revision = "03f45bd4b7dad4734bc4620e46a35789349abb20"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "oid"
+  ]
+  revision = "d34b9ff171c21ad295489235aec8b6626023cd04"
 
 [[projects]]
   name = "github.com/newrelic/go-agent"
@@ -69,8 +84,8 @@
 [[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
-  version = "v1.0.4"
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
 
 [[projects]]
   name = "github.com/stretchr/testify"
@@ -88,7 +103,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "d585fd2cc9195196078f516b69daff6744ef5e84"
+  revision = "613d6eafa307c6881a737a3c35c0e312e8d3a8c5"
 
 [[projects]]
   branch = "master"
@@ -97,7 +112,7 @@
     "unix",
     "windows"
   ]
-  revision = "571f7bbbe08da2a8955aed9d4db316e78630e9a3"
+  revision = "78d5f264b493f125018180c204871ecf58a2dce1"
 
 [[projects]]
   name = "gopkg.in/throttled/throttled.v2"
@@ -109,14 +124,14 @@
   version = "v2.0.3"
 
 [[projects]]
-  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "287cf08546ab5e7e37d55a84f7ed3fd1db036de5"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "83007dbae8d40f8ae7c61813348b8e4e67b397f74bc9ee54bf30e3bfe79bdbcc"
+  inputs-digest = "5f8584144b1f074fe4f0418de95c8bb11006c1917cf9cfd2c71231bba837aa36"
   solver-name = "gps-cdcl"
   solver-version = 1
