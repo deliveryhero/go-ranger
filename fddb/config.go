@@ -15,8 +15,8 @@ type SQLConfig struct {
 }
 
 var availableDrivers = map[string]struct{}{
-	"mysql":    struct{}{},
-	"postgres": struct{}{},
+	"mysql":    {},
+	"postgres": {},
 }
 
 // ErrNoDriverSpecified is returned when you call fddb.OpenSQL without
