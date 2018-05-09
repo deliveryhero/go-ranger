@@ -71,7 +71,7 @@ func NewLogger(out io.Writer, appData LoggerData, f Formatter, logLevel string, 
 //CreateFieldsFromRequest - Create a logrus.Fields object from a Request
 func CreateFieldsFromRequest(r *http.Request) LoggerData {
 	return LoggerData{
-		"client_ip":      r.RemoteAddr,
+		"client_ip":      r.Header.Get("X-Forwarded-For"),
 		"request_method": r.Method,
 		"request_uri":    r.RequestURI,
 		"request_host":   r.Host,
