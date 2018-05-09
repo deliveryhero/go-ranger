@@ -17,7 +17,7 @@ type NewRelic struct {
 }
 
 func NewRelicLabels(middleware ranger_http.MiddlewareInterface, labels map[string]string) {
-	nr := (*NewRelic)(middleware)
+	nr := middleware.(*NewRelic)
 	// create new application because we cannot change config of a created application
 	config := newrelic.NewConfig(nr.appName, nr.license)
 	config.Labels = labels
