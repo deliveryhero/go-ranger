@@ -143,5 +143,5 @@ func HealthCheckHandler(configuration healthCheckConfiguration) httprouter.Handl
 
 //ElapsedTimeSince calculates the elapsed time from a given start
 func ElapsedTimeSince(s time.Time) float64 {
-	return float64(time.Since(s)) / float64(time.Second)
+	return time.Since(s).Seconds()
 }

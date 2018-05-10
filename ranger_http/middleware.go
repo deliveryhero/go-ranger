@@ -28,10 +28,13 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 			logger.Debug(
 				message.String(),
 				ranger_logger.LoggerData{
-					"method": r.Method,
-					"uri":    r.RequestURI,
-					"status": sr.Status(),
-					"time":   time.Since(start),
+					"request_method":   r.Method,
+					"status":           sr.Status(),
+					"uri":              r.RequestURI,
+					"http_referer":     r.Referer(),
+					"user_agent":       r.UserAgent(),
+					"response_time":    ElapsedTimeSince(start),
+					"response_time_ms": ElapsedTimeSince(start) / 1000,
 				},
 			)
 		}()
