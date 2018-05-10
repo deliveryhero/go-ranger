@@ -128,6 +128,7 @@ func HealthCheckHandler(configuration healthCheckConfiguration) httprouter.Handl
 			}
 		}
 
+		w.WriteHeader(statusCode)
 		json.NewEncoder(w).Encode(
 			healthCheckResponse{
 				HTTPStatus: statusCode,

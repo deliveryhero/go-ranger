@@ -17,6 +17,7 @@ type MiddlewareInterface interface {
 func LoggerMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+		sr := StatusResponseWriter{http.StatusOK, w}
 
 		defer func() {
 			var message bytes.Buffer
@@ -28,13 +29,14 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 				message.String(),
 				ranger_logger.LoggerData{
 					"method": r.Method,
-					"URI":    r.RequestURI,
+					"uri":    r.RequestURI,
+					"status": sr.Status(),
 					"time":   time.Since(start),
 				},
 			)
 		}()
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(&sr, r)
 	}
 
 	return http.HandlerFunc(fn)
