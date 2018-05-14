@@ -5,6 +5,28 @@ import (
 	"net/http"
 )
 
+type StatusResponseWriter struct {
+	status int
+	http.ResponseWriter
+}
+
+func (w *StatusResponseWriter) Status() int {
+	return w.status
+}
+
+func (w *StatusResponseWriter) Header() http.Header {
+	return w.ResponseWriter.Header()
+}
+
+func (w *StatusResponseWriter) Write(data []byte) (int, error) {
+	return w.ResponseWriter.Write(data)
+}
+
+func (w *StatusResponseWriter) WriteHeader(statusCode int) {
+	w.status = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
 // ErrorResponse struct
 type ErrorResponse struct {
 	Status int                `json:"status"`
