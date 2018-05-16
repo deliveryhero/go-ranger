@@ -22,6 +22,10 @@ func NewRelicLabels(middleware ranger_http.MiddlewareInterface, labels map[strin
 	config := newrelic.NewConfig(nr.appName, nr.license)
 	config.Labels = labels
 
+	config.ErrorCollector.IgnoreStatusCodes = []int{
+		http.StatusBadRequest, // 400
+	}
+
 	app, err := newrelic.NewApplication(config)
 	if err != nil {
 		nr.logger.Panic("NewRelic cannot create app with labels", ranger_logger.LoggerData{"error": err.Error()})
