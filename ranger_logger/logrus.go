@@ -1,7 +1,6 @@
 package ranger_logger
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
@@ -125,18 +124,15 @@ func convertToLogrusFields(loggerData LoggerData) logrus.Fields {
 
 //GetAllFieldsToLog – merges default fields with the given ones
 func (logger *Wrapper) GetAllFieldsToLog(data LoggerData) LoggerData {
-	result := make(LoggerData)
+	var result LoggerData
+	copy(result, logger.DefaultData)
 
-	for k, v := range logger.DefaultData {
-		result[k] = v
-	}
-
-	for k, v := range data {
-		if logger.ExtraDataPrefix != "" {
-			k = fmt.Sprintf("%s.%s", logger.ExtraDataPrefix, k)
+	if logger.ExtraDataPrefix != "" {
+		result[logger.ExtraDataPrefix] = data
+	} else {
+		for k, v := range data {
+			result[k] = v
 		}
-
-		result[k] = v
 	}
 
 	return result
