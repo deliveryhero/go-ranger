@@ -1,6 +1,7 @@
 package ranger_logger
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -24,8 +25,9 @@ type LoggerInterface interface {
 
 //Wrapper - Wrap a logrus logger
 type Wrapper struct {
-	*logrus.Logger            // see promoted methods https://www.goinggo.net/2015/09/composition-with-go.html,
-	AppData        LoggerData // default fields
+	*logrus.Logger             // see promoted methods https://www.goinggo.net/2015/09/composition-with-go.html,
+	DefaultData     LoggerData // default fields
+	ExtraDataPrefix string
 }
 
 // JSONFormatter Wrapper for logrus.JSONFormatter
@@ -65,7 +67,7 @@ func NewLogger(out io.Writer, appData LoggerData, f Formatter, logLevel string, 
 		}
 	}
 
-	return &Wrapper{log, appData}
+	return &Wrapper{log, appData, ""}
 }
 
 //CreateFieldsFromRequest - Create a logrus.Fields object from a Request
@@ -125,13 +127,21 @@ func convertToLogrusFields(loggerData LoggerData) logrus.Fields {
 func (logger *Wrapper) GetAllFieldsToLog(data LoggerData) LoggerData {
 	result := make(LoggerData)
 
-	for k, v := range logger.AppData {
+	for k, v := range logger.DefaultData {
 		result[k] = v
 	}
 
 	for k, v := range data {
+		if logger.ExtraDataPrefix != "" {
+			k = fmt.Sprintf("%s.%s", logger.ExtraDataPrefix, k)
+		}
+
 		result[k] = v
 	}
 
 	return result
+}
+
+func (logger *Wrapper) SetPrefix(p string) {
+	logger.ExtraDataPrefix = p
 }
