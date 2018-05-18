@@ -124,8 +124,11 @@ func convertToLogrusFields(loggerData LoggerData) logrus.Fields {
 
 //GetAllFieldsToLog – merges default fields with the given ones
 func (logger *Wrapper) GetAllFieldsToLog(data LoggerData) LoggerData {
-	var result LoggerData
-	copy(result, logger.DefaultData)
+	result := make(LoggerData)
+
+	for k, v := range logger.DefaultData {
+		result[k] = v
+	}
 
 	if logger.ExtraDataPrefix != "" {
 		result[logger.ExtraDataPrefix] = data
