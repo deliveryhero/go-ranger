@@ -130,12 +130,17 @@ func (logger *Wrapper) GetAllFieldsToLog(data LoggerData) LoggerData {
 		result[k] = v
 	}
 
-	if logger.ExtraDataPrefix != "" {
-		result[logger.ExtraDataPrefix] = data
-	} else {
-		for k, v := range data {
+	ctx := LoggerData{}
+	for k, v := range data {
+		if _, ok := result[k]; !ok && logger.ExtraDataPrefix != "" {
+			ctx[k] = v
+		} else {
 			result[k] = v
 		}
+	}
+
+	if len(ctx) > 0 {
+		result[logger.ExtraDataPrefix] = ctx
 	}
 
 	return result
