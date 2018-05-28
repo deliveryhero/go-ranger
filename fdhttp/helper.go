@@ -31,6 +31,10 @@ func ResponseJSON(w http.ResponseWriter, statusCode int, resp interface{}) {
 		return
 	}
 
+	if j, ok := resp.(JSONer); ok {
+		resp = j.JSON()
+	}
+
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		panic(err)
 	}
