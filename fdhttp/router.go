@@ -2,6 +2,7 @@ package fdhttp
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -148,8 +149,9 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 		statusCode, resp := fn(ctx)
 		if respErr, ok := resp.(*Error); ok {
 			ctx = SetResponseError(ctx, respErr)
-		} else if j, ok := resp.(JSONer); ok {
-			resp = j.JSON()
+		} else if _, ok := resp.(JSONer); ok {
+			// If resp is a JSON should have precedence to error
+			// Check case test TestRouter_SendCustomErrorAsJSON
 		} else if err, ok := resp.(error); ok {
 			// If it's a error let's convert to fdhttp.Error and return as JSON
 			respErr := &Error{
@@ -171,7 +173,11 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 		// Override request, with that middlewares can access the whole ctx
 		*req = *req.WithContext(ctx)
 
-		ResponseJSON(w, statusCode, resp)
+		if r, ok := resp.(io.Reader); ok {
+			io.Copy(w, r)
+		} else {
+			ResponseJSON(w, statusCode, resp)
+		}
 	})
 }
 

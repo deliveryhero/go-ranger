@@ -298,6 +298,33 @@ func TestRouter_HeaderAreSentBackToClients(t *testing.T) {
 	resp.Body.Close()
 }
 
+func TestRouter_SendResponseAsReader(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
+				buf := bytes.NewBufferString("here is my response")
+				return http.StatusOK, buf
+			})
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/")
+	assert.NoError(t, err)
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	assert.Equal(t, `here is my response`, string(body))
+
+	resp.Body.Close()
+}
+
 func TestRouter_SendResponseAsJSON(t *testing.T) {
 	r := fdhttp.NewRouter()
 
@@ -368,13 +395,15 @@ func (e *dummyError) JSON() interface{} {
 	return e
 }
 
+// TestRouter_SendCustomErrorAsJSON dummyError is a valid JSONer and error,
+// in this case we should return to JSONer response
 func TestRouter_SendCustomErrorAsJSON(t *testing.T) {
 	r := fdhttp.NewRouter()
 
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
 			r.GET("/", func(ctx context.Context) (int, interface{}) {
-				return http.StatusBadRequest, dummyError{
+				return http.StatusBadRequest, &dummyError{
 					Code:    "123",
 					Message: "something went wrong",
 				}
