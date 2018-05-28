@@ -63,17 +63,17 @@ func TestNewCORSMiddleware_IsIgnoredIfStdHandlerSetted(t *testing.T) {
 }
 
 func TestNewCORSHandler(t *testing.T) {
-	corsHandlers := fdhttp.NewCORSHandler()
-	corsHandlers.Origin = "https://api.foodora.com"
-	corsHandlers.Credentials = true
-	corsHandlers.ExposeHeaders = []string{
+	corsHandler := fdhttp.NewCORSHandler()
+	corsHandler.Origin = "https://api.foodora.com"
+	corsHandler.Credentials = true
+	corsHandler.ExposeHeaders = []string{
 		"X-Personal-One",
 		"X-Personal-Two",
 	}
-	corsHandlers.MaxAge = 25 * time.Minute
+	corsHandler.MaxAge = 25 * time.Minute
 
 	router := fdhttp.NewRouter()
-	router.Register(corsHandlers)
+	router.Register(corsHandler)
 	router.StdGET("/foo", func(w http.ResponseWriter, req *http.Request) {})
 	router.PUT("/foo", func(ctx context.Context) (int, interface{}) {
 		return http.StatusOK, nil
@@ -83,7 +83,7 @@ func TestNewCORSHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, corsHandlers.Origin, w.Header().Get("Access-Control-Allow-Origin"))
+	assert.Equal(t, corsHandler.Origin, w.Header().Get("Access-Control-Allow-Origin"))
 	assert.ElementsMatch(t, []string{
 		"OPTIONS",
 		"GET",
@@ -95,11 +95,11 @@ func TestNewCORSHandler(t *testing.T) {
 }
 
 func TestNewCORSHandler_WithCrdentialsDisabled(t *testing.T) {
-	corsHandlers := fdhttp.NewCORSHandler()
-	corsHandlers.MaxAge = 0
+	corsHandler := fdhttp.NewCORSHandler()
+	corsHandler.MaxAge = 0
 
 	router := fdhttp.NewRouter()
-	router.Register(corsHandlers)
+	router.Register(corsHandler)
 
 	req := httptest.NewRequest(http.MethodOptions, "/foo", nil)
 	w := httptest.NewRecorder()
