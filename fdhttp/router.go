@@ -48,6 +48,11 @@ func NewRouter() *Router {
 
 // allowMethod save this method as allowed to be returned in CORS header
 func (r *Router) allowMethod(method string) {
+	if r.parent != nil {
+		r.parent.allowMethod(method)
+		return
+	}
+
 	if _, ok := r.methods[method]; !ok {
 		r.methods[method] = struct{}{}
 	}

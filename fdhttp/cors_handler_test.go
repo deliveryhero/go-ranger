@@ -114,3 +114,34 @@ func TestNewCORSHandler_WithCrdentialsDisabled(t *testing.T) {
 	_, ok = w.HeaderMap["Access-Control-Max-Age"]
 	assert.False(t, ok)
 }
+
+func TestNewCORSHandler_SubRouterMethodsAreReturned(t *testing.T) {
+	corsHandler := fdhttp.NewCORSHandler()
+
+	router := fdhttp.NewRouter()
+	router.Register(corsHandler)
+	router.StdGET("/foo", func(w http.ResponseWriter, req *http.Request) {})
+	router.PUT("/foo", func(ctx context.Context) (int, interface{}) {
+		return http.StatusOK, nil
+	})
+
+	subrouter := router.SubRouter()
+	subrouter.Prefix = "/foo"
+	subrouter.StdPOST("/bar", func(w http.ResponseWriter, req *http.Request) {})
+	subrouter.DELETE("/bar", func(ctx context.Context) (int, interface{}) {
+		return http.StatusOK, nil
+	})
+
+	req := httptest.NewRequest(http.MethodOptions, "/foo", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, corsHandler.Origin, w.Header().Get("Access-Control-Allow-Origin"))
+	assert.ElementsMatch(t, []string{
+		"OPTIONS",
+		"GET",
+		"PUT",
+		"POST",
+		"DELETE",
+	}, strings.Split(w.Header().Get("Access-Control-Allow-Methods"), ", "))
+}
