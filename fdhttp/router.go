@@ -21,11 +21,15 @@ type Router struct {
 	// Prefix will be added in all routes
 	Prefix string
 
-	httprouter  *httprouter.Router
+	httprouter *httprouter.Router
+	parent     *Router
+	childs     []Router
+
 	middlewares []Middleware
 	handlers    []Handler
 	rootHandler http.Handler
-	methods     map[string]struct{}
+
+	methods map[string]struct{}
 }
 
 var _ http.Handler = &Router{}
@@ -79,6 +83,15 @@ func (r *Router) Init() {
 	for k := range r.middlewares {
 		r.rootHandler = r.middlewares[len(r.middlewares)-1-k](r.rootHandler)
 	}
+}
+
+func (r *Router) SubRouter() *Router {
+	subrouter := Router{
+		parent: r,
+	}
+	r.childs = append(r.childs, subrouter)
+
+	return &subrouter
 }
 
 // Use a middleware to wrap all http request
