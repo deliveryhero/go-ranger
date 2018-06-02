@@ -88,6 +88,10 @@ func (s *Server) Start(r *Router) error {
 	}
 
 	if r != nil {
+		if r.parent != nil {
+			panic("Unable to start server with a sub router")
+		}
+
 		s.router = r
 		s.router.Init()
 		s.httpSrv.Handler = s.router
