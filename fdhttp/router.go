@@ -31,7 +31,8 @@ type Router struct {
 	handlers    []Handler
 	rootHandler http.Handler
 
-	methods map[string]struct{}
+	methods   map[string]struct{}
+	endpoints map[string]*Endpoint
 }
 
 var _ http.Handler = &Router{}
@@ -57,6 +58,18 @@ func (r *Router) allowMethod(method string) {
 
 	if _, ok := r.methods[method]; !ok {
 		r.methods[method] = struct{}{}
+	}
+}
+
+// addNamedEndpoint save endpoint to be able to generate URL later
+func (r *Router) addNamedEndpoint(name string, endpoint *Endpoint) {
+	if r.parent != nil {
+		r.parent.addNamedEndpoint(name, endpoint)
+		return
+	}
+
+	if _, ok := r.endpoints[name]; !ok {
+		r.endpoints[name] = endpoint
 	}
 }
 
@@ -162,10 +175,9 @@ func sendResponseHeader(ctx context.Context, w http.ResponseWriter) {
 	}
 }
 
-func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) {
+func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) *Endpoint {
 	if r.parent != nil {
-		r.parent.StdHandler(method, r.Prefix+path, r.wrapMiddlewares(handler).ServeHTTP)
-		return
+		return r.parent.StdHandler(method, r.Prefix+path, r.wrapMiddlewares(handler).ServeHTTP)
 	}
 
 	r.allowMethod(method)
@@ -186,6 +198,11 @@ func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) {
 		// If not send body and header send it
 		// r.sendResponseHeader(ctx, w)
 	})
+
+	return &Endpoint{
+		path:   r.Prefix + path,
+		router: r,
+	}
 }
 
 // StdGET register a standard http.HandlerFunc to handle GET method
@@ -214,7 +231,7 @@ func (r *Router) StdOPTIONS(path string, handler http.HandlerFunc) {
 }
 
 // Handler register the method and path with fdhttp.EndpointFunc
-func (r *Router) Handler(method, path string, fn EndpointFunc) {
+func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 	r.allowMethod(method)
 	r.httprouter.Handle(method, r.Prefix+path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		var handler http.Handler
@@ -266,6 +283,11 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 
 		handler.ServeHTTP(w, req)
 	})
+
+	return &Endpoint{
+		path:   r.Prefix + path,
+		router: r,
+	}
 }
 
 // GET register a fdhttp.EndpointFunc to handle GET method
