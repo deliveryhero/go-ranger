@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/foodora/go-ranger/fdhttp"
@@ -74,6 +75,32 @@ func TestRouter_StdHandlerIsCalled(t *testing.T) {
 	assert.True(t, handlerCalled)
 }
 
+func TestSubRouter_StdHandlerIsCalled(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	var handlerCalled bool
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.SubRouter().StdGET("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				handlerCalled = true
+			}))
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/")
+	assert.NoError(t, err)
+	resp.Body.Close()
+
+	assert.True(t, handlerCalled)
+}
+
 func TestRouter_HandlerIsCalled(t *testing.T) {
 	r := fdhttp.NewRouter()
 
@@ -82,6 +109,33 @@ func TestRouter_HandlerIsCalled(t *testing.T) {
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
 			r.GET("/", func(ctx context.Context) (int, interface{}) {
+				handlerCalled = true
+				return http.StatusOK, nil
+			})
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/")
+	assert.NoError(t, err)
+	resp.Body.Close()
+
+	assert.True(t, handlerCalled)
+}
+
+func TestSubRouter_HandlerIsCalled(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	var handlerCalled bool
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.SubRouter().GET("/", func(ctx context.Context) (int, interface{}) {
 				handlerCalled = true
 				return http.StatusOK, nil
 			})
@@ -129,6 +183,90 @@ func TestRouter_MiddlewareIsCalled(t *testing.T) {
 	assert.Equal(t, "middlewarehandler", string(body))
 	resp.Body.Close()
 
+	assert.True(t, mCalled)
+}
+
+func TestSubRouter_MiddlewareIsCalled(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	var mCalled bool
+	m := newMiddleware("middleware", &mCalled)
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.StdGET("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.Write([]byte("handler"))
+			}))
+		},
+	}
+
+	sr := r.SubRouter()
+	sr.Prefix = "/prefix"
+	sr.Use(m)
+	sr.Register(h)
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/")
+	assert.NoError(t, err)
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	assert.Equal(t, "handler", string(body))
+	resp.Body.Close()
+	assert.False(t, mCalled)
+
+	resp, err = http.Get(ts.URL + "/prefix")
+	assert.NoError(t, err)
+
+	body, _ = ioutil.ReadAll(resp.Body)
+	assert.Equal(t, "middlewarehandler", string(body))
+	resp.Body.Close()
+	assert.True(t, mCalled)
+}
+
+func TestSubRouter_MiddlewareIsCalledWhenNotUseStdHandler(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	var mCalled bool
+	m := newMiddleware("middleware", &mCalled)
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.GET("/", func(_ context.Context) (int, interface{}) {
+				return http.StatusOK, strings.NewReader("handler")
+			})
+		},
+	}
+
+	sr := r.SubRouter()
+	sr.Prefix = "/prefix"
+	sr.Use(m)
+	sr.Register(h)
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/")
+	assert.NoError(t, err)
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	assert.Equal(t, "handler", string(body))
+	resp.Body.Close()
+	assert.False(t, mCalled)
+
+	resp, err = http.Get(ts.URL + "/prefix")
+	assert.NoError(t, err)
+
+	body, _ = ioutil.ReadAll(resp.Body)
+	assert.Equal(t, "middlewarehandler", string(body))
+	resp.Body.Close()
 	assert.True(t, mCalled)
 }
 

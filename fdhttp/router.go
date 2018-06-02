@@ -25,7 +25,7 @@ type Router struct {
 
 	httprouter *httprouter.Router
 	parent     *Router
-	childs     []Router
+	childs     []*Router
 
 	middlewares []Middleware
 	handlers    []Handler
@@ -62,9 +62,12 @@ func (r *Router) allowMethod(method string) {
 
 // Init call Init() from all handlers
 func (r *Router) Init() {
-	for _, h := range r.handlers {
-		h.Init(r)
+	if r.parent != nil {
+		r.parent.Init()
+		return
 	}
+
+	r.initHandlers()
 
 	// Set default not found handlers
 	if r.NotFoundHandler != nil {
@@ -86,19 +89,36 @@ func (r *Router) Init() {
 	}
 
 	// build root handler with all middlewares
-	r.rootHandler = r.httprouter
-	for k := range r.middlewares {
-		r.rootHandler = r.middlewares[len(r.middlewares)-1-k](r.rootHandler)
+	r.rootHandler = r.wrapMiddlewares(r.httprouter)
+}
+
+func (r *Router) initHandlers() {
+	for _, h := range r.handlers {
+		h.Init(r)
+	}
+
+	// initialize all children
+	for _, sr := range r.childs {
+		sr.initHandlers()
 	}
 }
 
+func (r *Router) wrapMiddlewares(h http.Handler) http.Handler {
+	for k := range r.middlewares {
+		h = r.middlewares[len(r.middlewares)-1-k](h)
+	}
+
+	return h
+}
+
 func (r *Router) SubRouter() *Router {
-	subrouter := Router{
-		parent: r,
+	subrouter := &Router{
+		parent:     r,
+		httprouter: r.httprouter,
 	}
 	r.childs = append(r.childs, subrouter)
 
-	return &subrouter
+	return subrouter
 }
 
 // Use a middleware to wrap all http request
@@ -143,6 +163,11 @@ func sendResponseHeader(ctx context.Context, w http.ResponseWriter) {
 }
 
 func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) {
+	if r.parent != nil {
+		r.parent.StdHandler(method, r.Prefix+path, r.wrapMiddlewares(handler).ServeHTTP)
+		return
+	}
+
 	r.allowMethod(method)
 	r.httprouter.Handle(method, r.Prefix+path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		ctx := req.Context()
@@ -192,43 +217,54 @@ func (r *Router) StdOPTIONS(path string, handler http.HandlerFunc) {
 func (r *Router) Handler(method, path string, fn EndpointFunc) {
 	r.allowMethod(method)
 	r.httprouter.Handle(method, r.Prefix+path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-		ctx := req.Context()
-		ctx = injectRouteParams(ctx, ps)
-		ctx, err := injectRequestBody(ctx, req.Body)
-		if err != nil {
-			ResponseJSON(w, http.StatusBadRequest, &Error{
-				Code:    "invalid_body",
-				Message: err.Error(),
-			})
-		}
+		var handler http.Handler
 
-		// call user handler
-		statusCode, resp := fn(ctx)
-		if respErr, ok := resp.(*Error); ok {
-			ctx = SetResponseError(ctx, respErr)
-		} else if _, ok := resp.(JSONer); ok {
-			// If resp is a JSON should have precedence to error
-			// Check case test TestRouter_SendCustomErrorAsJSON
-		} else if err, ok := resp.(error); ok {
-			// If it's a error let's convert to fdhttp.Error and return as JSON
-			respErr := &Error{
-				Code:    "unknown",
-				Message: err.Error(),
+		handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			ctx := req.Context()
+			ctx = injectRouteParams(ctx, ps)
+			ctx, err := injectRequestBody(ctx, req.Body)
+			if err != nil {
+				ResponseJSON(w, http.StatusBadRequest, &Error{
+					Code:    "invalid_body",
+					Message: err.Error(),
+				})
 			}
-			ctx = SetResponseError(ctx, respErr)
-			resp = respErr
+
+			// call user handler
+			statusCode, resp := fn(ctx)
+			if respErr, ok := resp.(*Error); ok {
+				ctx = SetResponseError(ctx, respErr)
+			} else if _, ok := resp.(JSONer); ok {
+				// If resp is a JSON should have precedence to error
+				// Check case test TestRouter_SendCustomErrorAsJSON
+			} else if err, ok := resp.(error); ok {
+				// If it's a error let's convert to fdhttp.Error and return as JSON
+				respErr := &Error{
+					Code:    "unknown",
+					Message: err.Error(),
+				}
+				ctx = SetResponseError(ctx, respErr)
+				resp = respErr
+			}
+
+			sendResponseHeader(ctx, w)
+
+			// Override request, with that middlewares can access the whole ctx
+			*req = *req.WithContext(ctx)
+
+			if r, ok := resp.(io.Reader); ok {
+				io.Copy(w, r)
+			} else {
+				ResponseJSON(w, statusCode, resp)
+			}
+		})
+
+		if r.parent != nil {
+			// if is a sub router let's wrap middlewares
+			handler = r.wrapMiddlewares(handler)
 		}
 
-		sendResponseHeader(ctx, w)
-
-		// Override request, with that middlewares can access the whole ctx
-		*req = *req.WithContext(ctx)
-
-		if r, ok := resp.(io.Reader); ok {
-			io.Copy(w, r)
-		} else {
-			ResponseJSON(w, statusCode, resp)
-		}
+		handler.ServeHTTP(w, req)
 	})
 }
 
