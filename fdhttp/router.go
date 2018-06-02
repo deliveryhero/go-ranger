@@ -18,6 +18,8 @@ type Router struct {
 	MethodNotAllowedHandler http.HandlerFunc
 	// PanicHandler by default is NewPanicHandler
 	PanicHandler func(http.ResponseWriter, *http.Request, interface{})
+	// Prefix will be added in all routes
+	Prefix string
 
 	httprouter  *httprouter.Router
 	middlewares []Middleware
@@ -89,9 +91,56 @@ func (r *Router) Register(h ...Handler) {
 	r.handlers = append(r.handlers, h...)
 }
 
+func injectRouteParams(ctx context.Context, ps httprouter.Params) context.Context {
+	params := map[string]string{}
+	for _, p := range ps {
+		params[p.Key] = p.Value
+	}
+
+	return SetRouteParams(ctx, params)
+}
+
+func injectRequestBody(ctx context.Context, body io.Reader) (context.Context, error) {
+	if body != nil {
+		return ctx, nil
+	}
+
+	buf, err := ioutil.ReadAll(body)
+	if err != nil {
+		return ctx, err
+	}
+
+	return SetRequestBody(ctx, bytes.NewBuffer(buf)), nil
+}
+
+func sendResponseHeader(ctx context.Context, w http.ResponseWriter) {
+	headers := ResponseHeader(ctx)
+	for h, values := range headers {
+		for _, v := range values {
+			w.Header().Add(h, v)
+		}
+	}
+}
+
 func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) {
 	r.allowMethod(method)
-	r.httprouter.Handler(method, path, handler)
+	r.httprouter.Handle(method, r.Prefix+path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+		ctx := req.Context()
+		ctx = injectRouteParams(ctx, ps)
+		ctx, err := injectRequestBody(ctx, req.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Cannot read body request: %s", err)))
+			return
+		}
+
+		*req = *req.WithContext(ctx)
+
+		handler(w, req)
+
+		// If not send body and header send it
+		// r.sendResponseHeader(ctx, w)
+	})
 }
 
 // StdGET register a standard http.HandlerFunc to handle GET method
@@ -122,27 +171,15 @@ func (r *Router) StdOPTIONS(path string, handler http.HandlerFunc) {
 // Handler register the method and path with fdhttp.EndpointFunc
 func (r *Router) Handler(method, path string, fn EndpointFunc) {
 	r.allowMethod(method)
-	r.httprouter.Handle(method, path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	r.httprouter.Handle(method, r.Prefix+path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		ctx := req.Context()
-		// Inject route param on ctx
-		params := map[string]string{}
-		for _, p := range ps {
-			params[p.Key] = p.Value
-		}
-		ctx = SetRouteParams(ctx, params)
-
-		// Inject body on ctx
-		if req.Body != nil {
-			body, err := ioutil.ReadAll(req.Body)
-			if err != nil {
-				ResponseJSON(w, http.StatusBadRequest, &Error{
-					Code:    "invalid_body",
-					Message: err.Error(),
-				})
-				return
-			}
-
-			ctx = SetRequestBody(ctx, bytes.NewBuffer(body))
+		ctx = injectRouteParams(ctx, ps)
+		ctx, err := injectRequestBody(ctx, req.Body)
+		if err != nil {
+			ResponseJSON(w, http.StatusBadRequest, &Error{
+				Code:    "invalid_body",
+				Message: err.Error(),
+			})
 		}
 
 		// call user handler
@@ -162,13 +199,7 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) {
 			resp = respErr
 		}
 
-		// Even in error case send all headers setted
-		headers := ResponseHeader(ctx)
-		for h, values := range headers {
-			for _, v := range values {
-				w.Header().Add(h, v)
-			}
-		}
+		sendResponseHeader(ctx, w)
 
 		// Override request, with that middlewares can access the whole ctx
 		*req = *req.WithContext(ctx)
@@ -228,8 +259,4 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	r.rootHandler.ServeHTTP(w, req.WithContext(ctx))
-
-	// TODO send header and body here, with this even standard handler can use
-	// our helper function, like AddResponseHeader, SetResponseHeader
-	// Problem is how identify that handler didn't send some data already
 }

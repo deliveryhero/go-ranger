@@ -167,6 +167,44 @@ func TestRouter_MiddlewareIsCalledRightOrder(t *testing.T) {
 	assert.True(t, m2Called)
 }
 
+func TestRouter_WithPrefix(t *testing.T) {
+	r := fdhttp.NewRouter()
+	r.Prefix = "/prefix"
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.StdGET("/v1", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("handlerv1"))
+			}))
+			r.GET("/v2", func(ctx context.Context) (int, interface{}) {
+				return http.StatusCreated, "handlerv2"
+			})
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	resp.Body.Close()
+
+	resp, err = http.Get(ts.URL + "/prefix/v1")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
+
+	resp, err = http.Get(ts.URL + "/prefix/v2")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	resp.Body.Close()
+}
+
 func TestRouter_RouteParamsAreSentInsideContext(t *testing.T) {
 	r := fdhttp.NewRouter()
 
