@@ -2,6 +2,8 @@ package fdhttp
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
