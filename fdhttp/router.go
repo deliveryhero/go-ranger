@@ -206,28 +206,28 @@ func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) *Endp
 }
 
 // StdGET register a standard http.HandlerFunc to handle GET method
-func (r *Router) StdGET(path string, handler http.HandlerFunc) {
-	r.StdHandler("GET", path, handler)
+func (r *Router) StdGET(path string, handler http.HandlerFunc) *Endpoint {
+	return r.StdHandler("GET", path, handler)
 }
 
 // StdPOST register a standard http.HandlerFunc to handle POST method
-func (r *Router) StdPOST(path string, handler http.HandlerFunc) {
-	r.StdHandler("POST", path, handler)
+func (r *Router) StdPOST(path string, handler http.HandlerFunc) *Endpoint {
+	return r.StdHandler("POST", path, handler)
 }
 
 // StdPUT register a standard http.HandlerFunc to handle PUT method
-func (r *Router) StdPUT(path string, handler http.HandlerFunc) {
-	r.StdHandler("PUT", path, handler)
+func (r *Router) StdPUT(path string, handler http.HandlerFunc) *Endpoint {
+	return r.StdHandler("PUT", path, handler)
 }
 
 // StdDELETE register a standard http.HandlerFunc to handle DELETE method
-func (r *Router) StdDELETE(path string, handler http.HandlerFunc) {
-	r.StdHandler("DELETE", path, handler)
+func (r *Router) StdDELETE(path string, handler http.HandlerFunc) *Endpoint {
+	return r.StdHandler("DELETE", path, handler)
 }
 
 // StdOPTIONS register a standard http.HandlerFunc to handle OPTIONS method
-func (r *Router) StdOPTIONS(path string, handler http.HandlerFunc) {
-	r.StdHandler("OPTIONS", path, handler)
+func (r *Router) StdOPTIONS(path string, handler http.HandlerFunc) *Endpoint {
+	return r.StdHandler("OPTIONS", path, handler)
 }
 
 // Handler register the method and path with fdhttp.EndpointFunc
@@ -291,28 +291,28 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 }
 
 // GET register a fdhttp.EndpointFunc to handle GET method
-func (r *Router) GET(path string, fn EndpointFunc) {
-	r.Handler("GET", path, fn)
+func (r *Router) GET(path string, fn EndpointFunc) *Endpoint {
+	return r.Handler("GET", path, fn)
 }
 
 // POST register a fdhttp.EndpointFunc to handle POST method
-func (r *Router) POST(path string, fn EndpointFunc) {
-	r.Handler("POST", path, fn)
+func (r *Router) POST(path string, fn EndpointFunc) *Endpoint {
+	return r.Handler("POST", path, fn)
 }
 
 // PUT register a fdhttp.EndpointFunc to handle PUT method
-func (r *Router) PUT(path string, fn EndpointFunc) {
-	r.Handler("PUT", path, fn)
+func (r *Router) PUT(path string, fn EndpointFunc) *Endpoint {
+	return r.Handler("PUT", path, fn)
 }
 
 // DELETE register a fdhttp.EndpointFunc to handle DELETE method
-func (r *Router) DELETE(path string, fn EndpointFunc) {
-	r.Handler("DELETE", path, fn)
+func (r *Router) DELETE(path string, fn EndpointFunc) *Endpoint {
+	return r.Handler("DELETE", path, fn)
 }
 
 // OPTIONS register a fdhttp.EndpointFunc to handle OPTIONS method
-func (r *Router) OPTIONS(path string, fn EndpointFunc) {
-	r.Handler("OPTIONS", path, fn)
+func (r *Router) OPTIONS(path string, fn EndpointFunc) *Endpoint {
+	return r.Handler("OPTIONS", path, fn)
 }
 
 // ServeHTTP makes this struct a valid implementation of http.Handler
