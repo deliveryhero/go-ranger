@@ -2,7 +2,6 @@ package fdhttp
 
 import (
 	"fmt"
-	"strings"
 )
 
 type Endpoint struct {
@@ -16,31 +15,6 @@ func (e Endpoint) Name(name string) {
 
 func (e Endpoint) URL() string {
 	return e.path
-}
-
-func (e Endpoint) URLParam(params map[string]string) string {
-	var b strings.Builder
-
-	path := strings.Split(strings.TrimPrefix(e.path, "/"), "/")
-	for _, part := range path {
-		i := strings.Index(part, "*")
-		if i >= 0 {
-			param := params[part[i+1:]]
-			fmt.Fprintf(&b, "/%s%s", part[:i], param)
-			continue
-		}
-
-		i = strings.Index(part, ":")
-		if i >= 0 {
-			param := params[part[i+1:]]
-			fmt.Fprintf(&b, "/%s%s", part[:i], param)
-			continue
-		}
-
-		fmt.Fprintf(&b, "/%s", part)
-	}
-
-	return b.String()
 }
 
 func (r *Router) URL(name string) string {
