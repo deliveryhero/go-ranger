@@ -10,15 +10,15 @@ type Endpoint struct {
 	path   string
 }
 
-func (e *Endpoint) Name(name string) {
+func (e Endpoint) Name(name string) {
 	e.router.addNamedEndpoint(name, e)
 }
 
-func (e *Endpoint) URL() string {
+func (e Endpoint) URL() string {
 	return e.path
 }
 
-func (e *Endpoint) URLParam(params map[string]string) string {
+func (e Endpoint) URLParam(params map[string]string) string {
 	var b strings.Builder
 
 	path := strings.Split(strings.TrimPrefix(e.path, "/"), "/")
@@ -48,7 +48,12 @@ func (r *Router) URL(name string) string {
 		return r.parent.URL(name)
 	}
 
-	return r.endpoints[name].URL()
+	endpoint, ok := r.endpoints[name]
+	if !ok {
+		panic(fmt.Sprintf("No endpoint with name %s was found", name))
+	}
+
+	return endpoint.URL()
 }
 
 func (r *Router) URLParam(name string, params map[string]string) string {
@@ -56,5 +61,10 @@ func (r *Router) URLParam(name string, params map[string]string) string {
 		return r.parent.URLParam(name, params)
 	}
 
-	return r.endpoints[name].URLParam(params)
+	endpoint, ok := r.endpoints[name]
+	if !ok {
+		panic(fmt.Sprintf("No endpoint with name %s was found", name))
+	}
+
+	return endpoint.URLParam(params)
 }

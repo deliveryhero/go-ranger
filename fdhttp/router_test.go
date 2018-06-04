@@ -343,6 +343,94 @@ func TestRouter_WithPrefix(t *testing.T) {
 	resp.Body.Close()
 }
 
+func TestRouterURL(t *testing.T) {
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.StdGET("/v1", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("handlerv1"))
+			})).Name("getv1")
+
+			r.GET("/v2", func(ctx context.Context) (int, interface{}) {
+				return http.StatusCreated, "handlerv2"
+			}).Name("getv2")
+		},
+	}
+
+	r := fdhttp.NewRouter()
+	r.Register(h)
+	r.Init()
+
+	assert.Equal(t, "/v1", r.URL("getv1"))
+	assert.Equal(t, "/v2", r.URL("getv2"))
+}
+
+func TestRouterURL_WithParams(t *testing.T) {
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.StdGET("/v1/:name", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("handlerv1"))
+			})).Name("getv1")
+
+			r.GET("/v2/:name", func(ctx context.Context) (int, interface{}) {
+				return http.StatusCreated, "handlerv2"
+			}).Name("getv2")
+		},
+	}
+
+	r := fdhttp.NewRouter()
+	r.Register(h)
+	r.Init()
+
+	assert.Equal(t, "/v1/foodora", r.URLParam("getv1", map[string]string{"name": "foodora"}))
+	assert.Equal(t, "/v2/foodora", r.URLParam("getv2", map[string]string{"name": "foodora"}))
+}
+
+func TestSubRouterURL(t *testing.T) {
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.StdGET("/v1", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("handlerv1"))
+			})).Name("getv1")
+
+			r.GET("/v2", func(ctx context.Context) (int, interface{}) {
+				return http.StatusCreated, "handlerv2"
+			}).Name("getv2")
+		},
+	}
+
+	r := fdhttp.NewRouter().SubRouter()
+	r.Register(h)
+	r.Init()
+
+	assert.Equal(t, "/v1", r.URL("getv1"))
+	assert.Equal(t, "/v2", r.URL("getv2"))
+}
+
+func TestSubRouterURL_WithParams(t *testing.T) {
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.StdGET("/v1/:name", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("handlerv1"))
+			})).Name("getv1")
+
+			r.GET("/v2/:name", func(ctx context.Context) (int, interface{}) {
+				return http.StatusCreated, "handlerv2"
+			}).Name("getv2")
+		},
+	}
+
+	r := fdhttp.NewRouter().SubRouter()
+	r.Register(h)
+	r.Init()
+
+	assert.Equal(t, "/v1/foodora", r.URLParam("getv1", map[string]string{"name": "foodora"}))
+	assert.Equal(t, "/v2/foodora", r.URLParam("getv2", map[string]string{"name": "foodora"}))
+}
+
 func TestRouter_RouteParamsAreSentInsideContext(t *testing.T) {
 	r := fdhttp.NewRouter()
 

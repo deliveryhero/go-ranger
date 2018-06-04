@@ -32,7 +32,7 @@ type Router struct {
 	rootHandler http.Handler
 
 	methods   map[string]struct{}
-	endpoints map[string]*Endpoint
+	endpoints map[string]Endpoint
 }
 
 var _ http.Handler = &Router{}
@@ -46,6 +46,7 @@ func NewRouter() *Router {
 	return &Router{
 		httprouter: httprouter.New(),
 		methods:    make(map[string]struct{}),
+		endpoints:  map[string]Endpoint{},
 	}
 }
 
@@ -62,7 +63,7 @@ func (r *Router) allowMethod(method string) {
 }
 
 // addNamedEndpoint save endpoint to be able to generate URL later
-func (r *Router) addNamedEndpoint(name string, endpoint *Endpoint) {
+func (r *Router) addNamedEndpoint(name string, endpoint Endpoint) {
 	if r.parent != nil {
 		r.parent.addNamedEndpoint(name, endpoint)
 		return
