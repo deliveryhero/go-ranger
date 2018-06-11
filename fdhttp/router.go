@@ -155,7 +155,7 @@ func injectRouteParams(ctx context.Context, ps httprouter.Params) context.Contex
 }
 
 func injectRequestBody(ctx context.Context, body io.Reader) (context.Context, error) {
-	if body != nil {
+	if body == nil {
 		return ctx, nil
 	}
 
