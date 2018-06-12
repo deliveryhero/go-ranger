@@ -145,6 +145,14 @@ func (r *Router) Register(h ...Handler) {
 	r.handlers = append(r.handlers, h...)
 }
 
+func injectRequest(ctx context.Context, req *http.Request) context.Context {
+	if req == nil {
+		return ctx
+	}
+
+	return SetRequest(ctx, req)
+}
+
 func injectRouteParams(ctx context.Context, ps httprouter.Params) context.Context {
 	params := map[string]string{}
 	for _, p := range ps {
@@ -184,6 +192,7 @@ func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) *Endp
 	r.allowMethod(method)
 	r.httprouter.Handle(method, r.Prefix+path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		ctx := req.Context()
+		ctx = injectRequest(ctx, req)
 		ctx = injectRouteParams(ctx, ps)
 		ctx, err := injectRequestBody(ctx, req.Body)
 		if err != nil {
@@ -239,6 +248,7 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 
 		handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			ctx := req.Context()
+			ctx = injectRequest(ctx, req)
 			ctx = injectRouteParams(ctx, ps)
 			ctx, err := injectRequestBody(ctx, req.Body)
 			if err != nil {

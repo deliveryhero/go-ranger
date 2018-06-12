@@ -38,6 +38,9 @@ func (c contextKey) String() string {
 }
 
 var (
+	// RequestContextKey is the key used to save route params.
+	RequestContextKey = &contextKey{"request"}
+
 	// RouteParamContextKey is the key used to save route params.
 	RouteParamContextKey = &contextKey{"route-params"}
 
@@ -60,13 +63,24 @@ var (
 	ResponseErrorContextKey = &contextKey{"response-error"}
 )
 
+// Request set http request to context.
+func Request(ctx context.Context) *http.Request {
+	v, _ := ctx.Value(RequestContextKey).(*http.Request)
+	return v
+}
+
+// RouteParam set route params from context.
+func SetRequest(ctx context.Context, req *http.Request) context.Context {
+	return context.WithValue(ctx, RequestContextKey, req)
+}
+
 // RouteParams set route params to context.
 func RouteParams(ctx context.Context) map[string]string {
 	v, _ := ctx.Value(RouteParamContextKey).(map[string]string)
 	return v
 }
 
-// RouteParam get route params from context.
+// RouteParam set route params from context.
 func SetRouteParams(ctx context.Context, params map[string]string) context.Context {
 	return context.WithValue(ctx, RouteParamContextKey, params)
 }

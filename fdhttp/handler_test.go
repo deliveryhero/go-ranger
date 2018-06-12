@@ -11,6 +11,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRequest(t *testing.T) {
+	ctx := context.Background()
+	assert.Nil(t, fdhttp.Request(ctx))
+
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8000/test", nil)
+	ctx = fdhttp.SetRequest(ctx, req)
+	assert.Equal(t, "/test", fdhttp.Request(ctx).URL.Path)
+}
+
 func TestRouteParams(t *testing.T) {
 	ctx := context.Background()
 	assert.Equal(t, "", fdhttp.RouteParams(ctx)["invalid"])
