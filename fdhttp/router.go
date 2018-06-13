@@ -153,13 +153,16 @@ func injectRequest(ctx context.Context, req *http.Request) context.Context {
 	return SetRequest(ctx, req)
 }
 
-func injectRouteParams(ctx context.Context, ps httprouter.Params) context.Context {
+func convertParams(ps httprouter.Params) map[string]string {
 	params := map[string]string{}
 	for _, p := range ps {
 		params[p.Key] = p.Value
 	}
+	return params
+}
 
-	return SetRouteParams(ctx, params)
+func injectRouteParams(ctx context.Context, ps httprouter.Params) context.Context {
+	return SetRouteParams(ctx, convertParams(ps))
 }
 
 func injectRequestBody(ctx context.Context, body io.Reader) (context.Context, error) {
@@ -348,4 +351,11 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	r.rootHandler.ServeHTTP(w, req.WithContext(ctx))
+}
+
+// Lookup return the handle, list of params extracted from the path and
+// also if you should try a trailing slash redirect
+func (r *Router) Lookup(method, path string) (Handle, map[string]string, bool)
+	h, ps, redirect := r.httprouter.Lookup(method, path)
+	return h, convertParams(ps), redirect
 }
