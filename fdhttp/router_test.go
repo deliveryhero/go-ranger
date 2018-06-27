@@ -32,8 +32,8 @@ func newMiddleware(message string, called *bool) fdhttp.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			*called = true
-			w.Write([]byte(message))
 			next.ServeHTTP(w, req)
+			w.Write([]byte(message))
 		})
 	}
 }
@@ -180,7 +180,7 @@ func TestRouter_MiddlewareIsCalled(t *testing.T) {
 	assert.NoError(t, err)
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	assert.Equal(t, "middlewarehandler", string(body))
+	assert.Equal(t, "handlermiddleware", string(body))
 	resp.Body.Close()
 
 	assert.True(t, mCalled)
@@ -223,7 +223,7 @@ func TestSubRouter_MiddlewareIsCalled(t *testing.T) {
 	assert.NoError(t, err)
 
 	body, _ = ioutil.ReadAll(resp.Body)
-	assert.Equal(t, "middlewarehandler", string(body))
+	assert.Equal(t, "handlermiddleware", string(body))
 	resp.Body.Close()
 	assert.True(t, mCalled)
 }
@@ -237,7 +237,7 @@ func TestSubRouter_MiddlewareIsCalledWhenNotUseStdHandler(t *testing.T) {
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
 			r.GET("/", func(_ context.Context) (int, interface{}) {
-				return http.StatusOK, strings.NewReader("handler")
+				return http.StatusCreated, strings.NewReader("handler")
 			})
 		},
 	}
@@ -255,6 +255,7 @@ func TestSubRouter_MiddlewareIsCalledWhenNotUseStdHandler(t *testing.T) {
 
 	resp, err := http.Get(ts.URL + "/")
 	assert.NoError(t, err)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	assert.Equal(t, "handler", string(body))
@@ -265,7 +266,7 @@ func TestSubRouter_MiddlewareIsCalledWhenNotUseStdHandler(t *testing.T) {
 	assert.NoError(t, err)
 
 	body, _ = ioutil.ReadAll(resp.Body)
-	assert.Equal(t, "middlewarehandler", string(body))
+	assert.Equal(t, "handlermiddleware", string(body))
 	resp.Body.Close()
 	assert.True(t, mCalled)
 }
@@ -297,7 +298,7 @@ func TestRouter_MiddlewareIsCalledRightOrder(t *testing.T) {
 	assert.NoError(t, err)
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	assert.Equal(t, "m1m2handler", string(body))
+	assert.Equal(t, "handlerm2m1", string(body))
 
 	resp.Body.Close()
 
@@ -349,11 +350,11 @@ func TestRouterURL(t *testing.T) {
 			r.StdGET("/v1", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte("handlerv1"))
-			})).Name("getv1")
+			})).SetName("getv1")
 
 			r.GET("/v2", func(ctx context.Context) (int, interface{}) {
 				return http.StatusCreated, "handlerv2"
-			}).Name("getv2")
+			}).SetName("getv2")
 		},
 	}
 
@@ -361,8 +362,8 @@ func TestRouterURL(t *testing.T) {
 	r.Register(h)
 	r.Init()
 
-	assert.Equal(t, "/v1", r.URL("getv1"))
-	assert.Equal(t, "/v2", r.URL("getv2"))
+	assert.Equal(t, "/v1", r.Path("getv1"))
+	assert.Equal(t, "/v2", r.Path("getv2"))
 }
 
 func TestRouterURL_WithParams(t *testing.T) {
@@ -371,11 +372,11 @@ func TestRouterURL_WithParams(t *testing.T) {
 			r.StdGET("/v1/:name", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte("handlerv1"))
-			})).Name("getv1")
+			})).SetName("getv1")
 
 			r.GET("/v2/:name", func(ctx context.Context) (int, interface{}) {
 				return http.StatusCreated, "handlerv2"
-			}).Name("getv2")
+			}).SetName("getv2")
 		},
 	}
 
@@ -383,8 +384,8 @@ func TestRouterURL_WithParams(t *testing.T) {
 	r.Register(h)
 	r.Init()
 
-	assert.Equal(t, "/v1/foodora", r.URLParam("getv1", map[string]string{"name": "foodora"}))
-	assert.Equal(t, "/v2/foodora", r.URLParam("getv2", map[string]string{"name": "foodora"}))
+	assert.Equal(t, "/v1/foodora", r.PathParam("getv1", map[string]string{"name": "foodora"}))
+	assert.Equal(t, "/v2/foodora", r.PathParam("getv2", map[string]string{"name": "foodora"}))
 }
 
 func TestSubRouterURL(t *testing.T) {
@@ -393,11 +394,11 @@ func TestSubRouterURL(t *testing.T) {
 			r.StdGET("/v1", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte("handlerv1"))
-			})).Name("getv1")
+			})).SetName("getv1")
 
 			r.GET("/v2", func(ctx context.Context) (int, interface{}) {
 				return http.StatusCreated, "handlerv2"
-			}).Name("getv2")
+			}).SetName("getv2")
 		},
 	}
 
@@ -405,8 +406,8 @@ func TestSubRouterURL(t *testing.T) {
 	r.Register(h)
 	r.Init()
 
-	assert.Equal(t, "/v1", r.URL("getv1"))
-	assert.Equal(t, "/v2", r.URL("getv2"))
+	assert.Equal(t, "/v1", r.Path("getv1"))
+	assert.Equal(t, "/v2", r.Path("getv2"))
 }
 
 func TestSubRouterURL_WithParams(t *testing.T) {
@@ -415,11 +416,11 @@ func TestSubRouterURL_WithParams(t *testing.T) {
 			r.StdGET("/v1/:name", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte("handlerv1"))
-			})).Name("getv1")
+			})).SetName("getv1")
 
 			r.GET("/v2/:name", func(ctx context.Context) (int, interface{}) {
 				return http.StatusCreated, "handlerv2"
-			}).Name("getv2")
+			}).SetName("getv2")
 		},
 	}
 
@@ -427,8 +428,8 @@ func TestSubRouterURL_WithParams(t *testing.T) {
 	r.Register(h)
 	r.Init()
 
-	assert.Equal(t, "/v1/foodora", r.URLParam("getv1", map[string]string{"name": "foodora"}))
-	assert.Equal(t, "/v2/foodora", r.URLParam("getv2", map[string]string{"name": "foodora"}))
+	assert.Equal(t, "/v1/foodora", r.PathParam("getv1", map[string]string{"name": "foodora"}))
+	assert.Equal(t, "/v2/foodora", r.PathParam("getv2", map[string]string{"name": "foodora"}))
 }
 
 func TestRouter_RouteParamsAreSentInsideContext(t *testing.T) {

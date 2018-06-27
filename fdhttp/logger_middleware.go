@@ -107,7 +107,6 @@ func withLogger(log Logger) LogByRequestFunc {
 	return func(logReq *LogRequest) {
 		var b bytes.Buffer
 		tmpl.Execute(&b, logReq)
-
 		log.Printf(b.String())
 	}
 }

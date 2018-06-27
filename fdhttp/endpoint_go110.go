@@ -7,10 +7,10 @@ import (
 	"strings"
 )
 
-func (e Endpoint) URLParam(params map[string]string) string {
+func (e Endpoint) PathParam(params map[string]string) string {
 	var b strings.Builder
 
-	path := strings.Split(strings.TrimPrefix(e.path, "/"), "/")
+	path := strings.Split(strings.TrimPrefix(e.Path, "/"), "/")
 	for _, part := range path {
 		i := strings.Index(part, "*")
 		if i >= 0 {

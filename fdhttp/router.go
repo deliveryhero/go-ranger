@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -31,7 +32,6 @@ type Router struct {
 	handlers    []Handler
 	rootHandler http.Handler
 
-	methods   map[string]struct{}
 	endpoints map[string]Endpoint
 }
 
@@ -45,38 +45,14 @@ const (
 func NewRouter() *Router {
 	return &Router{
 		httprouter: httprouter.New(),
-		methods:    make(map[string]struct{}),
 		endpoints:  map[string]Endpoint{},
-	}
-}
-
-// allowMethod save this method as allowed to be returned in CORS header
-func (r *Router) allowMethod(method string) {
-	if r.parent != nil {
-		r.parent.allowMethod(method)
-		return
-	}
-
-	if _, ok := r.methods[method]; !ok {
-		r.methods[method] = struct{}{}
-	}
-}
-
-// addNamedEndpoint save endpoint to be able to generate URL later
-func (r *Router) addNamedEndpoint(name string, endpoint Endpoint) {
-	if r.parent != nil {
-		r.parent.addNamedEndpoint(name, endpoint)
-		return
-	}
-
-	if _, ok := r.endpoints[name]; !ok {
-		r.endpoints[name] = endpoint
 	}
 }
 
 // Init call Init() from all handlers
 func (r *Router) Init() {
 	if r.parent != nil {
+		// only initialize main router
 		r.parent.Init()
 		return
 	}
@@ -87,19 +63,19 @@ func (r *Router) Init() {
 	if r.NotFoundHandler != nil {
 		r.httprouter.NotFound = r.NotFoundHandler
 	} else {
-		r.httprouter.NotFound = NewNotFoundHandler()
+		r.httprouter.NotFound = notFoundHandler
 	}
 	// Set default method not allowed handler
 	if r.MethodNotAllowedHandler != nil {
 		r.httprouter.MethodNotAllowed = r.MethodNotAllowedHandler
 	} else {
-		r.httprouter.MethodNotAllowed = NewMethodNotAllowedHandler()
+		r.httprouter.MethodNotAllowed = methodNotAllowedHandler
 	}
 	// Set default panic handler
 	if r.PanicHandler != nil {
 		r.httprouter.PanicHandler = r.PanicHandler
 	} else {
-		r.httprouter.PanicHandler = NewPanicHandler()
+		r.httprouter.PanicHandler = panicHandler
 	}
 
 	// build root handler with all middlewares
@@ -145,24 +121,12 @@ func (r *Router) Register(h ...Handler) {
 	r.handlers = append(r.handlers, h...)
 }
 
-func injectRequest(ctx context.Context, req *http.Request) context.Context {
-	if req == nil {
-		return ctx
-	}
-
-	return SetRequest(ctx, req)
-}
-
 func convertParams(ps httprouter.Params) map[string]string {
 	params := map[string]string{}
 	for _, p := range ps {
 		params[p.Key] = p.Value
 	}
 	return params
-}
-
-func injectRouteParams(ctx context.Context, ps httprouter.Params) context.Context {
-	return SetRouteParams(ctx, convertParams(ps))
 }
 
 func injectRequestBody(ctx context.Context, body io.Reader) (context.Context, error) {
@@ -189,33 +153,36 @@ func sendResponseHeader(ctx context.Context, w http.ResponseWriter) {
 
 func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) *Endpoint {
 	if r.parent != nil {
+		// register handler to the main router and but wrap middlewares from current
+		// router
 		return r.parent.StdHandler(method, r.Prefix+path, r.wrapMiddlewares(handler).ServeHTTP)
 	}
 
-	r.allowMethod(method)
 	r.httprouter.Handle(method, r.Prefix+path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		ctx := req.Context()
-		ctx = injectRequest(ctx, req)
-		ctx = injectRouteParams(ctx, ps)
+		ctx = SetRouteParams(ctx, convertParams(ps))
+
 		ctx, err := injectRequestBody(ctx, req.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(fmt.Sprintf("Cannot read body request: %s", err)))
+			fmt.Fprintf(w, "Cannot read body request: %s", err)
 			return
 		}
 
 		*req = *req.WithContext(ctx)
 
 		handler(w, req)
-
-		// If not send body and header send it
-		// r.sendResponseHeader(ctx, w)
+		// Handler is responsible to send Header, StatusCode and Body
 	})
 
-	return &Endpoint{
-		path:   r.Prefix + path,
+	e := &Endpoint{
 		router: r,
+		Method: method,
+		Path:   r.Prefix + path,
 	}
+	r.addEndpoint(e)
+
+	return e
 }
 
 // StdGET register a standard http.HandlerFunc to handle GET method
@@ -245,14 +212,23 @@ func (r *Router) StdOPTIONS(path string, handler http.HandlerFunc) *Endpoint {
 
 // Handler register the method and path with fdhttp.EndpointFunc
 func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
-	r.allowMethod(method)
-	r.httprouter.Handle(method, r.Prefix+path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	prefix := make([]string, 0)
+
+	// build prefix
+	parentRouter := r.parent
+	for parentRouter != nil {
+		prefix = append([]string{parentRouter.Prefix}, prefix...)
+		parentRouter = parentRouter.parent
+	}
+	prefix = append(prefix, r.Prefix)
+
+	r.httprouter.Handle(method, strings.Join(prefix, "")+path, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 		var handler http.Handler
 
 		handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			ctx := req.Context()
-			ctx = injectRequest(ctx, req)
-			ctx = injectRouteParams(ctx, ps)
+			ctx = SetRouteParams(ctx, convertParams(ps))
+
 			ctx, err := injectRequestBody(ctx, req.Body)
 			if err != nil {
 				ResponseJSON(w, http.StatusBadRequest, &Error{
@@ -280,10 +256,12 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 
 			sendResponseHeader(ctx, w)
 
-			// Override request, with that middlewares can access the whole ctx
+			// Override request, with that middlewares can access ctx with
+			// information added here
 			*req = *req.WithContext(ctx)
 
 			if r, ok := resp.(io.Reader); ok {
+				w.WriteHeader(statusCode)
 				io.Copy(w, r)
 			} else {
 				ResponseJSON(w, statusCode, resp)
@@ -298,10 +276,14 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 		handler.ServeHTTP(w, req)
 	})
 
-	return &Endpoint{
-		path:   r.Prefix + path,
+	e := &Endpoint{
 		router: r,
+		Method: method,
+		Path:   r.Prefix + path,
 	}
+	r.addEndpoint(e)
+
+	return e
 }
 
 // GET register a fdhttp.EndpointFunc to handle GET method
@@ -336,7 +318,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	ctx := req.Context()
+	ctx = SetRequest(ctx, req)
 	ctx = SetRequestHeader(ctx, req.Header)
+
+	ctx = SetResponse(ctx, w)
 	ctx = SetResponseHeader(ctx, http.Header{})
 
 	// Inject Form and PostForm
@@ -353,9 +338,19 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.rootHandler.ServeHTTP(w, req.WithContext(ctx))
 }
 
+// Endpoints return a list of all endpoints registered
+func (r *Router) Endpoints() []Endpoint {
+	endpoints := make([]Endpoint, 0, len(r.endpoints))
+	for _, e := range r.endpoints {
+		endpoints = append(endpoints, e)
+	}
+
+	return endpoints
+}
+
 // Lookup return the handle, list of params extracted from the path and
 // also if you should try a trailing slash redirect
-func (r *Router) Lookup(method, path string) (Handle, map[string]string, bool)
+func (r *Router) Lookup(method, path string) (httprouter.Handle, map[string]string, bool) {
 	h, ps, redirect := r.httprouter.Lookup(method, path)
 	return h, convertParams(ps), redirect
 }

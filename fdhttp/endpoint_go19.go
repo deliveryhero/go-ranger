@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (e Endpoint) URLParam(params map[string]string) string {
+func (e endpoint) URLParam(params map[string]string) string {
 	var b bytes.Buffer
 
 	path := strings.Split(strings.TrimPrefix(e.path, "/"), "/")
