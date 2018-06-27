@@ -538,6 +538,69 @@ func TestRouter_PostFormAreSentInsideContext(t *testing.T) {
 	resp.Body.Close()
 }
 
+func TestRouter_BodyIsSentInsideContext(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	expectedBody := "my-body"
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.POST("/", func(ctx context.Context) (int, interface{}) {
+				body := fdhttp.RequestBody(ctx)
+
+				var buf bytes.Buffer
+				buf.ReadFrom(body)
+
+				assert.Equal(t, expectedBody, buf.String())
+				return http.StatusOK, nil
+			})
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	resp, err := http.Post(ts.URL, "plain/text", bytes.NewBufferString(expectedBody))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestRouter_BodyCanBeReadFromRequest(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	expectedBody := "my-body"
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.StdPOST("/", func(w http.ResponseWriter, req *http.Request) {
+				body := fdhttp.RequestBody(req.Context())
+				assert.Equal(t, body, req.Body)
+
+				buf, err := ioutil.ReadAll(req.Body)
+				assert.NoError(t, err)
+
+				assert.Equal(t, expectedBody, string(buf))
+				w.WriteHeader(http.StatusOK)
+			})
+		},
+	}
+
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	resp, err := http.Post(ts.URL, "plain/text", bytes.NewBufferString(expectedBody))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
+}
+
 func TestRouter_HeaderAreSentBackToClients(t *testing.T) {
 	r := fdhttp.NewRouter()
 

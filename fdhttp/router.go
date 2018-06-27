@@ -129,17 +129,19 @@ func convertParams(ps httprouter.Params) map[string]string {
 	return params
 }
 
-func injectRequestBody(ctx context.Context, body io.Reader) (context.Context, error) {
-	if body == nil {
+func injectRequestBody(ctx context.Context, req *http.Request) (context.Context, error) {
+	if req.Body == nil {
 		return ctx, nil
 	}
 
-	buf, err := ioutil.ReadAll(body)
+	buf, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		return ctx, err
 	}
+	req.Body.Close()
 
-	return SetRequestBody(ctx, bytes.NewBuffer(buf)), nil
+	req.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
+	return SetRequestBody(ctx, req.Body), nil
 }
 
 func sendResponseHeader(ctx context.Context, w http.ResponseWriter) {
@@ -162,7 +164,7 @@ func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) *Endp
 		ctx := req.Context()
 		ctx = SetRouteParams(ctx, convertParams(ps))
 
-		ctx, err := injectRequestBody(ctx, req.Body)
+		ctx, err := injectRequestBody(ctx, req)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "Cannot read body request: %s", err)
@@ -229,7 +231,7 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 			ctx := req.Context()
 			ctx = SetRouteParams(ctx, convertParams(ps))
 
-			ctx, err := injectRequestBody(ctx, req.Body)
+			ctx, err := injectRequestBody(ctx, req)
 			if err != nil {
 				ResponseJSON(w, http.StatusBadRequest, &Error{
 					Code:    "invalid_body",
