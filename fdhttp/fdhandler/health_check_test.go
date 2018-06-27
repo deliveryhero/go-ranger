@@ -119,9 +119,7 @@ func TestHealthCheck_SuccessfulCheck(t *testing.T) {
 	assert.True(t, healthResp.Status)
 	assert.Equal(t, "1.0.0", healthResp.Version.Tag)
 	assert.Equal(t, "c6053cf", healthResp.Version.Commit)
-	assert.Equal(t, time.Duration(0), healthResp.Elapsed)
 	assert.True(t, healthResp.Checks["dummy"].Status)
-	assert.Equal(t, time.Duration(0), healthResp.Checks["dummy"].Elapsed)
 
 	detail := healthResp.Checks["dummy"].Detail.(map[string]interface{})
 	assert.Equal(t, float64(5), detail["active"])
