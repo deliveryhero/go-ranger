@@ -1,15 +1,17 @@
-package fdhttp_test
+package fdhandler_test
 
 import (
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strings"
+	"os"
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/foodora/go-ranger/fdhttp"
+	"github.com/foodora/go-ranger/fdhttp/fdhandler"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,20 +23,8 @@ func (c *dummyHealthCheck) HealthCheck() (interface{}, error) {
 	return c.HealthCheckFunc()
 }
 
-type dummyHealthCheckError struct {
-	DetailErrors []string
-}
-
-func (c *dummyHealthCheckError) Detail() interface{} {
-	return c.DetailErrors
-}
-
-func (c *dummyHealthCheckError) Error() string {
-	return "errors: " + strings.Join(c.DetailErrors, ", ")
-}
-
-func TestHealthCheckHandler(t *testing.T) {
-	h := fdhttp.NewHealthCheckHandler("1.0.0", "c6053cf")
+func TestHealthCheck(t *testing.T) {
+	h := fdhandler.NewHealthCheck("1.0.0", "c6053cf")
 
 	router := fdhttp.NewRouter()
 	router.Register(h)
@@ -46,25 +36,30 @@ func TestHealthCheckHandler(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var healthResp fdhttp.HealthCheckResponse
+	var healthResp fdhandler.HealthCheckResponse
 
 	json.NewDecoder(resp.Body).Decode(&healthResp)
 	defer resp.Body.Close()
 
+	hostname, _ := os.Hostname()
+
 	assert.True(t, healthResp.Status)
 	assert.Equal(t, "1.0.0", healthResp.Version.Tag)
 	assert.Equal(t, "c6053cf", healthResp.Version.Commit)
+	assert.Equal(t, hostname, healthResp.Hostname)
+	assert.Equal(t, runtime.Version(), healthResp.System.Version)
+	assert.Equal(t, runtime.NumCPU(), healthResp.System.NumCPU)
 	assert.Equal(t, time.Duration(0), healthResp.Elapsed)
 }
 
-func TestHealthCheckHandle_WithPrefixAndDifferentURL(t *testing.T) {
-	defaultHealthCheckURL := fdhttp.DefaultHealthCheckURL
+func TestHealthCheck_WithPrefixAndDifferentURL(t *testing.T) {
+	defaultHealthCheckURL := fdhandler.HealthCheckURL
 	defer func() {
-		fdhttp.DefaultHealthCheckURL = defaultHealthCheckURL
+		fdhandler.HealthCheckURL = defaultHealthCheckURL
 	}()
-	fdhttp.DefaultHealthCheckURL = "/health-check"
+	fdhandler.HealthCheckURL = "/health-check"
 
-	h := fdhttp.NewHealthCheckHandler("1.0.0", "c6053cf")
+	h := fdhandler.NewHealthCheck("1.0.0", "c6053cf")
 	h.Prefix = "/prefix"
 
 	router := fdhttp.NewRouter()
@@ -73,22 +68,27 @@ func TestHealthCheckHandle_WithPrefixAndDifferentURL(t *testing.T) {
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
-	resp, err := http.Get(ts.URL + "/prefix/health-check")
+	resp, err := http.Get(ts.URL + "/health/check")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+
+	resp, err = http.Get(ts.URL + "/prefix/health/check")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+
+	resp, err = http.Get(ts.URL + "/prefix/health-check")
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var healthResp fdhttp.HealthCheckResponse
+	var healthResp fdhandler.HealthCheckResponse
 
 	json.NewDecoder(resp.Body).Decode(&healthResp)
 	defer resp.Body.Close()
 
 	assert.True(t, healthResp.Status)
-	assert.Equal(t, "1.0.0", healthResp.Version.Tag)
-	assert.Equal(t, "c6053cf", healthResp.Version.Commit)
-	assert.Equal(t, time.Duration(0), healthResp.Elapsed)
 }
 
-func TestHealthCheckHandle_SuccessfulCheck(t *testing.T) {
+func TestHealthCheck_SuccessfulCheck(t *testing.T) {
 	dummyCheck := &dummyHealthCheck{
 		HealthCheckFunc: func() (interface{}, error) {
 			return map[string]interface{}{
@@ -98,7 +98,7 @@ func TestHealthCheckHandle_SuccessfulCheck(t *testing.T) {
 		},
 	}
 
-	h := fdhttp.NewHealthCheckHandler("1.0.0", "c6053cf")
+	h := fdhandler.NewHealthCheck("1.0.0", "c6053cf")
 	h.Register("dummy", dummyCheck)
 
 	router := fdhttp.NewRouter()
@@ -111,7 +111,7 @@ func TestHealthCheckHandle_SuccessfulCheck(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var healthResp fdhttp.HealthCheckResponse
+	var healthResp fdhandler.HealthCheckResponse
 
 	json.NewDecoder(resp.Body).Decode(&healthResp)
 	defer resp.Body.Close()
@@ -128,7 +128,9 @@ func TestHealthCheckHandle_SuccessfulCheck(t *testing.T) {
 	assert.Equal(t, float64(2), detail["idle"])
 }
 
-func TestHealthCheckHandle_FailedCheck(t *testing.T) {
+func TestHealthCheck_FailedCheck(t *testing.T) {
+	fdhandler.HealthCheckServiceTimeout = 500 * time.Millisecond
+
 	dummyCheck1 := &dummyHealthCheck{
 		HealthCheckFunc: func() (interface{}, error) {
 			return map[string]interface{}{
@@ -144,16 +146,22 @@ func TestHealthCheckHandle_FailedCheck(t *testing.T) {
 	}
 	dummyCheck3 := &dummyHealthCheck{
 		HealthCheckFunc: func() (interface{}, error) {
-			return nil, &dummyHealthCheckError{
-				DetailErrors: []string{"error1", "error2"},
-			}
+			detail := []string{"error1", "error2"}
+			return detail, errors.New("because erro1 and erro2 happend")
+		},
+	}
+	dummyCheck4 := &dummyHealthCheck{
+		HealthCheckFunc: func() (interface{}, error) {
+			time.Sleep(time.Second)
+			return nil, nil
 		},
 	}
 
-	h := fdhttp.NewHealthCheckHandler("1.0.0", "c6053cf")
+	h := fdhandler.NewHealthCheck("1.0.0", "c6053cf")
 	h.Register("dummy1", dummyCheck1)
 	h.Register("dummy2", dummyCheck2)
 	h.Register("dummy3", dummyCheck3)
+	h.Register("dummy4", dummyCheck4)
 
 	router := fdhttp.NewRouter()
 	router.Register(h)
@@ -165,7 +173,7 @@ func TestHealthCheckHandle_FailedCheck(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 
-	var healthResp fdhttp.HealthCheckResponse
+	var healthResp fdhandler.HealthCheckResponse
 
 	json.NewDecoder(resp.Body).Decode(&healthResp)
 	defer resp.Body.Close()
@@ -173,13 +181,12 @@ func TestHealthCheckHandle_FailedCheck(t *testing.T) {
 	assert.False(t, healthResp.Status)
 	assert.Equal(t, "1.0.0", healthResp.Version.Tag)
 	assert.Equal(t, "c6053cf", healthResp.Version.Commit)
-	assert.Equal(t, time.Duration(0), healthResp.Elapsed)
 
 	assert.True(t, healthResp.Checks["dummy1"].Status)
 	assert.Equal(t, time.Duration(0), healthResp.Checks["dummy1"].Elapsed)
-	detail := healthResp.Checks["dummy1"].Detail.(map[string]interface{})
-	assert.Equal(t, float64(5), detail["active"])
-	assert.Equal(t, float64(2), detail["idle"])
+	detailMap := healthResp.Checks["dummy1"].Detail.(map[string]interface{})
+	assert.Equal(t, float64(5), detailMap["active"])
+	assert.Equal(t, float64(2), detailMap["idle"])
 
 	assert.False(t, healthResp.Checks["dummy2"].Status)
 	assert.Equal(t, time.Duration(0), healthResp.Checks["dummy2"].Elapsed)
@@ -187,13 +194,17 @@ func TestHealthCheckHandle_FailedCheck(t *testing.T) {
 
 	assert.False(t, healthResp.Checks["dummy3"].Status)
 	assert.Equal(t, time.Duration(0), healthResp.Checks["dummy3"].Elapsed)
-	errDetail := healthResp.Checks["dummy3"].Error.([]interface{})
-	assert.Len(t, errDetail, 2)
-	assert.Equal(t, "error1", errDetail[0])
-	assert.Equal(t, "error2", errDetail[1])
+	assert.Equal(t, "because erro1 and erro2 happend", healthResp.Checks["dummy3"].Error)
+	detailArray := healthResp.Checks["dummy3"].Detail.([]interface{})
+	assert.Len(t, detailArray, 2)
+	assert.Equal(t, "error1", detailArray[0])
+	assert.Equal(t, "error2", detailArray[1])
+
+	assert.False(t, healthResp.Checks["dummy4"].Status)
+	assert.Equal(t, "context deadline exceeded", healthResp.Checks["dummy4"].Error)
 }
 
-func TestHealthCheckHandle_SuccessfulCheckSpecificService(t *testing.T) {
+func TestHealthCheck_SuccessfulCheckSpecificService(t *testing.T) {
 	dummyCheck1 := &dummyHealthCheck{
 		HealthCheckFunc: func() (interface{}, error) {
 			return map[string]interface{}{
@@ -208,7 +219,7 @@ func TestHealthCheckHandle_SuccessfulCheckSpecificService(t *testing.T) {
 		},
 	}
 
-	h := fdhttp.NewHealthCheckHandler("1.0.0", "c6053cf")
+	h := fdhandler.NewHealthCheck("1.0.0", "c6053cf")
 	h.Register("dummy1", dummyCheck1)
 	h.Register("dummy2", dummyCheck2)
 
@@ -222,7 +233,7 @@ func TestHealthCheckHandle_SuccessfulCheckSpecificService(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var healthResp fdhttp.HealthCheckResponse
+	var healthResp fdhandler.HealthCheckResponse
 
 	json.NewDecoder(resp.Body).Decode(&healthResp)
 	defer resp.Body.Close()
@@ -239,7 +250,7 @@ func TestHealthCheckHandle_SuccessfulCheckSpecificService(t *testing.T) {
 	assert.Equal(t, float64(2), detail["idle"])
 }
 
-func TestHealthCheckHandle_FailedCheckSpecificService(t *testing.T) {
+func TestHealthCheck_FailedCheckSpecificService(t *testing.T) {
 	dummyCheck1 := &dummyHealthCheck{
 		HealthCheckFunc: func() (interface{}, error) {
 			return map[string]interface{}{
@@ -254,7 +265,7 @@ func TestHealthCheckHandle_FailedCheckSpecificService(t *testing.T) {
 		},
 	}
 
-	h := fdhttp.NewHealthCheckHandler("1.0.0", "c6053cf")
+	h := fdhandler.NewHealthCheck("1.0.0", "c6053cf")
 	h.Register("dummy1", dummyCheck1)
 	h.Register("dummy2", dummyCheck2)
 
@@ -268,7 +279,7 @@ func TestHealthCheckHandle_FailedCheckSpecificService(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 
-	var healthResp fdhttp.HealthCheckResponse
+	var healthResp fdhandler.HealthCheckResponse
 
 	json.NewDecoder(resp.Body).Decode(&healthResp)
 	defer resp.Body.Close()

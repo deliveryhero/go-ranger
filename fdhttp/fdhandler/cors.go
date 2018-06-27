@@ -1,4 +1,4 @@
-package fdhttp
+package fdhandler
 
 import (
 	"context"
@@ -6,60 +6,73 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/foodora/go-ranger/fdhttp"
 )
 
 // CORSOriginAll can be passed to NewCORSMiddleware to accept all domains
 const CORSOriginAll = "*"
 
-type CORSHandler struct {
-	router *Router
+type CORS struct {
+	router *fdhttp.Router
 
 	// Origin that we accept, but defailt is setted with CORSOriginAll
 	Origin string
 	// Credentials control if we'll send Access-Control-Allow-Credentials or not
 	Credentials bool
+	// Methods is the list of methods that can be accept
+	Methods []string
 	// ExposeHeaders is the list of header that we can expose
 	ExposeHeaders []string
 	// MaxAge is setted 1 hour by default
 	MaxAge time.Duration
 }
 
-func NewCORSHandler() *CORSHandler {
-	return &CORSHandler{
+func NewCORS() *CORS {
+	return &CORS{
 		Origin: CORSOriginAll,
 		MaxAge: 1 * time.Hour,
 	}
 }
 
-func (h *CORSHandler) Init(router *Router) {
+func (h *CORS) Init(router *fdhttp.Router) {
 	h.router = router
 	router.OPTIONS("/*anything", h.PreFlight)
 	router.Use(NewCORSMiddleware(h.Origin))
 }
 
-func (h *CORSHandler) PreFlight(ctx context.Context) (int, interface{}) {
-	SetResponseHeaderValue(ctx, "Access-Control-Allow-Origin", h.Origin)
-	methods := make([]string, 0, len(h.router.methods))
-	for k := range h.router.methods {
-		methods = append(methods, k)
+func (h *CORS) PreFlight(ctx context.Context) (int, interface{}) {
+	fdhttp.SetResponseHeaderValue(ctx, "Access-Control-Allow-Origin", h.Origin)
+
+	if len(h.Methods) == 0 {
+		endpoints := h.router.Endpoints()
+		methodsMap := make(map[string]struct{})
+
+		for _, e := range endpoints {
+			if _, ok := methodsMap[e.Method]; !ok {
+				methodsMap[e.Method] = struct{}{}
+				h.Methods = append(h.Methods, e.Method)
+			}
+		}
 	}
-	SetResponseHeaderValue(ctx, "Access-Control-Allow-Methods", strings.Join(methods, ", "))
+
+	fdhttp.SetResponseHeaderValue(ctx, "Access-Control-Allow-Methods", strings.Join(h.Methods, ", "))
 
 	if h.Credentials {
-		SetResponseHeaderValue(ctx, "Access-Control-Allow-Credentials", "true")
+		fdhttp.SetResponseHeaderValue(ctx, "Access-Control-Allow-Credentials", "true")
 	}
 	if len(h.ExposeHeaders) > 0 {
-		SetResponseHeaderValue(ctx, "Access-Control-Allow-Headers", strings.Join(h.ExposeHeaders, ","))
+		fdhttp.SetResponseHeaderValue(ctx, "Access-Control-Allow-Headers", strings.Join(h.ExposeHeaders, ","))
 	}
 	if h.MaxAge > 0 {
-		SetResponseHeaderValue(ctx, "Access-Control-Max-Age", strconv.FormatInt(int64(h.MaxAge/time.Second), 10))
+		fdhttp.SetResponseHeaderValue(ctx, "Access-Control-Max-Age", strconv.FormatInt(int64(h.MaxAge/time.Second), 10))
 	}
 
 	return http.StatusOK, nil
 }
 
 // NewCORSMiddleware create a cors middleware
-func NewCORSMiddleware(origin string) Middleware {
+func NewCORSMiddleware(origin string) fdhttp.Middleware {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, req *http.Request) {
 			next.ServeHTTP(w, req)
