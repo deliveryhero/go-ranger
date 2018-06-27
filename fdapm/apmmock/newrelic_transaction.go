@@ -1,4 +1,4 @@
-package fdapm
+package apmmock
 
 import (
 	"net/http"
@@ -19,7 +19,7 @@ type NewRelicTransaction struct {
 	StartSegmentNowInvoked bool
 }
 
-func NewRelicTransactionMock(t *testing.T) *NewRelicTransaction {
+func NewNRTransaction(t *testing.T) *NewRelicTransaction {
 	return &NewRelicTransaction{
 		httptest.NewRecorder(),
 	}
