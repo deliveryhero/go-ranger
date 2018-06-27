@@ -7,6 +7,8 @@ import (
 )
 
 type DBConfig struct {
+	initialized int32
+
 	// Driver for now can be mysql, postgres, mongodb or dynamodb
 	Driver string
 
