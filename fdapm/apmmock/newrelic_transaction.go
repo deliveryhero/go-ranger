@@ -21,7 +21,7 @@ type NewRelicTransaction struct {
 
 func NewNRTransaction(t *testing.T) *NewRelicTransaction {
 	return &NewRelicTransaction{
-		httptest.NewRecorder(),
+		ResponseWriter: httptest.NewRecorder(),
 	}
 }
 
