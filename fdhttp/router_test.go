@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/foodora/go-ranger/fdhttp"
 	"github.com/stretchr/testify/assert"
@@ -864,8 +865,6 @@ func TestRouter_MethodNotAllowedHandler(t *testing.T) {
 }
 
 func TestRouter_PanicHandler(t *testing.T) {
-	r := fdhttp.NewRouter()
-
 	h := &dummyHandler{
 		initFunc: func(r *fdhttp.Router) {
 			r.GET("/", func(ctx context.Context) (int, interface{}) {
@@ -874,6 +873,7 @@ func TestRouter_PanicHandler(t *testing.T) {
 		},
 	}
 
+	r := fdhttp.NewRouter()
 	r.Register(h)
 	r.Init()
 
@@ -889,4 +889,80 @@ func TestRouter_PanicHandler(t *testing.T) {
 	assert.Equal(t, `{"code":"panic","message":"something bad happended"}`+"\n", string(body))
 
 	resp.Body.Close()
+}
+
+func TestRouter_DoNotCancelBeforeRequestFinishes(t *testing.T) {
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
+				select {
+				case <-ctx.Done():
+					t.Error("Request shouldn't be canceled")
+				case <-time.After(1 * time.Second):
+				}
+
+				return http.StatusCreated, nil
+			})
+		},
+	}
+
+	r := fdhttp.NewRouter()
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
+	assert.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+}
+
+func TestRouter_CancelingRequest(t *testing.T) {
+	var handlerCanceled bool
+	canceledChan := make(chan struct{}, 1)
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.GET("/", func(ctx context.Context) (int, interface{}) {
+				select {
+				case <-ctx.Done():
+					handlerCanceled = true
+					canceledChan <- struct{}{}
+				case <-time.After(2 * time.Second):
+					t.Error("Request was canceled but router didn't notify handler")
+				}
+
+				return http.StatusOK, nil
+			})
+		},
+	}
+
+	r := fdhttp.NewRouter()
+	r.Register(h)
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	req, err := http.NewRequest(http.MethodGet, ts.URL+"/", nil)
+	assert.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(req.Context())
+	req = req.WithContext(ctx)
+
+	// cancel request
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		cancel()
+	}()
+
+	resp, err := http.DefaultClient.Do(req)
+	assert.Error(t, err, context.Canceled)
+	assert.Nil(t, resp)
+	<-canceledChan
+	assert.True(t, handlerCanceled)
 }
