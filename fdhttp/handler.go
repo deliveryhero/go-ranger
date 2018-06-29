@@ -45,7 +45,7 @@ func notFoundHandler(w http.ResponseWriter, req *http.Request) {
 
 func panicHandler(w http.ResponseWriter, req *http.Request, rcv interface{}) {
 	// log stack trace
-	defaultLogger.Printf("%s", debug.Stack())
+	defaultLogger.Printf("%v: %s", rcv, debug.Stack())
 
 	ResponseJSON(w, http.StatusInternalServerError, &Error{
 		Code:    "panic",
