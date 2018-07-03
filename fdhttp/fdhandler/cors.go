@@ -75,10 +75,10 @@ func (h *CORS) PreFlight(ctx context.Context) (int, interface{}) {
 func NewCORSMiddleware(origin string) fdhttp.Middleware {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, req *http.Request) {
-			next.ServeHTTP(w, req)
-			if req.Method != http.MethodOptions && w.Header().Get("Access-Control-Allow-Origin") == "" {
+			if req.Method != http.MethodOptions {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 			}
+			next.ServeHTTP(w, req)
 		}
 
 		return http.HandlerFunc(fn)
