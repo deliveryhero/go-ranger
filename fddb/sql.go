@@ -20,7 +20,6 @@ func OpenSQL(c DBConfig) (*sql.DB, error) {
 	db.SetConnMaxLifetime(1 * time.Hour)
 
 	var attempt int
-	sleepFn := BackoffFunc()
 
 	for {
 		err := db.Ping()
@@ -39,7 +38,7 @@ func OpenSQL(c DBConfig) (*sql.DB, error) {
 			prefix = fmt.Sprintf("[%d/%d]", attempt, MaxConnAttempt)
 		}
 
-		sleepFor := sleepFn(attempt)
+		sleepFor := BackoffFunc(attempt)
 		defaultLogger.Printf("%s Unable to connect to database, trying again in %s: %s", prefix, sleepFor, err)
 		time.Sleep(sleepFor)
 

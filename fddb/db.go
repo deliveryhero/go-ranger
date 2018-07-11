@@ -1,8 +1,9 @@
 package fddb
 
 import (
-	"math"
 	"time"
+
+	"github.com/foodora/go-ranger/fdbackoff"
 )
 
 // MaxConnAttempt is the number of times that it'll try to connect to the database
@@ -12,16 +13,17 @@ var MaxConnAttempt = 5
 // BackoffFunc is a generator of duration that we use to sleep
 // between attempt in case we cannot connect to database.
 // Default implementation use following formula:
-// MinBackoff * pow(2, attempt) will will result in 5s, 10s, 20s, 40s, 1m20s, 2m40s
+// MinBackoff * pow(2, attempt) will will result in 2s, 4s, 8s, 16s, 32s, 1m4s
 // You also can override with something like this:
 //
 //      fddb.BackoffFunc = func() func(attempt int) time.Duration {
 //          d := []time.Duration{
-//              5*time.Second,
-//              10*time.Second,
-//              20*time.Second,
-//              1*time.Minute + 20*time.Second,
-//              2*time.Minute + 40*time.Second,
+//              2*time.Second,
+//              4*time.Second,
+//              8*time.Second,
+//              16*time.Second,
+//              32*time.Second,
+//              1*time.Minute + 4*time.Second,
 //          }
 //          return func(attempt int) time.Duration {
 //              if attempt > len(d) {
@@ -30,13 +32,9 @@ var MaxConnAttempt = 5
 //              return d[attempt-1]
 //          }
 //      }
-var BackoffFunc = func() func(attempt int) time.Duration {
-	startBackoff := float64(5 * time.Second)
-
-	return func(attempt int) time.Duration {
-		return time.Duration(startBackoff * math.Pow(2, float64(attempt-1)))
-	}
-}
+//
+// Or you can also check some implemented strategy in the fdbackoff package.
+var BackoffFunc = fdbackoff.Exponential(2 * time.Second)
 
 // DefaultMaxOpenConnection call SetMaxOpenConns to limit the number of connection
 // because by default no limit is setted, you also can override it, calling:
