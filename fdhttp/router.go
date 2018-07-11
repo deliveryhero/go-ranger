@@ -338,7 +338,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	ctx = SetRequestHeader(ctx, req.Header)
 
 	ctx = SetResponse(ctx, w)
-	ctx = SetResponseHeader(ctx, http.Header{})
+	ctx = SetResponseHeader(ctx, w.Header())
 
 	// Inject Form and PostForm
 	if req.Form == nil {
