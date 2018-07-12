@@ -3,7 +3,7 @@ package fdapm
 import (
 	"net/http"
 
-	"github.com/foodora/go-ranger/fdhttp"
+	"github.com/foodora/go-ranger/fdhttp/fdmiddleware"
 	newrelic "github.com/newrelic/go-agent"
 )
 
@@ -18,7 +18,7 @@ import (
 //		// you can get it like this:
 // 		// txn := NewRelicTransaction(ctx)
 // 		resp, err := fdapm.NewRelicClientMiddleware(http.DefaultClient, txn, req)
-func NewRelicClientMiddleware(c fdhttp.Doer, txn newrelic.Transaction, req *http.Request) (*http.Response, error) {
+func NewRelicClientMiddleware(c fdmiddleware.Doer, txn newrelic.Transaction, req *http.Request) (*http.Response, error) {
 	if txn == nil {
 		return c.Do(req)
 	}
