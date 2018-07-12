@@ -47,7 +47,7 @@ func NewCircuitBreaker(backoffFunc fdbackoff.Func, tripFunc circuit.TripFunc) Cl
 
 func (c *Circuit) Wrap(next Doer) Doer {
 	return DoerFunc(func(req *http.Request) (resp *http.Response, err error) {
-		c.Breaker.CallContext(req.Context(), func() error {
+		breakerErr := c.Breaker.CallContext(req.Context(), func() error {
 			resp, err = next.Do(req)
 			if err != nil {
 				return err
@@ -59,6 +59,10 @@ func (c *Circuit) Wrap(next Doer) Doer {
 
 			return nil
 		}, 0)
+
+		if err == nil && breakerErr != nil {
+			err = breakerErr
+		}
 
 		return
 	})

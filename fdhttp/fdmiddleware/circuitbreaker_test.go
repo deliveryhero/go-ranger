@@ -72,15 +72,10 @@ func TestCircuitBreaker_CanceledContextDoesNotCount(t *testing.T) {
 		circuit.ConsecutiveTripFunc(3),
 	)
 
-	expectedResp := &http.Response{
-		StatusCode: http.StatusOK,
-	}
-	expectedErr := errors.New("error")
-
 	var doer fdmiddleware.Doer
 	doer = fdmiddleware.DoerFunc(func(req *http.Request) (*http.Response, error) {
 		time.Sleep(time.Second)
-		return expectedResp, expectedErr
+		return nil, errors.New("error")
 	})
 	doer = circuitbreaker.Wrap(doer)
 
@@ -98,4 +93,29 @@ func TestCircuitBreaker_CanceledContextDoesNotCount(t *testing.T) {
 	doer.Do(req)
 	circuit := circuitbreaker.(*fdmiddleware.Circuit)
 	assert.Equal(t, int64(0), circuit.Breaker.Failures())
+}
+
+func TestCircuitBreaker_CallWithCircuitOpenReturnBreakerError(t *testing.T) {
+	circuitbreaker := fdmiddleware.NewCircuitBreaker(
+		fdbackoff.Linear(time.Millisecond),
+		circuit.ConsecutiveTripFunc(1),
+	)
+
+	expectedErr := errors.New("error")
+
+	var doer fdmiddleware.Doer
+	doer = fdmiddleware.DoerFunc(func(req *http.Request) (*http.Response, error) {
+		time.Sleep(time.Second)
+		return nil, expectedErr
+	})
+	doer = circuitbreaker.Wrap(doer)
+
+	req, err := http.NewRequest(http.MethodGet, "http://localhost", nil)
+	assert.NoError(t, err)
+
+	_, err = doer.Do(req)
+	assert.Equal(t, expectedErr, err)
+
+	_, err = doer.Do(req)
+	assert.Equal(t, circuit.ErrBreakerOpen, err)
 }
