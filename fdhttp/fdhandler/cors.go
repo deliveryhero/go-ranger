@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/foodora/go-ranger/fdhttp"
+	"github.com/foodora/go-ranger/fdhttp/fdmiddleware"
 )
 
 // CORSOriginAll can be passed to NewCORSMiddleware to accept all domains
@@ -72,8 +73,8 @@ func (h *CORS) PreFlight(ctx context.Context) (int, interface{}) {
 }
 
 // NewCORSMiddleware create a cors middleware
-func NewCORSMiddleware(origin string) fdhttp.Middleware {
-	return func(next http.Handler) http.Handler {
+func NewCORSMiddleware(origin string) fdmiddleware.Middleware {
+	return fdmiddleware.MiddlewareFunc(func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, req *http.Request) {
 			if req.Method != http.MethodOptions {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -82,5 +83,5 @@ func NewCORSMiddleware(origin string) fdhttp.Middleware {
 		}
 
 		return http.HandlerFunc(fn)
-	}
+	})
 }

@@ -5,13 +5,13 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/foodora/go-ranger/fdhttp"
+	"github.com/foodora/go-ranger/fdhttp/fdmiddleware"
 	newrelic "github.com/newrelic/go-agent"
 )
 
 // NewRelicMiddleware create a newrelic middleware
-func NewRelicMiddleware(app newrelic.Application) fdhttp.Middleware {
-	return func(next http.Handler) http.Handler {
+func NewRelicMiddleware(app newrelic.Application) fdmiddleware.Middleware {
+	return fdmiddleware.MiddlewareFunc(func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, req *http.Request) {
 			txn := app.StartTransaction(req.URL.Path, w, req)
 			defer txn.End()
@@ -23,7 +23,7 @@ func NewRelicMiddleware(app newrelic.Application) fdhttp.Middleware {
 		}
 
 		return http.HandlerFunc(fn)
-	}
+	})
 }
 
 // NewRelicTransactionKey s a key used inside of context.Context to save the newrelic transaction

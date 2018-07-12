@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/foodora/go-ranger/fdhttp"
+	"github.com/foodora/go-ranger/fdhttp/fdmiddleware"
 )
 
 func testMiddleware(next http.Handler) http.Handler {
@@ -40,8 +41,10 @@ func (h *testHandler) PutHandler(ctx context.Context) (int, interface{}) {
 func Example() {
 	srv := fdhttp.NewServer("8080")
 
+	testMw := fdmiddleware.MiddlewareFunc(testMiddleware)
+
 	router := fdhttp.NewRouter()
-	router.Use(testMiddleware)
+	router.Use(testMw)
 	router.Register(&testHandler{})
 
 	err := srv.Start(router)

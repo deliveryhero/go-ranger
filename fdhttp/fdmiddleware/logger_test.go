@@ -1,4 +1,4 @@
-package fdhttp_test
+package fdmiddleware_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/foodora/go-ranger/fdhttp"
+	"github.com/foodora/go-ranger/fdhttp/fdmiddleware"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +22,7 @@ func (l *dummyLog) Printf(format string, v ...interface{}) {
 
 func TestNewLogMiddleware(t *testing.T) {
 	logger := &dummyLog{}
-	logMiddleware := fdhttp.NewLogMiddleware()
+	logMiddleware := fdmiddleware.NewLogMiddleware()
 	logMiddleware.SetLogger(logger)
 
 	called := false
@@ -30,7 +31,7 @@ func TestNewLogMiddleware(t *testing.T) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	ts := httptest.NewServer(logMiddleware(http.HandlerFunc(handler)))
+	ts := httptest.NewServer(logMiddleware.Wrap(http.HandlerFunc(handler)))
 	defer ts.Close()
 
 	http.Get(ts.URL + "/foo")
@@ -41,9 +42,9 @@ func TestNewLogMiddleware(t *testing.T) {
 
 func TestNewLogMiddleware_DifferentLogFormat(t *testing.T) {
 	logger := &dummyLog{}
-	fdhttp.RequestLogFormat = "{{.Method}} {{.RequestURI}} {{.Response.StatusCode}} {{.Response.StatusText}}"
+	fdmiddleware.RequestLogFormat = "{{.Method}} {{.RequestURI}} {{.Response.StatusCode}} {{.Response.StatusText}}"
 
-	logMiddleware := fdhttp.NewLogMiddleware()
+	logMiddleware := fdmiddleware.NewLogMiddleware()
 	logMiddleware.SetLogger(logger)
 
 	called := false
@@ -52,7 +53,7 @@ func TestNewLogMiddleware_DifferentLogFormat(t *testing.T) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	ts := httptest.NewServer(logMiddleware(http.HandlerFunc(handler)))
+	ts := httptest.NewServer(logMiddleware.Wrap(http.HandlerFunc(handler)))
 	defer ts.Close()
 
 	http.Get(ts.URL + "/foo")
@@ -64,8 +65,8 @@ func TestNewLogMiddleware_DifferentLogFormat(t *testing.T) {
 func TestNewLogMiddleware_CallFuncInEachRequest(t *testing.T) {
 	logger := &dummyLog{}
 
-	logMiddleware := fdhttp.NewLogMiddleware()
-	logMiddleware.SetLoggerFunc(func(logReq *fdhttp.LogRequest) {
+	logMiddleware := fdmiddleware.NewLogMiddleware()
+	logMiddleware.SetLoggerFunc(func(logReq *fdmiddleware.LogRequest) {
 		logger.Printf("%s %s %d", logReq.Method, logReq.RequestURI, logReq.Response.StatusCode)
 	})
 
@@ -75,7 +76,7 @@ func TestNewLogMiddleware_CallFuncInEachRequest(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	ts := httptest.NewServer(logMiddleware(http.HandlerFunc(handler)))
+	ts := httptest.NewServer(logMiddleware.Wrap(http.HandlerFunc(handler)))
 	defer ts.Close()
 
 	http.Get(ts.URL + "/foo")
@@ -86,9 +87,11 @@ func TestNewLogMiddleware_CallFuncInEachRequest(t *testing.T) {
 
 func TestNewLogMiddleware_CanGetError(t *testing.T) {
 	logger := &dummyLog{}
-	logMiddleware := fdhttp.NewLogMiddleware()
-	logMiddleware.SetLoggerFunc(func(logReq *fdhttp.LogRequest) {
-		logger.Printf("%s", logReq.Response.Err())
+	logMiddleware := fdmiddleware.NewLogMiddleware()
+	logMiddleware.SetLoggerFunc(func(logReq *fdmiddleware.LogRequest) {
+		err := fdhttp.ResponseError(logReq.Context())
+		assert.IsType(t, &fdhttp.Error{}, err)
+		logger.Printf("%s", err)
 	})
 
 	handlerErr := &fdhttp.Error{
@@ -97,7 +100,7 @@ func TestNewLogMiddleware_CanGetError(t *testing.T) {
 	}
 
 	router := fdhttp.NewRouter()
-	router.Use(logMiddleware.Middleware())
+	router.Use(logMiddleware)
 	router.GET("/foo", func(ctx context.Context) (int, interface{}) {
 		return http.StatusBadRequest, handlerErr
 	})

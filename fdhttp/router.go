@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/foodora/go-ranger/fdhttp/fdmiddleware"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -28,7 +29,7 @@ type Router struct {
 	parent     *Router
 	childs     []*Router
 
-	middlewares []Middleware
+	middlewares []fdmiddleware.Middleware
 	handlers    []Handler
 	rootHandler http.Handler
 
@@ -95,7 +96,7 @@ func (r *Router) initHandlers() {
 
 func (r *Router) wrapMiddlewares(h http.Handler) http.Handler {
 	for k := range r.middlewares {
-		h = r.middlewares[len(r.middlewares)-1-k](h)
+		h = r.middlewares[len(r.middlewares)-1-k].Wrap(h)
 	}
 
 	return h
@@ -112,7 +113,7 @@ func (r *Router) SubRouter() *Router {
 }
 
 // Use a middleware to wrap all http request
-func (r *Router) Use(m ...Middleware) {
+func (r *Router) Use(m ...fdmiddleware.Middleware) {
 	r.middlewares = append(r.middlewares, m...)
 }
 

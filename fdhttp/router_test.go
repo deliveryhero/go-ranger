@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/foodora/go-ranger/fdhttp"
+	"github.com/foodora/go-ranger/fdhttp/fdmiddleware"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,14 +30,14 @@ func (eh *dummyHandler) Init(r *fdhttp.Router) {
 	}
 }
 
-func newMiddleware(message string, called *bool) fdhttp.Middleware {
-	return func(next http.Handler) http.Handler {
+func newMiddleware(message string, called *bool) fdmiddleware.Middleware {
+	return fdmiddleware.MiddlewareFunc(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			*called = true
 			next.ServeHTTP(w, req)
 			w.Write([]byte(message))
 		})
-	}
+	})
 }
 
 func TestRouter_HandlerAreInitialized(t *testing.T) {
@@ -798,13 +799,13 @@ func TestRouter_ErrorIsAvailableInsideContext(t *testing.T) {
 	})
 
 	var mCalled bool
-	r.Use(func(next http.Handler) http.Handler {
+	r.Use(fdmiddleware.MiddlewareFunc(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			mCalled = true
 			next.ServeHTTP(w, req)
 			assert.Equal(t, handlerErr, fdhttp.ResponseError(req.Context()))
 		})
-	})
+	}))
 
 	r.Init()
 

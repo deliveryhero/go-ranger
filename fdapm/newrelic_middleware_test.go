@@ -38,7 +38,7 @@ func TestNewRelicMiddleware(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// call handler with middleware
-	newrelicMiddleware(http.HandlerFunc(handler)).ServeHTTP(w, req)
+	newrelicMiddleware.Wrap(http.HandlerFunc(handler)).ServeHTTP(w, req)
 
 	assert.True(t, called)
 }
@@ -58,7 +58,7 @@ func TestNewRelicMiddleware_InjectTransaction(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// call handler with middleware
-	newrelicMiddleware(http.HandlerFunc(handler)).ServeHTTP(w, req)
+	newrelicMiddleware.Wrap(http.HandlerFunc(handler)).ServeHTTP(w, req)
 
 	assert.True(t, called)
 }
@@ -89,7 +89,7 @@ func TestNewRelicStartSegment(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// call handler with middleware
-	newrelicMiddleware(http.HandlerFunc(handler)).ServeHTTP(w, req)
+	newrelicMiddleware.Wrap(http.HandlerFunc(handler)).ServeHTTP(w, req)
 
 	assert.True(t, called)
 }
