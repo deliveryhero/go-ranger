@@ -36,5 +36,5 @@
   name = "gopkg.in/yaml.v2"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/lib/pq"
+  name = "github.com/rubyist/circuitbreaker"
+  version = "2.2.1"
