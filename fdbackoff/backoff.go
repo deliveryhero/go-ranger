@@ -12,7 +12,7 @@ import (
 // the first unsuccessful attempt
 type Func func(attempt int) time.Duration
 
-var Fixed = func(waitFor time.Duration) Func {
+var Constant = func(waitFor time.Duration) Func {
 	return func(attempt int) time.Duration {
 		if attempt == 0 {
 			return 0
@@ -22,7 +22,7 @@ var Fixed = func(waitFor time.Duration) Func {
 	}
 }
 
-var Constant = func(startWith time.Duration) Func {
+var Linear = func(startWith time.Duration) Func {
 	s := float64(startWith)
 	return func(attempt int) time.Duration {
 		return time.Duration(s * float64(attempt))
