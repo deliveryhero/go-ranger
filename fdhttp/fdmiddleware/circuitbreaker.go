@@ -3,6 +3,7 @@ package fdmiddleware
 import (
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/foodora/go-ranger/fdbackoff"
@@ -24,6 +25,8 @@ func (b *circuitBreakerBackoff) Reset() {
 
 type Circuit struct {
 	Breaker *circuit.Breaker
+	// Use if you need update something in the Breaker
+	BreakerMu sync.Mutex
 }
 
 // NewCircuitClientMiddleware receive a backoffFunc that will be used to decide
@@ -47,6 +50,9 @@ func NewCircuitBreaker(backoffFunc fdbackoff.Func, tripFunc circuit.TripFunc) Cl
 
 func (c *Circuit) Wrap(next Doer) Doer {
 	return DoerFunc(func(req *http.Request) (resp *http.Response, err error) {
+		c.BreakerMu.Lock()
+		defer c.BreakerMu.Unlock()
+
 		breakerErr := c.Breaker.CallContext(req.Context(), func() error {
 			resp, err = next.Do(req)
 			if err != nil {
