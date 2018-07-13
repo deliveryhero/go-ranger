@@ -30,10 +30,10 @@ type DBConfig struct {
 }
 
 var availableDrivers = map[string]DBConfig{
-	"mysql":    DBConfig{Port: "3306"},
-	"postgres": DBConfig{Port: "5432"},
-	"mongodb":  DBConfig{Port: "27017"},
-	"redis":    DBConfig{Port: "6379"},
+	"mysql":    {Port: "3306"},
+	"postgres": {Port: "5432"},
+	"mongodb":  {Port: "27017"},
+	"redis":    {Port: "6379"},
 }
 
 // ErrNoDriverSpecified will be panic when you call fddb.Open without
