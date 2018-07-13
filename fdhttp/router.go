@@ -145,15 +145,6 @@ func injectRequestBody(ctx context.Context, req *http.Request) (context.Context,
 	return SetRequestBody(ctx, req.Body), nil
 }
 
-func sendResponseHeader(ctx context.Context, w http.ResponseWriter) {
-	headers := ResponseHeader(ctx)
-	for h, values := range headers {
-		for _, v := range values {
-			w.Header().Add(h, v)
-		}
-	}
-}
-
 func (r *Router) StdHandler(method, path string, handler http.HandlerFunc) *Endpoint {
 	if r.parent != nil {
 		// register handler to the main router and but wrap middlewares from current
@@ -256,8 +247,6 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 				ctx = SetResponseError(ctx, respErr)
 				resp = respErr
 			}
-
-			sendResponseHeader(ctx, w)
 
 			// Override request, with that middlewares can access ctx with
 			// information added here
