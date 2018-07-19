@@ -2,7 +2,6 @@ package fdhttp
 
 import (
 	"fmt"
-	"strings"
 )
 
 // Endpoint is returned when you create a router,
@@ -36,23 +35,7 @@ func (r *Router) addEndpoint(e *Endpoint) {
 	}
 
 	if e.Name == "" {
-		var name strings.Builder
-		name.WriteString(e.Method)
-		name.WriteRune('_')
-
-		for _, r := range strings.Trim(e.Path, "/") {
-			if r == ':' || r == '*' {
-				continue
-			}
-			if r == '/' {
-				name.WriteRune('_')
-				continue
-			}
-
-			name.WriteRune(r)
-		}
-
-		e.Name = name.String()
+		e.Name = e.buildName()
 	}
 
 	if _, ok := r.endpoints[e.Name]; !ok {
