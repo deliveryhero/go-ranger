@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (e endpoint) PathParam(params map[string]string) string {
+func (e Endpoint) PathParam(params map[string]string) string {
 	var b bytes.Buffer
 
 	path := strings.Split(strings.TrimPrefix(e.path, "/"), "/")
