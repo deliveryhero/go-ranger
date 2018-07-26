@@ -1,6 +1,7 @@
 package fdhttp_test
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"testing"
@@ -25,7 +26,7 @@ func stopServer(t *testing.T, srv *fdhttp.Server, stopChan chan struct{}) error 
 	// give some time to server runs
 	time.Sleep(1 * time.Millisecond)
 
-	err := srv.Stop()
+	err := srv.Stop(context.Background())
 
 	select {
 	case <-stopChan:
@@ -83,7 +84,7 @@ func TestServe_RunningTwice(t *testing.T) {
 func TestServe_StoppingTwice(t *testing.T) {
 	srv, stopChan := startServer("8126")
 
-	err := srv.Stop()
+	err := srv.Stop(context.Background())
 	assert.Equal(t, fdhttp.ErrServerNotRunning, err)
 
 	go func() {
@@ -95,6 +96,6 @@ func TestServe_StoppingTwice(t *testing.T) {
 	err = stopServer(t, srv, stopChan)
 	assert.NoError(t, err)
 
-	err = srv.Stop()
+	err = srv.Stop(context.Background())
 	assert.Equal(t, fdhttp.ErrServerNotRunning, err)
 }

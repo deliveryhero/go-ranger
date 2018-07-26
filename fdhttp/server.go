@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 type (
@@ -117,7 +116,7 @@ func (s *Server) Start(r *Router) error {
 // Stop the server. Return nil in case of success, but can fail due
 // take so long to shutdown. In case of success Start() will return
 // fdhttp.ErrServerStopped
-func (s *Server) Stop() error {
+func (s *Server) Stop(ctx context.Context) error {
 	if atomic.LoadUint32(&s.running) == 0 {
 		return ErrServerNotRunning
 	}
@@ -131,10 +130,6 @@ func (s *Server) Stop() error {
 	defer atomic.StoreUint32(&s.running, 0)
 
 	s.Logger.Printf("Stopping http server...")
-
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
 
 	return s.httpSrv.Shutdown(ctx)
 }
