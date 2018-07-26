@@ -40,6 +40,40 @@ func TestNewLogMiddleware(t *testing.T) {
 	assert.Regexp(t, "^127.0.0.1 \\[([0-9]+\\.)?[0-9]+[nµm]?s\\] \"GET /foo HTTP/1.1\" 400 Bad Request \"Go-http-client/1.1\"$", logger.PrintfMsg)
 }
 
+func TestNewLogMiddleware_CaptureStatusCodeSentToOriginalResponse(t *testing.T) {
+	// It's not clear if we should solve this problem. The problem here is if
+	// the user call fdhttp.Response(ctx) will be the original http.ResponseWriter
+	// ignoring any middleware that inject something different, like logger and newrelic, e.g.
+	// At the same point if we force to override it, we don't have any way to bypass
+	// these middleware, which is one of our usecases. There're a situation where
+	// we want to return failure to clients but ignore newrelic alerts.
+
+	fdmiddleware.RequestLogFormat = "{{.Response.StatusCode}}"
+
+	logger := &dummyLog{}
+	logMiddleware := fdmiddleware.NewLogMiddleware()
+	logMiddleware.SetLogger(logger)
+
+	called := false
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		called = true
+		originalW := fdhttp.Response(req.Context())
+		originalW.WriteHeader(http.StatusBadRequest)
+	}
+
+	router := fdhttp.NewRouter()
+	router.Use(logMiddleware)
+	router.StdGET("/foo", handler)
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	http.Get(ts.URL + "/foo")
+
+	assert.True(t, called)
+	// assert.Equal(t, "400", logger.PrintfMsg)
+}
+
 func TestNewLogMiddleware_DifferentLogFormat(t *testing.T) {
 	logger := &dummyLog{}
 	fdmiddleware.RequestLogFormat = "{{.Method}} {{.RequestURI}} {{.Response.StatusCode}} {{.Response.StatusText}}"
