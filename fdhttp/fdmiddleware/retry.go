@@ -15,7 +15,7 @@ type RetryClient struct {
 // NewRetryClient will retry maxRetries using backoffFunc to wait between
 // these calls. Once we have a successful call, status code less than 500 we'll stop.
 // Status code 429 - Too Many Request will trigger a retry as well.
-func NewRetryClient(maxRetries int, backoffFunc fdbackoff.Func) ClientMiddleware {
+func NewRetryClient(maxRetries int, backoffFunc fdbackoff.Func) *RetryClient {
 	return &RetryClient{
 		maxRetries:  maxRetries,
 		backoffFunc: backoffFunc,

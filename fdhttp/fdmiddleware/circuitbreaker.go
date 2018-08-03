@@ -34,7 +34,7 @@ type Circuit struct {
 // to decide if circuit should close or not.
 // Once that the circuit is open, it'll call backoffFunc to the next attempt
 // after the time will receive a half-open to retry.
-func NewCircuitBreaker(backoffFunc fdbackoff.Func, tripFunc circuit.TripFunc) ClientMiddleware {
+func NewCircuitBreaker(backoffFunc fdbackoff.Func, tripFunc circuit.TripFunc) *Circuit {
 	breaker := circuit.NewBreakerWithOptions(&circuit.Options{
 		BackOff: &circuitBreakerBackoff{
 			attempt: 1,

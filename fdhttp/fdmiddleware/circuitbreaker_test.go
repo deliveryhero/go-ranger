@@ -40,7 +40,7 @@ func TestCircuitBreaker(t *testing.T) {
 }
 
 func TestCircuitBreaker_ErrorCountAsFailure(t *testing.T) {
-	circuitbreaker := fdmiddleware.NewCircuitBreaker(
+	circuit := fdmiddleware.NewCircuitBreaker(
 		fdbackoff.Linear(time.Millisecond),
 		circuit.ConsecutiveTripFunc(3),
 	)
@@ -55,19 +55,18 @@ func TestCircuitBreaker_ErrorCountAsFailure(t *testing.T) {
 		assert.Equal(t, "http://localhost", req.URL.String())
 		return expectedResp, expectedErr
 	})
-	doer = circuitbreaker.Wrap(doer)
+	doer = circuit.Wrap(doer)
 
 	req, err := http.NewRequest(http.MethodGet, "http://localhost", nil)
 	assert.NoError(t, err)
 
 	doer.Do(req)
 	doer.Do(req)
-	circuit := circuitbreaker.(*fdmiddleware.Circuit)
 	assert.Equal(t, int64(2), circuit.Breaker.Failures())
 }
 
 func TestCircuitBreaker_CanceledContextDoesNotCount(t *testing.T) {
-	circuitbreaker := fdmiddleware.NewCircuitBreaker(
+	circuit := fdmiddleware.NewCircuitBreaker(
 		fdbackoff.Linear(time.Millisecond),
 		circuit.ConsecutiveTripFunc(3),
 	)
@@ -77,7 +76,7 @@ func TestCircuitBreaker_CanceledContextDoesNotCount(t *testing.T) {
 		time.Sleep(time.Second)
 		return nil, errors.New("error")
 	})
-	doer = circuitbreaker.Wrap(doer)
+	doer = circuit.Wrap(doer)
 
 	req, err := http.NewRequest(http.MethodGet, "http://localhost", nil)
 	assert.NoError(t, err)
@@ -91,7 +90,6 @@ func TestCircuitBreaker_CanceledContextDoesNotCount(t *testing.T) {
 	req = req.WithContext(ctx)
 
 	doer.Do(req)
-	circuit := circuitbreaker.(*fdmiddleware.Circuit)
 	assert.Equal(t, int64(0), circuit.Breaker.Failures())
 }
 
