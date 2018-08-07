@@ -10,57 +10,66 @@ import (
 	circuit "github.com/rubyist/circuitbreaker"
 )
 
-type circuitBreakerBackoff struct {
-	attempt int
-	fn      fdbackoff.Func
-}
+// CircuitWindowTime is the window time used to calculate error rate.
+// It affect only circuit breaker that was not created yet.
+var CircuitWindowTime = 10 * time.Second
 
-func (b *circuitBreakerBackoff) NextBackOff() time.Duration {
-	return b.fn(b.attempt)
-}
-
-func (b *circuitBreakerBackoff) Reset() {
-	b.attempt = 1
-}
+// ErrCircuitOpen ...
+var ErrCircuitOpen = circuit.ErrBreakerOpen
 
 type Circuit struct {
-	Breaker *circuit.Breaker
-	// Use if you need update something in the Breaker
-	BreakerMu sync.Mutex
+	mu      sync.RWMutex
+	breaker *circuit.Breaker
 }
 
-// NewCircuitClientMiddleware receive a backoffFunc that will be used to decide
-// if circuit breaker should retry. You also need to pass tripFunc that will be executed
-// to decide if circuit should close or not.
-// Once that the circuit is open, it'll call backoffFunc to the next attempt
-// after the time will receive a half-open to retry.
-func NewCircuitBreaker(backoffFunc fdbackoff.Func, tripFunc circuit.TripFunc) *Circuit {
+// NewCircuitBreaker receive a backoffFunc that will be used to decide
+// when the circuit breaker should retry. You also need to pass the error rate\
+// that will be calculate as (number of failures / total attempts). The error
+// rate is calculated over a sliding window of 10 secs (by default, check DefaultWindowTime).
+// Circuit will not open until there have been at least minSamples events.
+func NewCircuitBreaker(backoffFunc fdbackoff.Func, rate float64, minSamples int64) *Circuit {
 	breaker := circuit.NewBreakerWithOptions(&circuit.Options{
 		BackOff: &circuitBreakerBackoff{
 			attempt: 1,
 			fn:      backoffFunc,
 		},
-		ShouldTrip: tripFunc,
+		ShouldTrip:    nil,
+		WindowTime:    CircuitWindowTime,
+		WindowBuckets: circuit.DefaultWindowBuckets,
 	})
 
-	return &Circuit{
-		Breaker: breaker,
+	circuit := &Circuit{breaker: breaker}
+	circuit.Configure(rate, minSamples)
+
+	return circuit
+}
+
+// Configure updates the current configuration of error rates.
+// rate or minSamples equal to zero, disable the circuit breaker.
+func (c *Circuit) Configure(rate float64, minSamples int64) {
+	var tripFunc circuit.TripFunc
+	if rate > 0 && minSamples > 0 {
+		tripFunc = circuit.RateTripFunc(rate, minSamples)
 	}
+
+	c.mu.Lock()
+	c.breaker.ShouldTrip = tripFunc
+	c.mu.Unlock()
 }
 
 func (c *Circuit) Wrap(next Doer) Doer {
 	return DoerFunc(func(req *http.Request) (resp *http.Response, err error) {
-		c.BreakerMu.Lock()
-		defer c.BreakerMu.Unlock()
+		c.mu.RLock()
+		defer c.mu.RUnlock()
 
-		breakerErr := c.Breaker.CallContext(req.Context(), func() error {
+		breakerErr := c.breaker.CallContext(req.Context(), func() error {
 			resp, err = next.Do(req)
 			if err != nil {
 				return err
 			}
 
-			if resp.StatusCode >= 500 {
-				return fmt.Errorf("server respond with %s", resp.Status)
+			if resp != nil && resp.StatusCode >= 500 {
+				return fmt.Errorf("%s %s: %s", req.Method, req.URL.String(), http.StatusText(resp.StatusCode))
 			}
 
 			return nil
@@ -72,4 +81,17 @@ func (c *Circuit) Wrap(next Doer) Doer {
 
 		return
 	})
+}
+
+type circuitBreakerBackoff struct {
+	attempt int
+	fn      fdbackoff.Func
+}
+
+func (b *circuitBreakerBackoff) NextBackOff() time.Duration {
+	return b.fn(b.attempt)
+}
+
+func (b *circuitBreakerBackoff) Reset() {
+	b.attempt = 1
 }
