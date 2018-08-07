@@ -54,6 +54,7 @@ func (c *Circuit) Configure(rate float64, minSamples int64) {
 
 	c.mu.Lock()
 	c.breaker.ShouldTrip = tripFunc
+	c.breaker.ResetCounters()
 	c.mu.Unlock()
 }
 
