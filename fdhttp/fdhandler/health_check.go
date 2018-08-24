@@ -15,7 +15,7 @@ import (
 // HealthChecker is the interface that your service need to provide to
 // be able to check its health.
 type HealthChecker interface {
-	HealthCheck() (interface{}, error)
+	HealthCheck(context.Context) (interface{}, error)
 }
 
 // HealthCheckResponse is the main json response from healthcheck endpoint
@@ -154,7 +154,7 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 
 			ctx, cancel := context.WithTimeout(context.Background(), HealthCheckServiceTimeout)
 			go func() {
-				detail, err := svc.HealthCheck()
+				detail, err := svc.HealthCheck(ctx)
 
 				if ctx.Err() != nil {
 					// context has timed out

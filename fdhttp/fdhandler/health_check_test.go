@@ -1,6 +1,7 @@
 package fdhandler_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -19,7 +20,7 @@ type dummyHealthCheck struct {
 	HealthCheckFunc func() (interface{}, error)
 }
 
-func (c *dummyHealthCheck) HealthCheck() (interface{}, error) {
+func (c *dummyHealthCheck) HealthCheck(context.Context) (interface{}, error) {
 	return c.HealthCheckFunc()
 }
 
