@@ -20,7 +20,7 @@ type Client interface {
 // Client is a wrap to http.Client where you can add different configurations, like
 // fdhttp.WithFallback(), fdhttp.WithBackoff(), etc.
 type ClientImpl struct {
-	GoClient *http.Client
+	*http.Client
 }
 
 // DefaultClientTimeout will be used when create a new Client
@@ -29,7 +29,7 @@ var DefaultClientTimeout = 10 * time.Second
 // NewClient return a new instace of fdhttp.Client
 func NewClient() *ClientImpl {
 	return &ClientImpl{
-		GoClient: &http.Client{
+		Client: &http.Client{
 			Timeout:   DefaultClientTimeout,
 			Transport: http.DefaultTransport,
 		},
@@ -39,31 +39,13 @@ func NewClient() *ClientImpl {
 // Use a middleware to wrap all http calls
 func (c *ClientImpl) Use(middlewares ...fdmiddleware.ClientMiddleware) {
 	for _, m := range middlewares {
-		c.GoClient.Transport = m.Wrap(c.GoClient.Transport)
+		c.Client.Transport = m.Wrap(c.Client.Transport)
 	}
 }
 
-// Do is implementated to satisfy the fdhttp.Client interface.
-func (c *ClientImpl) Do(req *http.Request) (*http.Response, error) {
-	return c.GoClient.Do(req)
-}
-
-// Get is implementated to satisfy the fdhttp.Client interface.
-func (c *ClientImpl) Get(url string) (*http.Response, error) {
-	return c.GoClient.Get(url)
-}
-
-// Head is implementated to satisfy the fdhttp.Client interface.
-func (c *ClientImpl) Head(url string) (*http.Response, error) {
-	return c.GoClient.Head(url)
-}
-
-// Post is implementated to satisfy the fdhttp.Client interface.
-func (c *ClientImpl) Post(url string, contentType string, body io.Reader) (*http.Response, error) {
-	return c.GoClient.Post(url, contentType, body)
-}
-
-// PostForm is implementated to satisfy the fdhttp.Client interface.
-func (c *ClientImpl) PostForm(url string, data url.Values) (*http.Response, error) {
-	return c.GoClient.PostForm(url, data)
+// StdClient return the http.Client from standard library will all
+// configuration that you have changed. Use it if you need to communicate
+// with different libraries.
+func (c *ClientImpl) StdClient() *http.Client {
+	return c.Client
 }
