@@ -36,7 +36,7 @@ func ResponseJSON(w http.ResponseWriter, statusCode int, resp interface{}) {
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		panic(err)
+		defaultLogger.Printf("Unable to send response to client: %v", err)
 	}
 }
 
