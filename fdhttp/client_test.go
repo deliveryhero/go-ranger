@@ -12,10 +12,10 @@ import (
 )
 
 func newClientMiddleware(called *bool) fdmiddleware.ClientMiddleware {
-	return fdmiddleware.ClientMiddlewareFunc(func(next fdmiddleware.Doer) fdmiddleware.Doer {
-		return fdmiddleware.DoerFunc(func(req *http.Request) (*http.Response, error) {
+	return fdmiddleware.ClientMiddlewareFunc(func(next http.RoundTripper) http.RoundTripper {
+		return fdmiddleware.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			*called = true
-			return next.Do(req)
+			return next.RoundTrip(req)
 		})
 	})
 }
