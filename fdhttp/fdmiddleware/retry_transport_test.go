@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRetryClientMiddleware(t *testing.T) {
-	middleware := fdmiddleware.NewRetryClient(4, fdbackoff.Constant(time.Millisecond))
+func TestRetryTransportMiddleware(t *testing.T) {
+	middleware := fdmiddleware.NewRetryTransport(4, fdbackoff.Constant(time.Millisecond))
 
 	c := fdhttp.NewClient()
 	c.Use(middleware)

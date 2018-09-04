@@ -13,7 +13,7 @@ import (
 )
 
 func TestCircuitBreaker(t *testing.T) {
-	circuitbreaker := fdmiddleware.NewCircuitBreaker(
+	circuitbreaker := fdmiddleware.NewCircuitBreakerTransport(
 		fdbackoff.Linear(time.Millisecond),
 		0.4, // 40% error rate
 		5,
@@ -21,10 +21,10 @@ func TestCircuitBreaker(t *testing.T) {
 
 	expectedErr := errors.New("failed connecting to remote server")
 
-	var doer fdmiddleware.Doer
+	var transport http.RoundTripper
 
 	var called int
-	doer = fdmiddleware.DoerFunc(func(req *http.Request) (*http.Response, error) {
+	transport = fdmiddleware.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		assert.Equal(t, "http://localhost", req.URL.String())
 
 		called++
@@ -44,47 +44,47 @@ func TestCircuitBreaker(t *testing.T) {
 		return &http.Response{StatusCode: http.StatusOK}, nil
 	})
 
-	doer = circuitbreaker.Wrap(doer)
+	transport = circuitbreaker.Wrap(transport)
 
 	req, err := http.NewRequest(http.MethodGet, "http://localhost", nil)
 	assert.NoError(t, err)
 
-	resp, err := doer.Do(req)
+	resp, err := transport.RoundTrip(req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-	resp, err = doer.Do(req)
+	resp, err = transport.RoundTrip(req)
 	assert.Error(t, err)
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 
-	resp, err = doer.Do(req)
+	resp, err = transport.RoundTrip(req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 
-	resp, err = doer.Do(req)
+	resp, err = transport.RoundTrip(req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
-	resp, err = doer.Do(req)
+	resp, err = transport.RoundTrip(req)
 	assert.Equal(t, expectedErr, err)
 
-	resp, err = doer.Do(req)
+	resp, err = transport.RoundTrip(req)
 	assert.Equal(t, fdmiddleware.ErrCircuitOpen, err)
 }
 
 func TestCircuitBreaker_CanceledContextDoesNotTripCircuit(t *testing.T) {
-	circuit := fdmiddleware.NewCircuitBreaker(fdbackoff.Linear(time.Millisecond), 1.0, 5)
+	circuit := fdmiddleware.NewCircuitBreakerTransport(fdbackoff.Linear(time.Millisecond), 1.0, 5)
 
 	var (
-		doer   fdmiddleware.Doer
-		called int
+		transport http.RoundTripper
+		called    int
 	)
 
-	doer = fdmiddleware.DoerFunc(func(req *http.Request) (*http.Response, error) {
+	transport = fdmiddleware.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		called++
 		return nil, nil
 	})
-	doer = circuit.Wrap(doer)
+	transport = circuit.Wrap(transport)
 
 	req, err := http.NewRequest(http.MethodGet, "http://localhost", nil)
 	assert.NoError(t, err)
@@ -96,7 +96,7 @@ func TestCircuitBreaker_CanceledContextDoesNotTripCircuit(t *testing.T) {
 	req = req.WithContext(ctx)
 
 	for i := 0; i < 10; i++ {
-		_, err := doer.Do(req)
+		_, err := transport.RoundTrip(req)
 		assert.NoError(t, err)
 	}
 
@@ -104,26 +104,26 @@ func TestCircuitBreaker_CanceledContextDoesNotTripCircuit(t *testing.T) {
 }
 
 func TestCircuitBreaker_CallWithCircuitOpenReturnBreakerError(t *testing.T) {
-	circuit := fdmiddleware.NewCircuitBreaker(fdbackoff.Linear(time.Millisecond), 1.0, 5)
+	circuit := fdmiddleware.NewCircuitBreakerTransport(fdbackoff.Linear(time.Millisecond), 1.0, 5)
 
 	expectedErr := errors.New("failed connecting to remote server")
 
 	var (
-		doer   fdmiddleware.Doer
-		called int
+		transport http.RoundTripper
+		called    int
 	)
 
-	doer = fdmiddleware.DoerFunc(func(req *http.Request) (*http.Response, error) {
+	transport = fdmiddleware.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		called++
 		return nil, expectedErr
 	})
-	doer = circuit.Wrap(doer)
+	transport = circuit.Wrap(transport)
 
 	req, err := http.NewRequest(http.MethodGet, "http://localhost", nil)
 	assert.NoError(t, err)
 
 	for i := 0; i < 10; i++ {
-		_, err := doer.Do(req)
+		_, err := transport.RoundTrip(req)
 		if i < 5 {
 			assert.Equal(t, expectedErr, err)
 			continue

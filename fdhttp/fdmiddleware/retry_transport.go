@@ -7,25 +7,25 @@ import (
 	"github.com/foodora/go-ranger/fdbackoff"
 )
 
-type RetryClient struct {
+type RetryTransport struct {
 	maxRetries  int
 	backoffFunc fdbackoff.Func
 }
 
-// NewRetryClient will retry maxRetries using backoffFunc to wait between
+// NewRetryTransport will retry maxRetries using backoffFunc to wait between
 // these calls. Once we have a successful call, status code less than 500 we'll stop.
 // Status code 429 - Too Many Request will trigger a retry as well.
-func NewRetryClient(maxRetries int, backoffFunc fdbackoff.Func) *RetryClient {
-	return &RetryClient{
+func NewRetryTransport(maxRetries int, backoffFunc fdbackoff.Func) *RetryTransport {
+	return &RetryTransport{
 		maxRetries:  maxRetries,
 		backoffFunc: backoffFunc,
 	}
 }
 
-func (m *RetryClient) Wrap(next Doer) Doer {
-	return DoerFunc(func(req *http.Request) (resp *http.Response, err error) {
+func (m *RetryTransport) Wrap(next http.RoundTripper) http.RoundTripper {
+	return RoundTripperFunc(func(req *http.Request) (resp *http.Response, err error) {
 		for retry := 0; retry < m.maxRetries; retry++ {
-			resp, err = next.Do(req)
+			resp, err = next.RoundTrip(req)
 			if err == nil && resp.StatusCode < 500 && resp.StatusCode != http.StatusTooManyRequests {
 				// we can consider this situation as a successful call, let's return
 				return

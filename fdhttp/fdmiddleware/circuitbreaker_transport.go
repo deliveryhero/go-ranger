@@ -22,12 +22,12 @@ type Circuit struct {
 	breaker *circuit.Breaker
 }
 
-// NewCircuitBreaker receive a backoffFunc that will be used to decide
+// NewCircuitBreakerTransport receive a backoffFunc that will be used to decide
 // when the circuit breaker should retry. You also need to pass the error rate\
 // that will be calculate as (number of failures / total attempts). The error
 // rate is calculated over a sliding window of 10 secs (by default, check DefaultWindowTime).
 // Circuit will not open until there have been at least minSamples events.
-func NewCircuitBreaker(backoffFunc fdbackoff.Func, rate float64, minSamples int64) *Circuit {
+func NewCircuitBreakerTransport(backoffFunc fdbackoff.Func, rate float64, minSamples int64) *Circuit {
 	breaker := circuit.NewBreakerWithOptions(&circuit.Options{
 		BackOff: &circuitBreakerBackoff{
 			attempt: 1,
@@ -58,13 +58,13 @@ func (c *Circuit) Configure(rate float64, minSamples int64) {
 	c.mu.Unlock()
 }
 
-func (c *Circuit) Wrap(next Doer) Doer {
-	return DoerFunc(func(req *http.Request) (resp *http.Response, err error) {
+func (c *Circuit) Wrap(next http.RoundTripper) http.RoundTripper {
+	return RoundTripperFunc(func(req *http.Request) (resp *http.Response, err error) {
 		c.mu.RLock()
 		defer c.mu.RUnlock()
 
 		breakerErr := c.breaker.CallContext(req.Context(), func() error {
-			resp, err = next.Do(req)
+			resp, err = next.RoundTrip(req)
 			if err != nil {
 				return err
 			}
