@@ -52,6 +52,10 @@ func NewRelicTransport(txn newrelic.Transaction) fdmiddleware.ClientMiddleware {
 func NewRelicClientMiddleware(httpClient *http.Client, txn newrelic.Transaction, req *http.Request) (*http.Response, error) {
 	c := &http.Client{}
 	*c = *httpClient
+	if c.Transport == nil {
+		c.Transport = http.DefaultTransport
+	}
+
 	c.Transport = NewRelicTransport(txn).Wrap(c.Transport)
 	return c.Do(req)
 }
