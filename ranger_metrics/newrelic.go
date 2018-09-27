@@ -21,10 +21,11 @@ func NewRelicLabels(middleware ranger_http.MiddlewareInterface, labels map[strin
 	// create new application because we cannot change config of a created application
 	config := newrelic.NewConfig(nr.appName, nr.license)
 	config.Labels = labels
-
 	config.ErrorCollector.IgnoreStatusCodes = []int{
 		http.StatusBadRequest, // 400
 	}
+	config.CrossApplicationTracer.Enabled = false
+	config.DistributedTracer.Enabled = true
 
 	app, err := newrelic.NewApplication(config)
 	if err != nil {
