@@ -69,8 +69,8 @@
     "internal/sysinfo",
     "internal/utilization"
   ]
-  revision = "f5bce3387232559bcbe6a5f8227c4bf508dac1ba"
-  version = "v1.11.0"
+  revision = "46d73e6be8b4faeee70850d0df829e4fe00d6819"
+  version = "v2.1.0"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -141,6 +141,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2695c90b16c5af661f07442fc62ad6dd8f7cf1116406298564b1f6b9f7ff9f9d"
+  inputs-digest = "eae04777704e4176e1c80aee7871acecb2d77e74d59dcec5810c1f28f9167f10"
   solver-name = "gps-cdcl"
   solver-version = 1
