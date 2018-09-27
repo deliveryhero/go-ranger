@@ -26,12 +26,9 @@ func NewRelicMiddleware(app newrelic.Application) fdmiddleware.Middleware {
 	})
 }
 
-// NewRelicTransactionKey s a key used inside of context.Context to save the newrelic transaction
-var NewRelicTransactionKey = "newrelic_transaction"
-
 // SetNewRelicTransaction set newrelic transaction into context.
-func SetNewRelicTransaction(ctx context.Context, value newrelic.Transaction) context.Context {
-	return context.WithValue(ctx, NewRelicTransactionKey, value)
+func SetNewRelicTransaction(ctx context.Context, txn newrelic.Transaction) context.Context {
+	return newrelic.NewContext(ctx, txn)
 }
 
 // NewRelicTransaction get newrelic transaction from context.
@@ -40,14 +37,14 @@ func SetNewRelicTransaction(ctx context.Context, value newrelic.Transaction) con
 //  txn := fdapm.NewRelicTransaction(ctx)
 //  txn.NoticeError(errors.New("my error message"))
 func NewRelicTransaction(ctx context.Context) newrelic.Transaction {
-	v, ok := ctx.Value(NewRelicTransactionKey).(newrelic.Transaction)
-	if !ok {
+	txn := newrelic.FromContext(ctx)
+	if txn == nil {
 		// your app is trying to access newrelic transaction but you're not
 		// using newrelic middleware
 		panic(errors.New("fdapm: newrelic middleware was not called"))
 	}
 
-	return v
+	return txn
 }
 
 // NewRelicStartSegment start a segment inside of transaction.
