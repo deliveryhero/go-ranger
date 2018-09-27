@@ -13,12 +13,14 @@ type NewRelicTransaction struct {
 	mu sync.Mutex
 
 	http.ResponseWriter
-	EndInvoked             bool
-	IgnoreInvoked          bool
-	SetNameInvoked         bool
-	NoticeErrorInvoked     bool
-	AddAttributeInvoked    bool
-	StartSegmentNowInvoked bool
+	EndInvoked                           bool
+	IgnoreInvoked                        bool
+	SetNameInvoked                       bool
+	NoticeErrorInvoked                   bool
+	AddAttributeInvoked                  bool
+	StartSegmentNowInvoked               bool
+	AcceptDistributedTracePayloadInvoked bool
+	CreateDistributedTracePayloadInvoked bool
 }
 
 func NewNRTransaction(t *testing.T) *NewRelicTransaction {
@@ -74,3 +76,24 @@ func (t *NewRelicTransaction) StartSegmentNow() newrelic.SegmentStartTime {
 	t.StartSegmentNowInvoked = true
 	return newrelic.SegmentStartTime{}
 }
+
+func (t *NewRelicTransaction) AcceptDistributedTracePayload(newrelic.TransportType, interface{}) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.AcceptDistributedTracePayloadInvoked = true
+	return nil
+}
+
+func (t *NewRelicTransaction) CreateDistributedTracePayload() newrelic.DistributedTracePayload {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.CreateDistributedTracePayloadInvoked = true
+	return mockPayload{}
+}
+
+type mockPayload struct{}
+
+func (p mockPayload) Text() string     { return "" }
+func (p mockPayload) HTTPSafe() string { return "" }

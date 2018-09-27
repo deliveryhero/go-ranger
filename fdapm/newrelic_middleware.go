@@ -60,7 +60,7 @@ func NewRelicTransaction(ctx context.Context) newrelic.Transaction {
 //  // s2 must be ended before s1
 //  s2.End()
 //  s1.End()
-func NewRelicStartSegment(ctx context.Context, name string) newrelic.Segment {
+func NewRelicStartSegment(ctx context.Context, name string) *newrelic.Segment {
 	txn := NewRelicTransaction(ctx)
 	return newrelic.StartSegment(txn, name)
 }
