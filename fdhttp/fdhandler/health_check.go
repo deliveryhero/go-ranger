@@ -62,6 +62,9 @@ var HealthCheckServiceTimeout = 1 * time.Second
 type HealthCheck struct {
 	// Prefix will be prefix the fdhttp.HealthCheckURL.
 	Prefix string
+	// ServiceTimeout is max duration that each service should return
+	// before we get a timeout.
+	ServiceTimeout time.Duration
 
 	tag      string
 	commit   string
@@ -74,10 +77,11 @@ func NewHealthCheck(tag, commit string) *HealthCheck {
 	hostname, _ := os.Hostname()
 
 	return &HealthCheck{
-		tag:      tag,
-		commit:   commit,
-		hostname: hostname,
-		services: make(map[string]HealthChecker),
+		tag:            tag,
+		commit:         commit,
+		hostname:       hostname,
+		services:       make(map[string]HealthChecker),
+		ServiceTimeout: HealthCheckServiceTimeout,
 	}
 }
 
@@ -152,7 +156,7 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 			defer wg.Done()
 			started := time.Now()
 
-			ctx, cancel := context.WithTimeout(context.Background(), HealthCheckServiceTimeout)
+			ctx, cancel := context.WithTimeout(context.Background(), h.ServiceTimeout)
 			go func() {
 				detail, err := svc.HealthCheck(ctx)
 
