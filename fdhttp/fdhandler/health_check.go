@@ -156,11 +156,11 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 			defer wg.Done()
 			started := time.Now()
 
-			ctx, cancel := context.WithTimeout(context.Background(), h.ServiceTimeout)
+			timeoutCtx, cancel := context.WithTimeout(ctx, h.ServiceTimeout)
 			go func() {
-				detail, err := svc.HealthCheck(ctx)
+				detail, err := svc.HealthCheck(timeoutCtx)
 
-				if ctx.Err() != nil {
+				if timeoutCtx.Err() != nil {
 					// context has timed out
 					return
 				}
@@ -177,9 +177,9 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 				check.Detail = detail
 			}()
 
-			<-ctx.Done()
+			<-timeoutCtx.Done()
 
-			err := ctx.Err()
+			err := timeoutCtx.Err()
 			if err == context.DeadlineExceeded {
 				atomic.CompareAndSwapInt32(&statusCode, http.StatusOK, http.StatusRequestTimeout)
 				resp.Status = false
