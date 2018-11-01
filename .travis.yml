@@ -1,7 +1,8 @@
 language: go
 sudo: false
 go:
-  - 1.9
+  - "1.9"
+  - "1.10"
 before_install:
   - diff -u <(echo -n) <(gofmt -d -s .)
 install:

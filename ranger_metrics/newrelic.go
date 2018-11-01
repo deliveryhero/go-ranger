@@ -4,13 +4,35 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/foodora/go-ranger/ranger_http"
 	"github.com/foodora/go-ranger/ranger_logger"
 	newrelic "github.com/newrelic/go-agent"
 )
 
 type NewRelic struct {
-	Application newrelic.Application
+	appName     string
+	license     string
 	logger      ranger_logger.LoggerInterface
+	Application newrelic.Application
+}
+
+func NewRelicLabels(middleware ranger_http.MiddlewareInterface, labels map[string]string) {
+	nr := middleware.(*NewRelic)
+	// create new application because we cannot change config of a created application
+	config := newrelic.NewConfig(nr.appName, nr.license)
+	config.Labels = labels
+	config.ErrorCollector.IgnoreStatusCodes = []int{
+		http.StatusBadRequest, // 400
+	}
+	config.CrossApplicationTracer.Enabled = false
+	config.DistributedTracer.Enabled = true
+
+	app, err := newrelic.NewApplication(config)
+	if err != nil {
+		nr.logger.Panic("NewRelic cannot create app with labels", ranger_logger.LoggerData{"error": err.Error()})
+	}
+
+	nr.Application = app
 }
 
 func NewNewRelic(appName string, license string, logger ranger_logger.LoggerInterface) *NewRelic {
@@ -22,8 +44,10 @@ func NewNewRelic(appName string, license string, logger ranger_logger.LoggerInte
 	}
 
 	return &NewRelic{
-		Application: app,
+		appName:     appName,
+		license:     license,
 		logger:      logger,
+		Application: app,
 	}
 }
 

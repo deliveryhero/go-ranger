@@ -8,10 +8,22 @@
   version = "1.0-beta"
 
 [[projects]]
+  name = "github.com/cenk/backoff"
+  packages = ["."]
+  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
+  version = "v2.0.0"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/facebookgo/clock"
+  packages = ["."]
+  revision = "600d898af40aa09a7a93ecb9265d87b0504b6f03"
 
 [[projects]]
   branch = "master"
@@ -20,13 +32,13 @@
     ".",
     "simplelru"
   ]
-  revision = "0a025b7e63adc15a622f29b0b2c4c3848243bbf6"
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
   branch = "master"
   name = "github.com/johntdyer/slack-go"
   packages = ["."]
-  revision = "88ef3038545fa084d81f36e4a6943d112cdd74f6"
+  revision = "95fac1160b220c5abcf8b0ef88e9c3cb213c09f4"
 
 [[projects]]
   branch = "master"
@@ -57,8 +69,8 @@
     "internal/sysinfo",
     "internal/utilization"
   ]
-  revision = "f5bce3387232559bcbe6a5f8227c4bf508dac1ba"
-  version = "v1.11.0"
+  revision = "46d73e6be8b4faeee70850d0df829e4fe00d6819"
+  version = "v2.1.0"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -67,10 +79,16 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/rubyist/circuitbreaker"
+  packages = ["."]
+  revision = "2074adba5ddc7d5f7559448a9c3066573521c5bf"
+  version = "v2.2.1"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
-  version = "v1.0.4"
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
 
 [[projects]]
   name = "github.com/stretchr/testify"
@@ -88,7 +106,13 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "d585fd2cc9195196078f516b69daff6744ef5e84"
+  revision = "613d6eafa307c6881a737a3c35c0e312e8d3a8c5"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  revision = "039a4258aec0ad3c79b905677cceeab13b296a77"
 
 [[projects]]
   branch = "master"
@@ -97,7 +121,7 @@
     "unix",
     "windows"
   ]
-  revision = "571f7bbbe08da2a8955aed9d4db316e78630e9a3"
+  revision = "78d5f264b493f125018180c204871ecf58a2dce1"
 
 [[projects]]
   name = "gopkg.in/throttled/throttled.v2"
@@ -109,14 +133,14 @@
   version = "v2.0.3"
 
 [[projects]]
-  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "287cf08546ab5e7e37d55a84f7ed3fd1db036de5"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "83007dbae8d40f8ae7c61813348b8e4e67b397f74bc9ee54bf30e3bfe79bdbcc"
+  inputs-digest = "eae04777704e4176e1c80aee7871acecb2d77e74d59dcec5810c1f28f9167f10"
   solver-name = "gps-cdcl"
   solver-version = 1
