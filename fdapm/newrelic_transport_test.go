@@ -3,6 +3,7 @@ package fdapm_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/foodora/go-ranger/fdapm/apmmock"
@@ -41,6 +42,27 @@ func TestNewRelicTransport_EmptyTransaction(t *testing.T) {
 	}))
 
 	transport.RoundTrip(req)
+	assert.True(t, mCalled)
+}
+
+func TestNewRelicTransport_InjectRequestQueueingHeader(t *testing.T) {
+	var mCalled bool
+
+	expectedReq, _ := http.NewRequest(http.MethodGet, "http://www.foodora.de", nil)
+	txn := apmmock.NewNRTransaction(t)
+	m := fdapm.NewRelicTransport(txn)
+	transport := m.Wrap(fdmiddleware.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		mCalled = true
+		reqStart := req.Header.Get("X-Request-Start")
+		assert.NotEmpty(t, reqStart)
+
+		_, err := strconv.Atoi(reqStart)
+		assert.NoError(t, err)
+
+		return nil, nil
+	}))
+
+	transport.RoundTrip(expectedReq)
 	assert.True(t, mCalled)
 }
 
