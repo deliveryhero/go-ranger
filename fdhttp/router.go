@@ -62,15 +62,15 @@ func (r *Router) Init() {
 
 	// Set default not found handlers
 	if r.NotFoundHandler != nil {
-		r.httprouter.NotFound = r.NotFoundHandler
+		r.httprouter.NotFound = http.HandlerFunc(r.NotFoundHandler)
 	} else {
-		r.httprouter.NotFound = notFoundHandler
+		r.httprouter.NotFound = newNotFoundHandler()
 	}
 	// Set default method not allowed handler
 	if r.MethodNotAllowedHandler != nil {
-		r.httprouter.MethodNotAllowed = r.MethodNotAllowedHandler
+		r.httprouter.MethodNotAllowed = http.HandlerFunc(r.MethodNotAllowedHandler)
 	} else {
-		r.httprouter.MethodNotAllowed = methodNotAllowedHandler
+		r.httprouter.MethodNotAllowed = newMethodNotAllowedHandler()
 	}
 	// Set default panic handler
 	if r.PanicHandler != nil {
