@@ -2,6 +2,8 @@ package fdapm
 
 import (
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/foodora/go-ranger/fdhttp/fdmiddleware"
 
@@ -20,7 +22,8 @@ import (
 //		// you can get it like this:
 // 		txn := fdapm.NewRelicTransaction(ctx)
 //  	httpClient := &http.Client{}
-// 		resp, err := fdapm.NewRelicTransport(httpClient, txn, req)
+// 		httpClient.Transport = NewRelicTransport(txn).Wrap(httpClient.Transport)
+// 		resp, err := httpClient.Do(req)
 //
 // If you have a global http.Client that you're reusing between different request,
 // see fdapm.NewRelicClientMiddleware.
@@ -30,6 +33,9 @@ func NewRelicTransport(txn newrelic.Transaction) fdmiddleware.ClientMiddleware {
 			if txn == nil {
 				return next.RoundTrip(req)
 			}
+
+			// Add header to report request queueing
+			req.Header.Set("X-Request-Start", strconv.FormatInt(time.Now().UnixNano()/int64(time.Microsecond), 10))
 
 			seg := newrelic.StartExternalSegment(txn, req)
 			resp, err := next.RoundTrip(req)
