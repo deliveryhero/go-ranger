@@ -29,17 +29,21 @@ type JSONer interface {
 	JSON() interface{}
 }
 
-func methodNotAllowedHandler(w http.ResponseWriter, req *http.Request) {
-	ResponseJSON(w, http.StatusMethodNotAllowed, &Error{
-		Code:    "method_not_allowed",
-		Message: fmt.Sprintf("Method '%s' is not allowed to access '%s'", req.Method, req.URL.String()),
+func newMethodNotAllowedHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		ResponseJSON(w, http.StatusMethodNotAllowed, &Error{
+			Code:    "method_not_allowed",
+			Message: fmt.Sprintf("Method '%s' is not allowed to access '%s'", req.Method, req.URL.String()),
+		})
 	})
 }
 
-func notFoundHandler(w http.ResponseWriter, req *http.Request) {
-	ResponseJSON(w, http.StatusNotFound, &Error{
-		Code:    "not_found",
-		Message: fmt.Sprintf("URL '%s' was not found", req.URL.String()),
+func newNotFoundHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		ResponseJSON(w, http.StatusNotFound, &Error{
+			Code:    "not_found",
+			Message: fmt.Sprintf("URL '%s' was not found", req.URL.String()),
+		})
 	})
 }
 
