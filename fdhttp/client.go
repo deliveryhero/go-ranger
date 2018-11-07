@@ -106,6 +106,7 @@ func (c *ClientImpl) SetIdleConnTimeout(d time.Duration) {
 func (c *ClientImpl) SetIdleConnMaxLifetime(d time.Duration) {
 	if c.maxLifetimeDone != nil {
 		c.maxLifetimeDone <- struct{}{}
+		c.maxLifetimeDone = nil
 	}
 
 	tr := c.httpTransport()
