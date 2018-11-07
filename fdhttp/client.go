@@ -2,6 +2,7 @@ package fdhttp
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -21,6 +22,7 @@ type Client interface {
 // fdhttp.WithFallback(), fdhttp.WithBackoff(), etc.
 type ClientImpl struct {
 	*http.Client
+	tr *http.Transport
 }
 
 // DefaultClientTimeout will be used when create a new Client
@@ -28,11 +30,26 @@ var DefaultClientTimeout = 10 * time.Second
 
 // NewClient return a new instace of fdhttp.Client
 func NewClient() *ClientImpl {
+	tr := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   http.DefaultMaxIdleConnsPerHost,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
 	return &ClientImpl{
 		Client: &http.Client{
 			Timeout:   DefaultClientTimeout,
-			Transport: http.DefaultTransport,
+			Transport: tr,
 		},
+		tr: tr,
 	}
 }
 
@@ -48,4 +65,24 @@ func (c *ClientImpl) Use(middlewares ...fdmiddleware.ClientMiddleware) {
 // with different libraries.
 func (c *ClientImpl) StdClient() *http.Client {
 	return c.Client
+}
+
+// SetMaxIdleConns controls the maximum number of idle (keep-alive)
+// connections across all hosts. Zero means no limit.
+func (c *ClientImpl) SetMaxIdleConns(n int) {
+	c.tr.MaxIdleConns = n
+}
+
+// SetMaxIdleConnsPerHost if non-zero, controls the maximum idle
+// (keep-alive) connections to keep per-host. If zero,
+// http.DefaultMaxIdleConnsPerHost is used.
+func (c *ClientImpl) SetMaxIdleConnsPerHost(n int) {
+	c.tr.MaxIdleConnsPerHost = n
+}
+
+// SetIdleConnTimeout sets the maximum amount of time an idle
+// (keep-alive) connection will remain idle before closing
+// itself. Zero means no limit.
+func (c *ClientImpl) SetIdleConnTimeout(d time.Duration) {
+	c.tr.IdleConnTimeout = d
 }
