@@ -23,7 +23,7 @@ type Client interface {
 type ClientImpl struct {
 	*http.Client
 	tr *http.Transport
-	// Control when close idle connections.
+	// Control when abort ticker to close idle connections.
 	maxLifetimeDone chan struct{}
 }
 
