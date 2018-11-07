@@ -22,7 +22,6 @@ type Client interface {
 // fdhttp.WithFallback(), fdhttp.WithBackoff(), etc.
 type ClientImpl struct {
 	*http.Client
-	tr *http.Transport
 	// Control when abort ticker to close idle connections.
 	maxLifetimeDone chan struct{}
 }
@@ -51,8 +50,12 @@ func NewClient() *ClientImpl {
 			Timeout:   DefaultClientTimeout,
 			Transport: tr,
 		},
-		tr: tr,
 	}
+}
+
+func (c *ClientImpl) httpTransport() *http.Transport {
+	tr, _ := c.Transport.(*http.Transport)
+	return tr
 }
 
 // Use a middleware to wrap all http calls
@@ -72,21 +75,30 @@ func (c *ClientImpl) StdClient() *http.Client {
 // SetMaxIdleConns controls the maximum number of idle (keep-alive)
 // connections across all hosts. Zero means no limit.
 func (c *ClientImpl) SetMaxIdleConns(n int) {
-	c.tr.MaxIdleConns = n
+	tr := c.httpTransport()
+	if tr != nil {
+		tr.MaxIdleConns = n
+	}
 }
 
 // SetMaxIdleConnsPerHost if non-zero, controls the maximum idle
 // (keep-alive) connections to keep per-host. If zero,
 // http.DefaultMaxIdleConnsPerHost is used.
 func (c *ClientImpl) SetMaxIdleConnsPerHost(n int) {
-	c.tr.MaxIdleConnsPerHost = n
+	tr := c.httpTransport()
+	if tr != nil {
+		tr.MaxIdleConnsPerHost = n
+	}
 }
 
 // SetIdleConnTimeout sets the maximum amount of time an idle
 // (keep-alive) connection will remain idle before closing
 // itself. Zero means no limit.
 func (c *ClientImpl) SetIdleConnTimeout(d time.Duration) {
-	c.tr.IdleConnTimeout = d
+	tr := c.httpTransport()
+	if tr != nil {
+		tr.IdleConnTimeout = d
+	}
 }
 
 // SetIdleConnMaxLifetime sets the maximum amount of time a connection may be reused.
@@ -94,6 +106,11 @@ func (c *ClientImpl) SetIdleConnTimeout(d time.Duration) {
 func (c *ClientImpl) SetIdleConnMaxLifetime(d time.Duration) {
 	if c.maxLifetimeDone != nil {
 		c.maxLifetimeDone <- struct{}{}
+	}
+
+	tr := c.httpTransport()
+	if tr == nil {
+		return
 	}
 	if d <= 0 {
 		return
@@ -107,7 +124,7 @@ func (c *ClientImpl) SetIdleConnMaxLifetime(d time.Duration) {
 		for {
 			select {
 			case <-t.C:
-				c.tr.CloseIdleConnections()
+				tr.CloseIdleConnections()
 			case <-c.maxLifetimeDone:
 				return
 			}
