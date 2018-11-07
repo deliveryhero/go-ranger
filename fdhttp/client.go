@@ -23,6 +23,8 @@ type Client interface {
 type ClientImpl struct {
 	*http.Client
 	tr *http.Transport
+	// Control when close idle connections.
+	maxLifetimeDone chan struct{}
 }
 
 // DefaultClientTimeout will be used when create a new Client
@@ -85,4 +87,30 @@ func (c *ClientImpl) SetMaxIdleConnsPerHost(n int) {
 // itself. Zero means no limit.
 func (c *ClientImpl) SetIdleConnTimeout(d time.Duration) {
 	c.tr.IdleConnTimeout = d
+}
+
+// SetIdleConnMaxLifetime sets the maximum amount of time a connection may be reused.
+// If d <= 0, connections are reused forever.
+func (c *ClientImpl) SetIdleConnMaxLifetime(d time.Duration) {
+	if c.maxLifetimeDone != nil {
+		c.maxLifetimeDone <- struct{}{}
+	}
+	if d <= 0 {
+		return
+	}
+
+	c.maxLifetimeDone = make(chan struct{})
+	t := time.NewTicker(d)
+
+	go func() {
+		defer t.Stop()
+		for {
+			select {
+			case <-t.C:
+				c.tr.CloseIdleConnections()
+			case <-c.maxLifetimeDone:
+				return
+			}
+		}
+	}()
 }

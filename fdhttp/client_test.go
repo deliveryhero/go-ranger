@@ -122,3 +122,29 @@ func TestClient_MaxIdleConns(t *testing.T) {
 		assert.EqualValues(t, expectedActiveConns, atomic.LoadInt32(&activeConns))
 	}
 }
+
+func TestClient_MaxIdleConnsLifetime(t *testing.T) {
+	c := fdhttp.NewClient()
+	c.SetMaxIdleConns(1)
+	c.SetMaxIdleConnsPerHost(1)
+	c.SetIdleConnTimeout(10 * time.Millisecond)
+	c.SetIdleConnMaxLifetime(4 * time.Millisecond)
+
+	var activeConns int32
+	c.Use(middlewareConnCount(&activeConns))
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(1 * time.Millisecond)
+	}))
+	defer ts.Close()
+
+	done := make(chan struct{})
+	go func() {
+		httpGetParallel(t, c, ts.URL, 10)
+		done <- struct{}{}
+	}()
+
+	time.Sleep(20 * time.Millisecond)
+	assert.EqualValues(t, 0, atomic.LoadInt32(&activeConns))
+	<-done
+}
