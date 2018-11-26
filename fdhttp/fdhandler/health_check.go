@@ -181,10 +181,11 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 
 			err := timeoutCtx.Err()
 			if err == context.DeadlineExceeded {
-				atomic.CompareAndSwapInt32(&statusCode, http.StatusOK, http.StatusRequestTimeout)
-				resp.Status = false
-				check.Status = false
-				check.Error = err.Error()
+				if atomic.CompareAndSwapInt32(&statusCode, http.StatusOK, http.StatusRequestTimeout) {
+					resp.Status = false
+					check.Status = false
+					check.Error = err.Error()
+				}
 			}
 
 			check.Elapsed = time.Since(started) / time.Millisecond
