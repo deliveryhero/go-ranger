@@ -46,9 +46,7 @@ func (client *apiClient) Get(url string) (*http.Response, error) {
 func (client *apiClient) Do(req *http.Request) (*http.Response, error) {
 	res, err := client.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"ApiClient.Do=Cannot execute request, URL=%s, Header=%+v, error:%s", req.URL, req.Header, err,
-		)
+		return nil, fmt.Errorf("ApiClient.Do=Cannot execute request, URL=%s, error:%s", req.URL, err)
 	}
 
 	return res, err
