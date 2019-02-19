@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-// A generic interface representing the publisher behaviour
+// Publisher ...
 type Publisher interface {
 	// Publish will publish a message with context.
 	Publish(context.Context, string, string) error
 }
 
-// a generic interface representing the subscriber behaviour
+// Subscriber ...
 type Subscriber interface {
 	// Start will return a channel of raw messages.
 	Start() <-chan SubscriberMessage
