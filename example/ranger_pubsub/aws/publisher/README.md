@@ -11,4 +11,5 @@ The `main.go` file demonstrate how to:
 - Creating the `Publisher` instance
 - Publish the message 
 
-`Note:`Use appropriate aws configuration to test the implementation.   
+`Note:`Use appropriate aws configuration to test the implementation. 
+  
