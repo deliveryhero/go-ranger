@@ -10,6 +10,9 @@ import (
 // LoggerData used to log any data structure
 type LoggerData map[string]interface{}
 
+// LD is a type alias for LoggerData
+type LD = LoggerData
+
 // Hook wrapper
 type Hook logrus.Hook
 
@@ -148,4 +151,19 @@ func (logger *Wrapper) GetAllFieldsToLog(data LoggerData) LoggerData {
 
 func (logger *Wrapper) SetPrefix(p string) {
 	logger.ExtraDataPrefix = p
+}
+
+// With is a convenience method to return a loggerData with new fields from another loggerData
+func (ld LD) With(augmentLD LD) LD {
+	// Copy LoggerData to prevent modifying the original map
+	newLD := LD{}
+	for k, v := range ld {
+		newLD[k] = v
+	}
+
+	// Add new fields to logger data
+	for k, v := range augmentLD {
+		newLD[k] = v
+	}
+	return newLD
 }
