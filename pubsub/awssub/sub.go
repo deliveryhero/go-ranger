@@ -1,67 +1,19 @@
-package aws
+package awssub
 
 import (
-	"context"
 	"errors"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sns"
-	"github.com/aws/aws-sdk-go/service/sns/snsiface"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-	"github.com/foodora/go-ranger/ranger_pubsub"
+	"github.com/foodora/go-ranger/pubsub"
 	"sync/atomic"
 	"time"
 )
 
-// publisher will accept AWS configuration and an SNS topic name
-// and it will emit any publish events to it.
-type publisher struct {
-	sns   snsiface.SNSAPI
-	topic string
-}
-
-// NewPublisher will initiate the SNS client.
-func NewPublisher(cfg SNSConfig) (ranger_pubsub.Publisher, error) {
-	p := &publisher{}
-
-	if cfg.Topic == "" {
-		return p, errors.New("SNS topic name is required")
-	}
-	p.topic = cfg.Topic
-
-	if cfg.Region == nil {
-		return p, errors.New("SNS region is required")
-	}
-
-	sess, err := session.NewSession()
-	if err != nil {
-		return p, err
-	}
-
-	p.sns = sns.New(sess, &aws.Config{
-		Region:   cfg.Region,
-		Endpoint: cfg.Endpoint, //optional
-	})
-	return p, nil
-}
-
-// Publish send the message to the SNS topic.
-// The key will be used as the SNS message subject which is optional.
-func (p *publisher) Publish(ctx context.Context, key string, m string) error {
-	msg := &sns.PublishInput{
-		TopicArn: &p.topic,
-		Subject:  &key, //optional
-		Message:  aws.String(m),
-	}
-
-	_, err := p.sns.Publish(msg)
-	return err
-}
-
 type (
 	// subscriber is an SQS client that allows a user to
-	// consume messages via the ranger_pubsub.Subscriber interface.
+	// consume messages via the pubsub.Subscriber interface.
 	subscriber struct {
 		sqs sqsiface.SQSAPI
 
@@ -76,6 +28,8 @@ type (
 
 		stop   chan chan error
 		sqsErr error
+
+		Logger pubsub.Logger
 	}
 
 	// SQSMessage is the SQS implementation of `SubscriberMessage`.
@@ -112,16 +66,16 @@ var (
 )
 
 func defaultSQSConfig(cfg *SQSConfig) {
-	if cfg.MaxMessages == nil {
-		cfg.MaxMessages = &defaultSQSMaxMessages
+	if cfg.MaxMessages == 0 {
+		cfg.MaxMessages = defaultSQSMaxMessages
 	}
 
 	if cfg.TimeoutSeconds == nil {
 		cfg.TimeoutSeconds = &defaultSQSTimeoutSeconds
 	}
 
-	if cfg.SleepInterval == nil {
-		cfg.SleepInterval = &defaultSQSSleepInterval
+	if cfg.SleepInterval == 0 {
+		cfg.SleepInterval = defaultSQSSleepInterval
 	}
 
 	if cfg.DeleteBufferSize == nil {
@@ -148,13 +102,14 @@ func (s *subscriber) inFlightCount() uint64 {
 // NewSubscriber will initiate a new Decrypter for the subscriber
 // It will also fetch the SQS Queue Url
 // and set up the SQS client.
-func NewSubscriber(cfg SQSConfig) (ranger_pubsub.Subscriber, error) {
+func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 	var err error
 
 	s := &subscriber{
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),
 		stop:     make(chan chan error, 1),
+		Logger:   pubsub.DefaultLogger,
 	}
 
 	if (len(cfg.QueueName) == 0) && (len(cfg.QueueURL) == 0) {
@@ -191,7 +146,7 @@ func NewSubscriber(cfg SQSConfig) (ranger_pubsub.Subscriber, error) {
 }
 
 // Message will decode message bodies and simply return string message.
-func (m *subscriberMessage) Message() string {
+func (m *subscriberMessage) String() string {
 	msgBody := aws.StringValue(m.message.Body)
 	return msgBody
 }
@@ -228,10 +183,10 @@ func (m *subscriberMessage) Done() error {
 // and emit any messages to the returned channel.
 // If it encounters any issues, it will populate the Err() error
 // and close the returned channel.
-func (s *subscriber) Start() <-chan ranger_pubsub.SubscriberMessage {
-	output := make(chan ranger_pubsub.SubscriberMessage)
+func (s *subscriber) Start() <-chan pubsub.Message {
+	output := make(chan pubsub.Message)
 	go s.handleDeletes()
-	go func(s *subscriber, output chan ranger_pubsub.SubscriberMessage) {
+	go func() {
 		defer close(output)
 		var (
 			resp *sqs.ReceiveMessageOutput
@@ -243,42 +198,40 @@ func (s *subscriber) Start() <-chan ranger_pubsub.SubscriberMessage {
 				exit <- nil
 				return
 			default:
-				// get messages
-				//Log.Debugf("receiving messages")
-				resp, err = s.sqs.ReceiveMessage(&sqs.ReceiveMessageInput{
-					MaxNumberOfMessages: s.cfg.MaxMessages,
-					QueueUrl:            s.queueURL,
-					WaitTimeSeconds:     s.cfg.TimeoutSeconds,
-				})
-				if err != nil {
-					// we've encountered a major error
-					// this will set the error value and close the channel
-					// so the user will stop iterating and check the err
-					s.sqsErr = err
-					go s.Stop()
-					continue
-				}
+			}
+			s.Logger.Printf("receiving messages")
+			// get messages
+			resp, err = s.sqs.ReceiveMessage(&sqs.ReceiveMessageInput{
+				MaxNumberOfMessages: aws.Int64(s.cfg.MaxMessages),
+				QueueUrl:            s.queueURL,
+				WaitTimeSeconds:     s.cfg.TimeoutSeconds,
+			})
+			if err != nil {
+				// we've encountered a major error
+				s.Logger.Printf("Error occurred %s", err.Error())
+				s.sqsErr = err
+				time.Sleep(s.cfg.SleepInterval)
+				continue
+			}
 
-				// if we didn't get any messages, lets chill out for a sec
-				if len(resp.Messages) == 0 {
-					//pubsub.Log.Debugf("no messages found. sleeping for %s", s.cfg.SleepInterval)
-					time.Sleep(*s.cfg.SleepInterval)
-					continue
-				}
+			// if we didn't get any messages, lets chill out for a sec
+			if len(resp.Messages) == 0 {
+				s.Logger.Printf("no messages found. sleeping for %s", s.cfg.SleepInterval)
+				time.Sleep(s.cfg.SleepInterval)
+				continue
+			}
 
-				//pubsub.Log.Debugf("found %d messages", len(resp.Messages))
-
-				// for each message, pass to output
-				for _, msg := range resp.Messages {
-					output <- &subscriberMessage{
-						sub:     s,
-						message: msg,
-					}
-					s.incrementInFlight()
+			s.Logger.Printf("found %d messages", len(resp.Messages))
+			// for each message, pass to output
+			for _, msg := range resp.Messages {
+				output <- &subscriberMessage{
+					sub:     s,
+					message: msg,
 				}
+				s.incrementInFlight()
 			}
 		}
-	}(s, output)
+	}()
 	return output
 }
 
@@ -293,7 +246,7 @@ func (s *subscriber) handleDeletes() {
 	)
 	for delRequest = range s.toDelete {
 		entriesBuffer = append(entriesBuffer, delRequest.entry)
-		// if the subber is stopped and this is the last request,
+		// if the subscriber is stopped and this is the last request,
 		// flush quit!
 		if s.isStopped() && s.inFlightCount() == 1 {
 			break
@@ -302,7 +255,7 @@ func (s *subscriber) handleDeletes() {
 		if len(entriesBuffer) > *s.cfg.DeleteBufferSize {
 			batchInput.Entries = entriesBuffer
 			_, err = s.sqs.DeleteMessageBatch(batchInput)
-			// cleaer buffer
+			// clear buffer
 			entriesBuffer = []*sqs.DeleteMessageBatchRequestEntry{}
 		}
 

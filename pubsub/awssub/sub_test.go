@@ -1,4 +1,4 @@
-package aws
+package awssub
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-	"github.com/foodora/go-ranger/ranger_pubsub"
+	"github.com/foodora/go-ranger/pubsub"
 	"testing"
 	"time"
 )
@@ -48,6 +48,7 @@ func TestSubscriberForPositiveCases(t *testing.T) {
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),
 		stop:     make(chan chan error, 1),
+		Logger:   pubsub.DefaultLogger,
 	}
 
 	queue := sub.Start()
@@ -56,35 +57,6 @@ func TestSubscriberForPositiveCases(t *testing.T) {
 	verifySQSSub(t, queue, sqstest, test3, 2)
 	verifySQSSub(t, queue, sqstest, test4, 3)
 	sub.Stop()
-}
-
-func TestSQSReceiveError(t *testing.T) {
-	wantErr := errors.New("my sqs error")
-	sqstest := &TestSQSAPI{
-		Err: wantErr,
-	}
-
-	cfg := SQSConfig{}
-	defaultSQSConfig(&cfg)
-	sub := &subscriber{
-		sqs:      sqstest,
-		cfg:      cfg,
-		toDelete: make(chan *deleteRequest),
-		stop:     make(chan chan error, 1),
-	}
-
-	queue := sub.Start()
-	_, ok := <-queue
-	if ok {
-		t.Error("no message should've gotten to us, the channel should be closed")
-		return
-	}
-	sub.Stop()
-
-	if sub.Err() != wantErr {
-		t.Errorf("expected subscriber to return error '%s'; got '%s'",
-			wantErr, sub.Err())
-	}
 }
 
 func TestSQSDoneAfterStop(t *testing.T) {
@@ -107,6 +79,7 @@ func TestSQSDoneAfterStop(t *testing.T) {
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),
 		stop:     make(chan chan error, 1),
+		Logger:   pubsub.DefaultLogger,
 	}
 
 	queue := sub.Start()
@@ -146,6 +119,7 @@ func TestExtendDoneTimeout(t *testing.T) {
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),
 		stop:     make(chan chan error, 1),
+		Logger:   pubsub.DefaultLogger,
 	}
 
 	queue := sub.Start()
@@ -161,9 +135,9 @@ func TestExtendDoneTimeout(t *testing.T) {
 	}
 }
 
-func verifySQSSub(t *testing.T, queue <-chan ranger_pubsub.SubscriberMessage, testsqs *TestSQSAPI, want string, index int) {
+func verifySQSSub(t *testing.T, queue <-chan pubsub.Message, testsqs *TestSQSAPI, want string, index int) {
 	gotRaw := <-queue
-	got := string(gotRaw.Message())
+	got := string(gotRaw.String())
 	if got != want {
 		t.Errorf("subscriber expected:\n%#v\ngot:\n%#v", want, got)
 	}
@@ -189,6 +163,7 @@ type TestSQSAPI struct {
 }
 
 var _ sqsiface.SQSAPI = &TestSQSAPI{}
+var errNotImpl = errors.New("Not implemented ")
 
 func (s *TestSQSAPI) ReceiveMessage(*sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
 	if s.Offset >= len(s.Messages) {

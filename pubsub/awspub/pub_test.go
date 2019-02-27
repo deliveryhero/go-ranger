@@ -1,4 +1,4 @@
-package aws
+package awspub
 
 import (
 	"context"
@@ -7,13 +7,17 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
+	"github.com/foodora/go-ranger/pubsub"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestPublisher(t *testing.T) {
 	snstest := &TestSNSAPI{}
-	pub := &publisher{sns: snstest}
+	pub := &publisher{
+		sns:    snstest,
+		Logger: pubsub.DefaultLogger,
+	}
 
 	subject := "This is a subject!"
 	expected := "This is a message"

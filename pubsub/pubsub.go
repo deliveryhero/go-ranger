@@ -1,4 +1,4 @@
-package ranger_pubsub
+package pubsub
 
 import (
 	"context"
@@ -14,7 +14,7 @@ type Publisher interface {
 // Subscriber ...
 type Subscriber interface {
 	// Start will return a channel of raw messages.
-	Start() <-chan SubscriberMessage
+	Start() <-chan Message
 	// Err will contain any errors returned from the consumer connection.
 	Err() error
 	// Stop will initiate a graceful shutdown of the subscriber connection.
@@ -23,8 +23,8 @@ type Subscriber interface {
 
 // SubscriberMessage is a struct to encapsulate subscriber messages and provide
 // a mechanism for acknowledging messages _after_ they've been processed.
-type SubscriberMessage interface {
-	Message() string
+type Message interface {
+	String() string
 	ExtendDoneDeadline(time.Duration) error
 	Done() error
 }

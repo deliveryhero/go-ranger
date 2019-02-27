@@ -2,24 +2,23 @@ package main
 
 import (
 	"fmt"
-	aws2 "github.com/aws/aws-sdk-go/aws"
-	"github.com/foodora/go-ranger/ranger_pubsub/aws"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/foodora/go-ranger/pubsub/awssub"
 	"log"
 )
 
 // An example application to create a subscriber and listening on to a message from subscriber
 func main() {
+	awsconfig := *aws.NewConfig().WithRegion("eu-central-1")
 	// create configuration for publisher
-	config := aws.SQSConfig{
-		Config:         *aws2.NewConfig().WithRegion("eu-central-1"),
-		QueueName:      "<name-of-the-sqs-queue>",
-		QueueURL:       "<sqs-queue-url>", //optional
-		MaxMessages:    aws2.Int64(10),
-		TimeoutSeconds: aws2.Int64(10),
-	}
+	config := awssub.NewSQSConfig(awsconfig)
+	config.QueueName = "<name-of-the-sqs-queue>"
+	config.QueueURL = "<sqs-queue-url>" //optional
+	config.MaxMessages = 10
+	config.TimeoutSeconds = aws.Int64(10)
 
 	// initialize a subscriber instance
-	subscriber, err := aws.NewSubscriber(config)
+	subscriber, err := awssub.NewSubscriber(config)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -31,7 +30,7 @@ func main() {
 	rawMessage := <-messageQueue
 
 	//process the message as per the business need
-	message := string(rawMessage.Message())
+	message := rawMessage.String()
 	fmt.Println(message)
 
 	// queue up the message from
