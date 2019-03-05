@@ -21,8 +21,7 @@ type Subscriber interface {
 	Stop() error
 }
 
-// SubscriberMessage is a struct to encapsulate subscriber messages and provide
-// a mechanism for acknowledging messages _after_ they've been processed.
+// Message ...
 type Message interface {
 	String() string
 	ExtendDoneDeadline(time.Duration) error
