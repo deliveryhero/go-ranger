@@ -38,14 +38,18 @@ func NewRelicLabels(middleware ranger_http.MiddlewareInterface, labels map[strin
 func NewNewRelic(appName string, license string, logger ranger_logger.LoggerInterface) *NewRelic {
 	config := newrelic.NewConfig(appName, license)
 
+	return NewNewRelicWithConfig(config, logger)
+}
+
+func NewNewRelicWithConfig(config newrelic.Config, logger ranger_logger.LoggerInterface) *NewRelic {
 	app, err := newrelic.NewApplication(config)
 	if err != nil {
 		logger.Panic("NewRelic error", ranger_logger.LoggerData{"error": err.Error()})
 	}
 
 	return &NewRelic{
-		appName:     appName,
-		license:     license,
+		appName:     config.AppName,
+		license:     config.License,
 		logger:      logger,
 		Application: app,
 	}
