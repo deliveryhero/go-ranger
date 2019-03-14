@@ -60,6 +60,9 @@ func (newRelic *NewRelic) Middleware(next http.Handler) http.Handler {
 		txn := newRelic.Application.StartTransaction(r.URL.Path, w, r)
 		defer txn.End()
 
+		ctx := newrelic.NewContext(r.Context(), txn)
+		r = r.WithContext(ctx)
+
 		next.ServeHTTP(txn, r)
 	}
 
