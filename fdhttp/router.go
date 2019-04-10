@@ -309,21 +309,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.Init()
 	}
 
-	// create a cancelable context
-	ctx, cancel := context.WithCancel(req.Context())
-	defer cancel()
-
-	if c, ok := w.(http.CloseNotifier); ok {
-		closed := c.CloseNotify()
-		go func() {
-			select {
-			case <-ctx.Done():
-			case <-closed:
-				cancel()
-			}
-		}()
-	}
-
+	ctx := req.Context()
 	ctx = SetRequest(ctx, req)
 	ctx = SetRequestHeader(ctx, req.Header)
 

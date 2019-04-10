@@ -36,6 +36,7 @@ type HealthCheckResponse struct {
 		TotalAllocBytes uint64 `json:"total_alloc_bytes"`
 		AllocBytes      uint64 `json:"alloc_bytes"`
 	} `json:"system,omitempty"`
+	sync.Mutex
 }
 
 // HealthCheckServiceResponse is the return of each service that can provide
@@ -45,6 +46,7 @@ type HealthCheckServiceResponse struct {
 	Elapsed time.Duration `json:"elapsed"`
 	Detail  interface{}   `json:"detail,omitempty"`
 	Error   interface{}   `json:"error,omitempty"`
+	sync.Mutex
 }
 
 var _ fdhttp.Handler = &HealthCheck{}
@@ -158,6 +160,9 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 
 			timeoutCtx, cancel := context.WithTimeout(ctx, h.ServiceTimeout)
 			go func() {
+				// cancel the context
+				defer cancel()
+
 				detail, err := svc.HealthCheck(timeoutCtx)
 
 				if timeoutCtx.Err() != nil {
@@ -165,16 +170,20 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 					return
 				}
 
-				// cancel the context
-				cancel()
-
 				if err != nil {
 					atomic.CompareAndSwapInt32(&statusCode, http.StatusOK, http.StatusServiceUnavailable)
+					resp.Lock()
 					resp.Status = false
+					resp.Unlock()
+
+					check.Lock()
 					check.Status = false
 					check.Error = err.Error()
+					check.Unlock()
 				}
+				check.Lock()
 				check.Detail = detail
+				check.Unlock()
 			}()
 
 			<-timeoutCtx.Done()
@@ -182,19 +191,28 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 			err := timeoutCtx.Err()
 			if err == context.DeadlineExceeded {
 				atomic.CompareAndSwapInt32(&statusCode, http.StatusOK, http.StatusRequestTimeout)
+				resp.Lock()
 				resp.Status = false
+				resp.Unlock()
+
+				check.Lock()
 				check.Status = false
 				check.Error = err.Error()
+				check.Unlock()
 			}
 
+			check.Lock()
 			check.Elapsed = time.Since(started) / time.Millisecond
+			check.Unlock()
 		}(svc, svcCheck)
 	}
 
 	wg.Wait()
 
+	resp.Lock()
 	resp.Elapsed = time.Since(started) / time.Millisecond
+	resp.Unlock()
 
 	fdhttp.AddResponseHeaderValue(ctx, "Cache-control", "private, no-cache")
-	return int(statusCode), resp
+	return int(atomic.LoadInt32(&statusCode)), resp
 }
