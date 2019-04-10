@@ -1,8 +1,7 @@
 language: go
 sudo: false
 go:
-  - "1.9"
-  - "1.10"
+  - "1.12"
 before_install:
   - diff -u <(echo -n) <(gofmt -d -s .)
 install:
@@ -10,4 +9,4 @@ install:
   - if ! go get github.com/golang/tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
 script:
   - $GOPATH/bin/dep ensure
-  - go test ./...
+  - go test -race ./...
