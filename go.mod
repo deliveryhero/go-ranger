@@ -3,6 +3,7 @@ module github.com/foodora/go-ranger
 go 1.12
 
 require (
+	github.com/aws/aws-sdk-go v1.19.11
 	github.com/bshuster-repo/logrus-logstash-hook v0.0.0-20180418140028-1e961e8e173c
 	github.com/cenk/backoff v2.0.0+incompatible // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
@@ -21,6 +22,7 @@ require (
 	golang.org/x/crypto v0.0.0-20181030102418-4d3f4d9ffa16 // indirect
 	golang.org/x/net v0.0.0-20181029044818-c44066c5c816 // indirect
 	golang.org/x/sys v0.0.0-20181031143558-9b800f95dbbc // indirect
+	golang.org/x/text v0.3.0 // indirect
 	gopkg.in/throttled/throttled.v2 v2.0.3
 	gopkg.in/yaml.v2 v2.2.1
 )
