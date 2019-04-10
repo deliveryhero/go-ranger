@@ -1,5 +1,9 @@
 github.com/bshuster-repo/logrus-logstash-hook v0.0.0-20170529052325-ea59b0451836 h1:uUvr5DK4sZstz2ALG44z3giqzzB30Pt9IbYlCIuCncU=
 github.com/bshuster-repo/logrus-logstash-hook v0.0.0-20170529052325-ea59b0451836/go.mod h1:zsTqEiSzDgAa/8GZR7E1qaXrhYNDKBYy5/dWPTIflbk=
+github.com/bshuster-repo/logrus-logstash-hook v0.0.0-20180418140028-1e961e8e173c h1:pG3hj67G+/jIlUD5fd+1z0QdMrsdjkXmkcwc6kPVyvs=
+github.com/bshuster-repo/logrus-logstash-hook v0.0.0-20180418140028-1e961e8e173c/go.mod h1:zsTqEiSzDgAa/8GZR7E1qaXrhYNDKBYy5/dWPTIflbk=
+github.com/bshuster-repo/logrus-logstash-hook v0.4.1 h1:pgAtgj+A31JBVtEHu2uHuEx0n+2ukqUJnS2vVe5pQNA=
+github.com/bshuster-repo/logrus-logstash-hook v0.4.1/go.mod h1:zsTqEiSzDgAa/8GZR7E1qaXrhYNDKBYy5/dWPTIflbk=
 github.com/cenk/backoff v2.0.0+incompatible h1:7vXVw3g7XE+Vnj0A9TmFGtMeP4oZQ5ZzpPvKhLFa80E=
 github.com/cenk/backoff v2.0.0+incompatible/go.mod h1:7FtoeaSnHoZnmZzz47cM35Y9nSW7tNyaidugnHTaFDE=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

@@ -3,7 +3,7 @@ module github.com/foodora/go-ranger
 go 1.12
 
 require (
-	github.com/bshuster-repo/logrus-logstash-hook v0.0.0-20170529052325-ea59b0451836
+	github.com/bshuster-repo/logrus-logstash-hook v0.0.0-20180418140028-1e961e8e173c
 	github.com/cenk/backoff v2.0.0+incompatible // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/garyburd/redigo v1.6.0 // indirect
