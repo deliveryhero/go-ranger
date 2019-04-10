@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/bshuster-repo/logrus-logstash-hook"
+	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
 	"github.com/johntdyer/slackrus"
 	"github.com/sirupsen/logrus"
 )
