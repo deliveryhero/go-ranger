@@ -160,15 +160,15 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 
 			timeoutCtx, cancel := context.WithTimeout(ctx, h.ServiceTimeout)
 			go func() {
+				// cancel the context
+				defer cancel()
+
 				detail, err := svc.HealthCheck(timeoutCtx)
 
 				if timeoutCtx.Err() != nil {
 					// context has timed out
 					return
 				}
-
-				// cancel the context
-				cancel()
 
 				if err != nil {
 					atomic.CompareAndSwapInt32(&statusCode, http.StatusOK, http.StatusServiceUnavailable)
