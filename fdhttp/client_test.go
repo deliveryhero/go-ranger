@@ -144,7 +144,7 @@ func TestClient_MaxIdleConnsLifetime(t *testing.T) {
 		done <- struct{}{}
 	}()
 
-	time.Sleep(20 * time.Millisecond)
-	assert.EqualValues(t, 0, atomic.LoadInt32(&activeConns))
+	time.Sleep(10 * time.Millisecond)
+	assert.EqualValues(t, 1, atomic.LoadInt32(&activeConns))
 	<-done
 }
