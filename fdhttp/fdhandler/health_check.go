@@ -196,5 +196,5 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 	resp.Elapsed = time.Since(started) / time.Millisecond
 
 	fdhttp.AddResponseHeaderValue(ctx, "Cache-control", "private, no-cache")
-	return int(statusCode), resp
+	return int(atomic.LoadInt32(&statusCode)), resp
 }
