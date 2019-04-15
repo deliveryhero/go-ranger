@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type (
@@ -18,7 +19,7 @@ type (
 		runLock  sync.Mutex
 		stopLock sync.Mutex
 		router   *Router
-		httpSrv  *http.Server
+		HTTPSrv  *http.Server
 
 		// Logger will be setted with DefaultLogger when NewServer is called
 		// but you can overwrite later only in this instance.
@@ -82,8 +83,13 @@ func (s *Server) Start(r *Router) error {
 
 	s.Logger.Printf("Running http server on %s...", s.addr)
 
-	s.httpSrv = &http.Server{
-		Addr: s.addr,
+	// Default timeouts to  prevent unclosed requests leaking memory.
+	// https://blog.cloudflare.com/exposing-go-on-the-internet/#timeouts
+	s.HTTPSrv = &http.Server{
+		Addr:         s.addr,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	if r != nil {
@@ -93,13 +99,13 @@ func (s *Server) Start(r *Router) error {
 
 		s.router = r
 		s.router.Init()
-		s.httpSrv.Handler = s.router
+		s.HTTPSrv.Handler = s.router
 	}
 
 	errChan := make(chan error)
 
 	go func() {
-		errChan <- s.httpSrv.ListenAndServe()
+		errChan <- s.HTTPSrv.ListenAndServe()
 	}()
 
 	atomic.StoreUint32(&s.running, 1)
@@ -131,5 +137,5 @@ func (s *Server) Stop(ctx context.Context) error {
 
 	s.Logger.Printf("Stopping http server...")
 
-	return s.httpSrv.Shutdown(ctx)
+	return s.HTTPSrv.Shutdown(ctx)
 }
