@@ -97,3 +97,28 @@ type mockPayload struct{}
 
 func (p mockPayload) Text() string     { return "" }
 func (p mockPayload) HTTPSafe() string { return "" }
+
+// Application ..
+func (t *NewRelicTransaction) Application() newrelic.Application {
+	return nil
+}
+
+// BrowserTimingHeader ...
+func (t *NewRelicTransaction) BrowserTimingHeader() (*newrelic.BrowserTimingHeader, error) {
+	return nil, nil
+}
+
+// NewGoroutine ...
+func (t *NewRelicTransaction) NewGoroutine() newrelic.Transaction {
+	return nil
+}
+
+// SetWebRequest ...
+func (t *NewRelicTransaction) SetWebRequest(req newrelic.WebRequest) error {
+	return nil
+}
+
+// SetWebResponse ...
+func (t *NewRelicTransaction) SetWebResponse(w http.ResponseWriter) newrelic.Transaction {
+	return nil
+}
