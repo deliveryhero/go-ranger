@@ -13,7 +13,7 @@ require (
 	github.com/johntdyer/slackrus v0.0.0-20180518184837-f7aae3243a07
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/justinas/alice v0.0.0-20171023064455-03f45bd4b7da
-	github.com/newrelic/go-agent v2.1.0+incompatible
+	github.com/newrelic/go-agent v2.7.0+incompatible
 	github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea // indirect
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/sirupsen/logrus v1.2.0
