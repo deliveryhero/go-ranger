@@ -42,6 +42,7 @@ type HealthCheckResponse struct {
 // HealthCheckServiceResponse is the return of each service that can provide
 // details
 type HealthCheckServiceResponse struct {
+	// True status indicates full availability of the service under check.
 	Status  bool          `json:"status"`
 	Elapsed time.Duration `json:"elapsed"`
 	Detail  interface{}   `json:"detail,omitempty"`
