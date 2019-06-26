@@ -25,5 +25,7 @@ type Subscriber interface {
 type Message interface {
 	String() string
 	ExtendDoneDeadline(time.Duration) error
+	GetMessageId() string
+	GetReceiveCount() int
 	Done() error
 }

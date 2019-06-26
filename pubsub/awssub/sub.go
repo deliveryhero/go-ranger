@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/foodora/go-ranger/pubsub"
+	"strconv"
 	"sync/atomic"
 	"time"
 )
@@ -177,6 +178,24 @@ func (m *subscriberMessage) Done() error {
 		receipt: receipt,
 	}
 	return <-receipt
+}
+
+// Returns the number of times a message has been received from the queue but not deleted.
+func (m *subscriberMessage) GetReceiveCount() int {
+	val, ok := m.message.Attributes[sqs.MessageSystemAttributeNameApproximateReceiveCount]
+	if !ok {
+		return 0
+	}
+	n, err := strconv.Atoi(*val)
+	if err != nil {
+		return 0
+	}
+	return n
+}
+
+// returns original sqs message id
+func (m *subscriberMessage) GetMessageId() string {
+	return *m.message.MessageId
 }
 
 // Start will start consuming messages on the SQS queue
