@@ -215,10 +215,12 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 			}
 			s.Logger.Printf("receiving messages")
 			// get messages
+			nameApproximateReceiveCount := sqs.MessageSystemAttributeNameApproximateReceiveCount
 			resp, err = s.sqs.ReceiveMessage(&sqs.ReceiveMessageInput{
 				MaxNumberOfMessages: aws.Int64(s.cfg.MaxMessages),
 				QueueUrl:            s.queueURL,
-				WaitTimeSeconds:     s.cfg.TimeoutSeconds,
+				WaitTimeSeconds:     s.cfg.TimeoutSeconds, //MessageSystemAttributeNameApproximateReceiveCount
+				AttributeNames:      []*string{&nameApproximateReceiveCount},
 			})
 			if err != nil {
 				// we've encountered a major error
