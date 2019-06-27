@@ -204,6 +204,16 @@ func (r *Router) StdOPTIONS(path string, handler http.HandlerFunc) *Endpoint {
 	return r.StdHandler("OPTIONS", path, handler)
 }
 
+// StdHEAD register a standard http.HandlerFunc to handle HEAD method
+func (r *Router) StdHEAD(path string, handler http.HandlerFunc) *Endpoint {
+	return r.StdHandler("HEAD", path, handler)
+}
+
+// StdPATCH register a standard http.HandlerFunc to handle PATCH method
+func (r *Router) StdPATCH(path string, handler http.HandlerFunc) *Endpoint {
+	return r.StdHandler("PATCH", path, handler)
+}
+
 // Handler register the method and path with fdhttp.EndpointFunc
 func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 	prefix := make([]string, 0)
