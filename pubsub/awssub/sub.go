@@ -151,6 +151,14 @@ func (m *subscriberMessage) String() string {
 	return msgBody
 }
 
+// returns original sqs message id
+func (m *subscriberMessage) GetMessageId() string {
+	if m.message.MessageId == nil {
+		return ""
+	}
+	return *m.message.MessageId
+}
+
 // ExtendDoneDeadline changes the visibility timeout of the underlying SQS
 // message. It will set the visibility timeout of the message to the given
 // duration.

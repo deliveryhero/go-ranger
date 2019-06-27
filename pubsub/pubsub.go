@@ -26,4 +26,5 @@ type Message interface {
 	String() string
 	ExtendDoneDeadline(time.Duration) error
 	Done() error
+	GetMessageId() string
 }
