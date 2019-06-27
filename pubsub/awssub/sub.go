@@ -21,6 +21,7 @@ type (
 		queueURL *string
 
 		toDelete chan *deleteRequest
+		flush    chan chan error
 		// inFlight and stopped are signals to manage delete requests
 		// at shutdown.
 		inFlight uint64
@@ -236,35 +237,37 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 }
 
 func (s *subscriber) handleDeletes() {
-	batchInput := &sqs.DeleteMessageBatchInput{
-		QueueUrl: s.queueURL,
-	}
-	var (
-		err           error
-		entriesBuffer []*sqs.DeleteMessageBatchRequestEntry
-		delRequest    *deleteRequest
-	)
-	for delRequest = range s.toDelete {
-		entriesBuffer = append(entriesBuffer, delRequest.entry)
-		// if the subscriber is stopped and this is the last request,
-		// flush quit!
-		if s.isStopped() && s.inFlightCount() == 1 {
-			break
+	s.flush = make(chan chan error, 1)
+	defer close(s.flush)
+
+	remove := func(entriesBuffer []*sqs.DeleteMessageBatchRequestEntry) error {
+		batchInput := &sqs.DeleteMessageBatchInput{
+			QueueUrl: s.queueURL,
+			Entries:  entriesBuffer,
 		}
+		_, err := s.sqs.DeleteMessageBatch(batchInput)
+		return err
+	}
+
+	var entriesBuffer []*sqs.DeleteMessageBatchRequestEntry
+	for {
+		var delRequest *deleteRequest
+		var err error
+		select {
+		case flush := <-s.flush:
+			if len(entriesBuffer) > 0 {
+				err = remove(entriesBuffer)
+			}
+			flush <- err
+			return
+		case delRequest = <-s.toDelete:
+		}
+		entriesBuffer = append(entriesBuffer, delRequest.entry)
 		// if buffer is full, send the request
 		if len(entriesBuffer) > *s.cfg.DeleteBufferSize {
-			batchInput.Entries = entriesBuffer
-			_, err = s.sqs.DeleteMessageBatch(batchInput)
-			// clear buffer
+			err = remove(entriesBuffer)
 			entriesBuffer = []*sqs.DeleteMessageBatchRequestEntry{}
 		}
-
-		delRequest.receipt <- err
-	}
-	// clear any remainders before shutdown
-	if len(entriesBuffer) > 0 {
-		batchInput.Entries = entriesBuffer
-		_, err = s.sqs.DeleteMessageBatch(batchInput)
 		delRequest.receipt <- err
 	}
 }
@@ -280,9 +283,20 @@ func (s *subscriber) Stop() error {
 		return errors.New("sqs subscriber is already stopped")
 	}
 	exit := make(chan error)
+	defer close(exit)
+	// stop subscriber
 	s.stop <- exit
 	atomic.SwapUint32(&s.stopped, uint32(1))
-	return <-exit
+	err := <-exit
+	if err != nil {
+		return err
+	}
+	//flush deleted msg buffer
+	flush := make(chan error)
+	defer close(flush)
+	s.flush <- flush
+
+	return <-flush
 }
 
 // Err will contain any errors that occurred during
