@@ -66,6 +66,8 @@ var (
 	defaultSQSConsumeBase64 = true
 )
 
+var sqsClientFactoryFunc = createSqsClient
+
 func defaultSQSConfig(cfg *SQSConfig) {
 	if cfg.MaxMessages == 0 {
 		cfg.MaxMessages = defaultSQSMaxMessages
@@ -107,25 +109,20 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 	var err error
 
 	s := &subscriber{
-		cfg:      cfg,
-		toDelete: make(chan *deleteRequest),
-		stop:     make(chan chan error, 1),
-		Logger:   pubsub.DefaultLogger,
+		cfg:     cfg,
+		stopped: 1,
+		Logger:  pubsub.DefaultLogger,
 	}
 
 	if (len(cfg.QueueName) == 0) && (len(cfg.QueueURL) == 0) {
 		return s, errors.New("sqs queue name or url is required")
 	}
 
-	sess, err := session.NewSession()
+	sqsClient, err := sqsClientFactoryFunc(&cfg)
 	if err != nil {
 		return s, err
 	}
-
-	s.sqs = sqs.New(sess, &aws.Config{
-		Region:   cfg.Region,
-		Endpoint: cfg.Endpoint,
-	})
+	s.sqs = sqsClient
 
 	if len(cfg.QueueURL) == 0 {
 		var urlResp *sqs.GetQueueUrlOutput
@@ -144,6 +141,20 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 	}
 
 	return s, nil
+}
+
+func createSqsClient(cfg *SQSConfig) (sqsiface.SQSAPI, error) {
+	sess, err := session.NewSession()
+	if err != nil {
+		return nil, err
+	}
+
+	sqsClient := sqs.New(sess, &aws.Config{
+		Region:   cfg.Region,
+		Endpoint: cfg.Endpoint,
+	})
+
+	return sqsClient, nil
 }
 
 // Message will decode message bodies and simply return string message.
@@ -169,12 +180,16 @@ func (m *subscriberMessage) ExtendDoneDeadline(d time.Duration) error {
 // message has been deleted.
 func (m *subscriberMessage) Done() error {
 	defer m.sub.decrementInFlight()
+	batchInput := &sqs.DeleteMessageBatchRequestEntry{
+		Id:            m.message.MessageId,
+		ReceiptHandle: m.message.ReceiptHandle,
+	}
+	if m.sub.isStopped() {
+		return m.sub.deleteMessageBatch(batchInput)
+	}
 	receipt := make(chan error)
 	m.sub.toDelete <- &deleteRequest{
-		entry: &sqs.DeleteMessageBatchRequestEntry{
-			Id:            m.message.MessageId,
-			ReceiptHandle: m.message.ReceiptHandle,
-		},
+		entry:   batchInput,
 		receipt: receipt,
 	}
 	return <-receipt
@@ -185,8 +200,19 @@ func (m *subscriberMessage) Done() error {
 // If it encounters any issues, it will populate the Err() error
 // and close the returned channel.
 func (s *subscriber) Start() <-chan pubsub.Message {
+	if !s.isStopped() {
+		s.sqsErr = errors.New("subscriber already is running")
+		return nil
+	}
+	atomic.SwapUint32(&s.stopped, uint32(0))
+	s.stop = make(chan chan error, 1)
+	s.flush = make(chan chan error, 1)
+	s.toDelete = make(chan *deleteRequest)
+
 	output := make(chan pubsub.Message)
+
 	go s.handleDeletes()
+
 	go func() {
 		defer close(output)
 		var (
@@ -237,18 +263,6 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 }
 
 func (s *subscriber) handleDeletes() {
-	s.flush = make(chan chan error, 1)
-	defer close(s.flush)
-
-	remove := func(entriesBuffer []*sqs.DeleteMessageBatchRequestEntry) error {
-		batchInput := &sqs.DeleteMessageBatchInput{
-			QueueUrl: s.queueURL,
-			Entries:  entriesBuffer,
-		}
-		_, err := s.sqs.DeleteMessageBatch(batchInput)
-		return err
-	}
-
 	var entriesBuffer []*sqs.DeleteMessageBatchRequestEntry
 	for {
 		var delRequest *deleteRequest
@@ -256,7 +270,7 @@ func (s *subscriber) handleDeletes() {
 		select {
 		case flush := <-s.flush:
 			if len(entriesBuffer) > 0 {
-				err = remove(entriesBuffer)
+				err = s.deleteMessageBatch(entriesBuffer...)
 			}
 			flush <- err
 			return
@@ -265,11 +279,21 @@ func (s *subscriber) handleDeletes() {
 		entriesBuffer = append(entriesBuffer, delRequest.entry)
 		// if buffer is full, send the request
 		if len(entriesBuffer) > *s.cfg.DeleteBufferSize {
-			err = remove(entriesBuffer)
+			err = s.deleteMessageBatch(entriesBuffer...)
 			entriesBuffer = []*sqs.DeleteMessageBatchRequestEntry{}
 		}
 		delRequest.receipt <- err
 	}
+}
+
+func (s *subscriber) deleteMessageBatch(batchReq ...*sqs.DeleteMessageBatchRequestEntry) error {
+	batchInput := &sqs.DeleteMessageBatchInput{
+		QueueUrl: s.queueURL,
+		Entries:  batchReq,
+	}
+	_, err := s.sqs.DeleteMessageBatch(batchInput)
+
+	return err
 }
 
 func (s *subscriber) isStopped() bool {
@@ -280,8 +304,13 @@ func (s *subscriber) isStopped() bool {
 // messages.
 func (s *subscriber) Stop() error {
 	if s.isStopped() {
-		return errors.New("sqs subscriber is already stopped")
+		return errors.New("sqs subscriber is not running")
 	}
+	defer func() {
+		close(s.stop)
+		close(s.toDelete)
+		close(s.flush)
+	}()
 	exit := make(chan error)
 	defer close(exit)
 	// stop subscriber
