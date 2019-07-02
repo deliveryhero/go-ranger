@@ -89,16 +89,63 @@ func TestSubscriberForPositiveCases(t *testing.T) {
 	assert.True(t, len(sqstest.Deleted) == 4, "The delete buffer was not flushed after the subscriber is stopped")
 	verifyRemovedMsg(t, sqstest, msq4, 3)
 
+	sqstest.Offset = 0
 	queue = sub.Start()
-	msq5 := <-queue
-	verifyReceivedMsg(t, msq5, test5)
-	msq5.Done()
+	msq1 = <-queue
+	verifyReceivedMsg(t, msq1, test1)
+	msq1.Done()
 
 	sub.Stop()
 
 	assert.True(t, len(sqstest.Deleted) == 5, "The delete buffer was not flushed after the subscriber is stopped")
-	verifyRemovedMsg(t, sqstest, msq5, 4)
+	verifyRemovedMsg(t, sqstest, msq1, 4)
 
+}
+
+func TestSubscriberStopBetweenBatch(t *testing.T) {
+	test1 := "This is test 1"
+	test2 := "This is test 2"
+	test3 := "This is test 3"
+	sqstest := &TestSQSAPI{
+		Messages: [][]*sqs.Message{
+			{
+				{
+					Body:          &test1,
+					ReceiptHandle: &test1,
+				},
+				{
+					Body:          &test2,
+					ReceiptHandle: &test2,
+				},
+				{
+					Body:          &test3,
+					ReceiptHandle: &test3,
+				},
+			},
+		},
+	}
+
+	cfg := SQSConfig{
+		QueueURL: "http://test_queue",
+	}
+	defaultSQSConfig(&cfg)
+	cfg.DeleteBufferSize = aws.Int(10)
+	sub, err := createSubscriber(cfg, sqstest)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	queue := sub.Start()
+	msq1 := <-queue
+	verifyReceivedMsg(t, msq1, test1)
+	msq1.Done()
+	assert.True(t, len(sqstest.Deleted) == 0, "Message unexpectedly was removed from the delete buffer")
+
+	sub.Stop()
+
+	assert.True(t, len(sqstest.Deleted) == 1, "Messages were not removed from the delete buffer")
+	verifyRemovedMsg(t, sqstest, msq1, 0)
 }
 
 func TestSQSDoneAfterStop(t *testing.T) {

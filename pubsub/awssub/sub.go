@@ -251,11 +251,16 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 			s.Logger.Printf("found %d messages", len(resp.Messages))
 			// for each message, pass to output
 			for _, msg := range resp.Messages {
-				output <- &subscriberMessage{
+				select {
+				case exit := <-s.stop:
+					exit <- nil
+					return
+				case output <- &subscriberMessage{
 					sub:     s,
 					message: msg,
+				}:
+					s.incrementInFlight()
 				}
-				s.incrementInFlight()
 			}
 		}
 	}()
