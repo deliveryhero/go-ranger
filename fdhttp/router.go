@@ -204,6 +204,16 @@ func (r *Router) StdOPTIONS(path string, handler http.HandlerFunc) *Endpoint {
 	return r.StdHandler("OPTIONS", path, handler)
 }
 
+// StdHEAD register a standard http.HandlerFunc to handle HEAD method
+func (r *Router) StdHEAD(path string, handler http.HandlerFunc) *Endpoint {
+	return r.StdHandler("HEAD", path, handler)
+}
+
+// StdPATCH register a standard http.HandlerFunc to handle PATCH method
+func (r *Router) StdPATCH(path string, handler http.HandlerFunc) *Endpoint {
+	return r.StdHandler("PATCH", path, handler)
+}
+
 // Handler register the method and path with fdhttp.EndpointFunc
 func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 	prefix := make([]string, 0)
@@ -301,6 +311,16 @@ func (r *Router) DELETE(path string, fn EndpointFunc) *Endpoint {
 // OPTIONS register a fdhttp.EndpointFunc to handle OPTIONS method
 func (r *Router) OPTIONS(path string, fn EndpointFunc) *Endpoint {
 	return r.Handler("OPTIONS", path, fn)
+}
+
+// HEAD register a fdhttp.EndpointFunc to handle HEAD method
+func (r *Router) HEAD(path string, fn EndpointFunc) *Endpoint {
+	return r.Handler("HEAD", path, fn)
+}
+
+// PATCH register a fdhttp.EndpointFunc to handle PATCH method
+func (r *Router) PATCH(path string, fn EndpointFunc) *Endpoint {
+	return r.Handler("PATCH", path, fn)
 }
 
 // ServeHTTP makes this struct a valid implementation of http.Handler
