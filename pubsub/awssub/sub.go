@@ -2,11 +2,13 @@ package awssub
 
 import (
 	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/foodora/go-ranger/pubsub"
+	"strconv"
 	"sync/atomic"
 	"time"
 )
@@ -187,6 +189,19 @@ func (m *subscriberMessage) Done() error {
 	return <-receipt
 }
 
+// Returns the number of times a message has been received from the queue but not deleted.
+func (m *subscriberMessage) GetReceiveCount() (int, error) {
+	val, ok := m.message.Attributes[sqs.MessageSystemAttributeNameApproximateReceiveCount]
+	if !ok || val == nil {
+		return 0, errors.New("receive count is undefined")
+	}
+	n, err := strconv.Atoi(*val)
+	if err != nil {
+		return 0, fmt.Errorf("could not parse a string value '%s' to int", *val)
+	}
+	return n, nil
+}
+
 // Start will start consuming messages on the SQS queue
 // and emit any messages to the returned channel.
 // If it encounters any issues, it will populate the Err() error
@@ -209,10 +224,12 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 			}
 			s.Logger.Printf("receiving messages")
 			// get messages
+			nameApproximateReceiveCount := sqs.MessageSystemAttributeNameApproximateReceiveCount
 			resp, err = s.sqs.ReceiveMessage(&sqs.ReceiveMessageInput{
 				MaxNumberOfMessages: aws.Int64(s.cfg.MaxMessages),
 				QueueUrl:            s.queueURL,
 				WaitTimeSeconds:     s.cfg.TimeoutSeconds,
+				AttributeNames:      []*string{&nameApproximateReceiveCount},
 			})
 			if err != nil {
 				// we've encountered a major error
