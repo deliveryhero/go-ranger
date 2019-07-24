@@ -291,6 +291,7 @@ func (s *subscriber) handleDeletes() {
 	}
 }
 
+// deleteMessageBatch is helper function to remove messages from sqs in batches
 func (s *subscriber) deleteMessageBatch(batchReq ...*sqs.DeleteMessageBatchRequestEntry) error {
 	batchInput := &sqs.DeleteMessageBatchInput{
 		QueueUrl: s.queueURL,
