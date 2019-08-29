@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/foodora/go-ranger/pubsub"
 	"github.com/stretchr/testify/assert"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -220,6 +221,52 @@ func TestExtendDoneTimeout(t *testing.T) {
 	if *sqstest.Extended[0].ReceiptHandle != test {
 		t.Errorf("subscriber expected receipt handle of %q , got:+ %q", test, *sqstest.Extended[0].ReceiptHandle)
 	}
+}
+
+func TestLogError(t *testing.T) {
+	logger := &testLogger{}
+	pubsub.SetLogger(logger)
+	sqstest := &TestSQSAPI{
+		Messages: [][]*sqs.Message{},
+		Err:      errors.New("error while fetching messages"),
+	}
+	cfg := SQSConfig{
+		QueueURL: "http://test_queue",
+	}
+	defaultSQSConfig(&cfg)
+	sub, err := createSubscriber(cfg, sqstest)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	sub.Start()
+	defer sub.Stop()
+	timer := time.NewTimer(100 * time.Millisecond)
+	for {
+		select {
+		case <-timer.C:
+			t.Error("error log is not triggered")
+			return
+		case <-time.After(5 * time.Millisecond):
+			if atomic.LoadUint64(&logger.errorCallCount) > 0 {
+				return
+			}
+		}
+	}
+}
+
+// testLogger logger mock
+type testLogger struct {
+	errorCallCount uint64
+}
+
+// Printf ...
+func (l *testLogger) Printf(format string, v ...interface{}) {
+}
+
+// Error ...
+func (l *testLogger) Error(args ...interface{}) {
+	atomic.AddUint64(&l.errorCallCount, 1)
 }
 
 func createSubscriber(cfg SQSConfig, sqstest sqsiface.SQSAPI) (pubsub.Subscriber, error) {

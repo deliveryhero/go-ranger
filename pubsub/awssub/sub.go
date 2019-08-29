@@ -45,6 +45,8 @@ type (
 		entry   *sqs.DeleteMessageBatchRequestEntry
 		receipt chan error
 	}
+
+	logLevel int
 )
 
 var (
@@ -66,6 +68,11 @@ var (
 	defaultSQSDeleteBufferSize = 0
 
 	defaultSQSConsumeBase64 = true
+)
+
+const (
+	logLevelDebug logLevel = iota
+	logLevelError
 )
 
 var sqsClientFactoryFunc = createSqsClient
@@ -259,7 +266,7 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 			})
 			if err != nil {
 				// we've encountered a major error
-				s.Logger.Printf("Error occurred %s", err.Error())
+				s.log(logLevelError, "Error occurred %s", err.Error())
 				s.sqsErr = err
 				time.Sleep(s.cfg.SleepInterval)
 				continue
@@ -267,12 +274,12 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 
 			// if we didn't get any messages, lets chill out for a sec
 			if len(resp.Messages) == 0 {
-				s.Logger.Printf("no messages found. sleeping for %s", s.cfg.SleepInterval)
+				s.log(logLevelDebug, "no messages found. sleeping for %s", s.cfg.SleepInterval)
 				time.Sleep(s.cfg.SleepInterval)
 				continue
 			}
 
-			s.Logger.Printf("found %d messages", len(resp.Messages))
+			s.log(logLevelDebug, "found %d messages", len(resp.Messages))
 			// for each message, pass to output
 			for _, msg := range resp.Messages {
 				select {
@@ -363,4 +370,18 @@ func (s *subscriber) Stop() error {
 // a user encounters a closed channel.
 func (s *subscriber) Err() error {
 	return s.sqsErr
+}
+
+// log provides an error level logging if the logger applies pubsub.ErrorLogger interface
+// for the rest uses Printf() provided by pubsub.Logger interface
+// introduced for the logging with an error level and backward compatibility
+func (s *subscriber) log(level logLevel, format string, args ...interface{}) {
+	if level == logLevelDebug {
+		s.Logger.Printf(format, args)
+	}
+	logger, ok := s.Logger.(pubsub.ErrorLogger)
+	if level == logLevelError && ok {
+		logger.Error(append([]interface{}{format}, args...))
+	}
+	s.Logger.Printf(format, args)
 }

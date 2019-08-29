@@ -10,6 +10,11 @@ type Logger interface {
 	Printf(format string, v ...interface{})
 }
 
+// ErrorLogger logs with an error level
+type ErrorLogger interface {
+	Error(args ...interface{})
+}
+
 // DefaultLogger will be used as logger when create a new server using NewServer()
 var DefaultLogger Logger
 
