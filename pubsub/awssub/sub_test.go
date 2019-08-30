@@ -224,7 +224,7 @@ func TestExtendDoneTimeout(t *testing.T) {
 }
 
 func TestLogError(t *testing.T) {
-	logger := &testLogger{}
+	logger := &loggerMock{}
 	pubsub.SetLogger(logger)
 	sqstest := &TestSQSAPI{
 		Messages: [][]*sqs.Message{},
@@ -255,17 +255,17 @@ func TestLogError(t *testing.T) {
 	}
 }
 
-// testLogger logger mock
-type testLogger struct {
+// loggerMock logger mock
+type loggerMock struct {
 	errorCallCount uint64
 }
 
 // Printf ...
-func (l *testLogger) Printf(format string, v ...interface{}) {
+func (l *loggerMock) Printf(format string, v ...interface{}) {
 }
 
 // Error ...
-func (l *testLogger) Error(args ...interface{}) {
+func (l *loggerMock) Error(args ...interface{}) {
 	atomic.AddUint64(&l.errorCallCount, 1)
 }
 
