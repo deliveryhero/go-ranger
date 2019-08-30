@@ -378,10 +378,12 @@ func (s *subscriber) Err() error {
 func (s *subscriber) log(level logLevel, format string, args ...interface{}) {
 	if level == logLevelDebug {
 		s.Logger.Printf(format, args)
+		return
 	}
 	logger, ok := s.Logger.(pubsub.ErrorLogger)
 	if level == logLevelError && ok {
 		logger.Error(append([]interface{}{format}, args...))
+		return
 	}
 	s.Logger.Printf(format, args)
 }
