@@ -249,7 +249,6 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 				return
 			default:
 			}
-			s.Logger.Printf("receiving messages")
 			// get messages
 			nameApproximateReceiveCount := sqs.MessageSystemAttributeNameApproximateReceiveCount
 			resp, err = s.sqs.ReceiveMessage(&sqs.ReceiveMessageInput{
