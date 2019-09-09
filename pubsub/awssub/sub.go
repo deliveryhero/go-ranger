@@ -33,6 +33,9 @@ type (
 		sqsErr error
 
 		Logger pubsub.Logger
+
+		// onErrorFunc is a func is being called when an error occurs
+		onErrorFunc func(error)
 	}
 
 	// SQSMessage is the SQS implementation of `SubscriberMessage`.
@@ -261,6 +264,9 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 				// we've encountered a major error
 				s.Logger.Printf("Error occurred %s", err.Error())
 				s.sqsErr = err
+				if s.onErrorFunc != nil {
+					s.onErrorFunc(err)
+				}
 				time.Sleep(s.cfg.SleepInterval)
 				continue
 			}
@@ -289,6 +295,11 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 		}
 	}()
 	return output
+}
+
+// OnErrorFunc sets subscriber's onErrorFunc field
+func (s *subscriber) SetOnErrorFunc(fn func(error)) {
+	s.onErrorFunc = fn
 }
 
 func (s *subscriber) handleDeletes() {
