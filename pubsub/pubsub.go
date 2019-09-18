@@ -19,6 +19,8 @@ type Subscriber interface {
 	Err() error
 	// Stop will initiate a graceful shutdown of the subscriber connection.
 	Stop() error
+	// SetOnErrorFunc is a setter for a func is being called when an error occurs
+	SetOnErrorFunc(fn func(error))
 }
 
 // Message ...
