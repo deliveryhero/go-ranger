@@ -24,6 +24,13 @@ type (
 		// Logger will be setted with DefaultLogger when NewServer is called
 		// but you can overwrite later only in this instance.
 		Logger Logger
+
+		// Timeouts will be setted with default values according
+		// https://blog.cloudflare.com/exposing-go-on-the-internet/#timeouts
+		// when NewServer is called but you can overwrite them later only in this instance
+		ReadTimeout  time.Duration
+		WriteTimeout time.Duration
+		IdleTimeout  time.Duration
 	}
 )
 
@@ -37,9 +44,14 @@ var (
 // NewServer return a new server instance and will be run in the address informed.
 // Address can be "0.0.0.0:8080", ":8080" or just the port "8080".
 func NewServer(addr string) *Server {
+	// Default timeouts to  prevent unclosed requests leaking memory.
+	// https://blog.cloudflare.com/exposing-go-on-the-internet/#timeouts
 	return &Server{
-		addr:   addr,
-		Logger: defaultLogger,
+		addr:         addr,
+		Logger:       defaultLogger,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 }
 
@@ -83,13 +95,11 @@ func (s *Server) Start(r *Router) error {
 
 	s.Logger.Printf("Running http server on %s...", s.addr)
 
-	// Default timeouts to  prevent unclosed requests leaking memory.
-	// https://blog.cloudflare.com/exposing-go-on-the-internet/#timeouts
 	s.HTTPSrv = &http.Server{
 		Addr:         s.addr,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  s.ReadTimeout,
+		WriteTimeout: s.WriteTimeout,
+		IdleTimeout:  s.IdleTimeout,
 	}
 
 	if r != nil {
