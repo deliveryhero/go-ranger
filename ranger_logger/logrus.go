@@ -20,6 +20,7 @@ type LoggerInterface interface {
 	Warning(message string, data LoggerData)
 	Error(message string, data LoggerData)
 	Panic(message string, data LoggerData)
+	WithData(data LoggerData) LoggerInterface
 }
 
 //Wrapper - Wrap a logrus logger
@@ -112,6 +113,11 @@ func (logger *Wrapper) Panic(message string, data LoggerData) {
 	ctx := logger.WithFields(convertToLogrusFields(logger.GetAllFieldsToLog(data)))
 
 	ctx.Panic(message)
+}
+
+// WithData returns a copy of the logger with new extra data
+func (logger *Wrapper) WithData(data LoggerData) LoggerInterface {
+	return &Wrapper{logger.Logger, logger.GetAllFieldsToLog(data), ""}
 }
 
 func convertToLogrusFields(loggerData LoggerData) logrus.Fields {
