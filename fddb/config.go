@@ -110,7 +110,7 @@ func (c DBConfig) ConnString() string {
 	}
 
 	timeOut := ""
-	if c.Timeout.String != "0s" {
+	if c.Timeout.String() != "0s" {
 		timeOut = "?" + c.Timeout.String()
 	}
 
