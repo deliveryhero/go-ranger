@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type DBConfig struct {
@@ -27,6 +28,7 @@ type DBConfig struct {
 	User     string
 	Password string
 	DB       string
+	Timeout time.Duration
 }
 
 var availableDrivers = map[string]DBConfig{
@@ -88,6 +90,12 @@ func (c DBConfig) init() DBConfig {
 		}
 	}
 
+	if c.Timeout.String() == "0s" {
+		if defaultCfg.Timeout.String() != "0s" {
+			c.Timeout = defaultCfg.Timeout
+		}
+	}
+
 	return c
 }
 
@@ -101,6 +109,11 @@ func (c DBConfig) ConnString() string {
 		usrPwd += ":" + c.Password
 	}
 
+	timeOut := ""
+	if c.Timeout.String != "0s" {
+		timeOut = "?" + c.Timeout.String()
+	}
+
 	var host string
 	if c.Host != "" {
 		host = fmt.Sprintf("%s:%s", c.Host, c.Port)
@@ -108,7 +121,7 @@ func (c DBConfig) ConnString() string {
 
 	switch c.Driver {
 	case "mysql":
-		return fmt.Sprintf("%s@tcp(%s)/%s", usrPwd, host, c.DB)
+		return fmt.Sprintf("%s@tcp(%s)/%s%s", usrPwd, host, c.DB, timeOut)
 	case "redis":
 		return host
 	case "mongodb":
