@@ -28,7 +28,7 @@ type DBConfig struct {
 	User     string
 	Password string
 	DB       string
-	Timeout time.Duration
+	Timeout  time.Duration
 }
 
 var availableDrivers = map[string]DBConfig{
