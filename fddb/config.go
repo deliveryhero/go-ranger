@@ -92,22 +92,16 @@ func (c DBConfig) init() DBConfig {
 		}
 	}
 
-	if c.Timeout == 0 {
-		if defaultCfg.Timeout != 0 {
-			c.Timeout = defaultCfg.Timeout
-		}
+	if c.Timeout == 0 && defaultCfg.Timeout != 0 {
+		c.Timeout = defaultCfg.Timeout
 	}
 
-	if c.ReadTimeout == 0 {
-		if defaultCfg.ReadTimeout != 0 {
-			c.ReadTimeout = defaultCfg.ReadTimeout
-		}
+	if c.ReadTimeout == 0 && defaultCfg.ReadTimeout != 0 {
+		c.ReadTimeout = defaultCfg.ReadTimeout
 	}
 
-	if c.WriteTimeout == 0 {
-		if defaultCfg.WriteTimeout != 0 {
-			c.WriteTimeout = defaultCfg.WriteTimeout
-		}
+	if c.WriteTimeout == 0 && defaultCfg.WriteTimeout != 0 {
+		c.WriteTimeout = defaultCfg.WriteTimeout
 	}
 
 	return c
@@ -123,29 +117,17 @@ func (c DBConfig) ConnString() string {
 		usrPwd += ":" + c.Password
 	}
 
-	dsnParams := ""
+	var dsnParams []string
 	if c.Timeout != 0 {
-		if dsnParams != "" {
-			dsnParams += "&timeout=" + c.Timeout.String()
-		} else {
-			dsnParams = "timeout=" + c.Timeout.String()
-		}
+		dsnParams = append(dsnParams, "timeout=" + c.Timeout.String())
 	}
 
 	if c.ReadTimeout != 0 {
-		if dsnParams != "" {
-			dsnParams += "&readTimeout=" + c.ReadTimeout.String()
-		} else {
-			dsnParams = "readTimeout=" + c.ReadTimeout.String()
-		}
+		dsnParams = append(dsnParams, "readTimeout=" + c.ReadTimeout.String())
 	}
 
 	if c.WriteTimeout != 0 {
-		if dsnParams != "" {
-			dsnParams += "&writeTimeout=" + c.WriteTimeout.String()
-		} else {
-			dsnParams = "writeTimeout=" + c.WriteTimeout.String()
-		}
+		dsnParams = append(dsnParams, "writeTimeout=" + c.WriteTimeout.String())
 	}
 
 	var host string
@@ -155,8 +137,8 @@ func (c DBConfig) ConnString() string {
 
 	switch c.Driver {
 	case "mysql":
-		if dsnParams != "" {
-			return fmt.Sprintf("%s@tcp(%s)/%s?%s", usrPwd, host, c.DB, dsnParams)
+		if len(dsnParams) > 0 {
+			return fmt.Sprintf("%s@tcp(%s)/%s?%s", usrPwd, host, c.DB, strings.Join(dsnParams, "&"))
 		}
 		return fmt.Sprintf("%s@tcp(%s)/%s", usrPwd, host, c.DB)
 	case "redis":
