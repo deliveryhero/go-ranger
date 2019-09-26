@@ -29,6 +29,8 @@ type DBConfig struct {
 	Password string
 	DB       string
 	Timeout  time.Duration
+	ReadTimeout  time.Duration
+	WriteTimeout  time.Duration
 }
 
 var availableDrivers = map[string]DBConfig{
@@ -90,9 +92,21 @@ func (c DBConfig) init() DBConfig {
 		}
 	}
 
-	if c.Timeout.String() == "0s" {
-		if defaultCfg.Timeout.String() != "0s" {
+	if c.Timeout == 0 {
+		if defaultCfg.Timeout != 0 {
 			c.Timeout = defaultCfg.Timeout
+		}
+	}
+
+	if c.ReadTimeout == 0 {
+		if defaultCfg.ReadTimeout != 0 {
+			c.ReadTimeout = defaultCfg.ReadTimeout
+		}
+	}
+
+	if c.WriteTimeout == 0 {
+		if defaultCfg.WriteTimeout != 0 {
+			c.WriteTimeout = defaultCfg.WriteTimeout
 		}
 	}
 
@@ -109,9 +123,29 @@ func (c DBConfig) ConnString() string {
 		usrPwd += ":" + c.Password
 	}
 
-	timeOut := ""
-	if c.Timeout.String() != "0s" {
-		timeOut = "?" + c.Timeout.String()
+	dsnParams := ""
+	if c.Timeout != 0 {
+		if dsnParams != "" {
+			dsnParams += "&timeout=" + c.Timeout.String()
+		} else {
+			dsnParams = "timeout=" + c.Timeout.String()
+		}
+	}
+
+	if c.ReadTimeout != 0 {
+		if dsnParams != "" {
+			dsnParams += "&readTimeout=" + c.ReadTimeout.String()
+		} else {
+			dsnParams = "readTimeout=" + c.ReadTimeout.String()
+		}
+	}
+
+	if c.WriteTimeout != 0 {
+		if dsnParams != "" {
+			dsnParams += "&writeTimeout=" + c.WriteTimeout.String()
+		} else {
+			dsnParams = "writeTimeout=" + c.WriteTimeout.String()
+		}
 	}
 
 	var host string
@@ -121,7 +155,10 @@ func (c DBConfig) ConnString() string {
 
 	switch c.Driver {
 	case "mysql":
-		return fmt.Sprintf("%s@tcp(%s)/%s%s", usrPwd, host, c.DB, timeOut)
+		if dsnParams != "" {
+			return fmt.Sprintf("%s@tcp(%s)/%s?%s", usrPwd, host, c.DB, dsnParams)
+		}
+		return fmt.Sprintf("%s@tcp(%s)/%s", usrPwd, host, c.DB)
 	case "redis":
 		return host
 	case "mongodb":
