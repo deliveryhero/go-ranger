@@ -133,6 +133,20 @@ func TestDBConfigString(t *testing.T) {
 
 func TestDBConfigConnString_MySQL(t *testing.T) {
 	c := DBConfig{
+		Driver: "mysql",
+		Host:   "127.0.0.1",
+		Port:   "3306",
+		User:   "root",
+		DB:     "test",
+	}
+	assert.Equal(t, c.ConnString(), "root@tcp(127.0.0.1:3306)/test")
+
+	c.Password = "r007"
+	assert.Equal(t, c.ConnString(), "root:r007@tcp(127.0.0.1:3306)/test")
+}
+
+func TestDBConfigConnFullString_MySQL(t *testing.T) {
+	c := DBConfig{
 		Driver:       "mysql",
 		Host:         "127.0.0.1",
 		Port:         "3306",
