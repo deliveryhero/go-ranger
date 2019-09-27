@@ -92,15 +92,15 @@ func (c DBConfig) init() DBConfig {
 		}
 	}
 
-	if c.Timeout == 0 && defaultCfg.Timeout != 0 {
+	if c.Timeout == 0 {
 		c.Timeout = defaultCfg.Timeout
 	}
 
-	if c.ReadTimeout == 0 && defaultCfg.ReadTimeout != 0 {
+	if c.ReadTimeout == 0 {
 		c.ReadTimeout = defaultCfg.ReadTimeout
 	}
 
-	if c.WriteTimeout == 0 && defaultCfg.WriteTimeout != 0 {
+	if c.WriteTimeout == 0 {
 		c.WriteTimeout = defaultCfg.WriteTimeout
 	}
 
