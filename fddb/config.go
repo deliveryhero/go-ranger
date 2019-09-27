@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type DBConfig struct {
@@ -24,9 +25,16 @@ type DBConfig struct {
 	// to all (host:port and each address informed in Addrs)
 	Addrs []string
 
-	User     string
-	Password string
-	DB       string
+	User         string
+	Password     string
+	DB           string
+	MysqlOptions MysqlOptions
+}
+
+type MysqlOptions struct {
+	Timeout      time.Duration
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
 }
 
 var availableDrivers = map[string]DBConfig{
@@ -108,7 +116,7 @@ func (c DBConfig) ConnString() string {
 
 	switch c.Driver {
 	case "mysql":
-		return fmt.Sprintf("%s@tcp(%s)/%s", usrPwd, host, c.DB)
+		return c.mySqlConnString(host, usrPwd)
 	case "redis":
 		return host
 	case "mongodb":
@@ -124,7 +132,25 @@ func (c DBConfig) ConnString() string {
 	default:
 		return fmt.Sprintf("%s://%s@%s/%s", c.Driver, usrPwd, host, c.DB)
 	}
+}
 
-	// should never reach it
-	return ""
+func (c DBConfig) mySqlConnString(host, usrPwd string) string {
+	var dsnParams []string
+	if c.MysqlOptions.Timeout != 0 {
+		dsnParams = append(dsnParams, "timeout="+c.MysqlOptions.Timeout.String())
+	}
+
+	if c.MysqlOptions.ReadTimeout != 0 {
+		dsnParams = append(dsnParams, "readTimeout="+c.MysqlOptions.ReadTimeout.String())
+	}
+
+	if c.MysqlOptions.WriteTimeout != 0 {
+		dsnParams = append(dsnParams, "writeTimeout="+c.MysqlOptions.WriteTimeout.String())
+	}
+
+	if len(dsnParams) > 0 {
+		return fmt.Sprintf("%s@tcp(%s)/%s?%s", usrPwd, host, c.DB, strings.Join(dsnParams, "&"))
+	}
+
+	return fmt.Sprintf("%s@tcp(%s)/%s", usrPwd, host, c.DB)
 }

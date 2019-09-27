@@ -1,9 +1,8 @@
 package fddb
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestDBConfig(t *testing.T) {
@@ -144,6 +143,25 @@ func TestDBConfigConnString_MySQL(t *testing.T) {
 
 	c.Password = "r007"
 	assert.Equal(t, c.ConnString(), "root:r007@tcp(127.0.0.1:3306)/test")
+}
+
+func TestDBConfigConnFullString_MySQL(t *testing.T) {
+	c := DBConfig{
+		Driver: "mysql",
+		Host:   "127.0.0.1",
+		Port:   "3306",
+		User:   "root",
+		DB:     "test",
+		MysqlOptions: MysqlOptions{
+			Timeout:      10000000,
+			ReadTimeout:  20000000,
+			WriteTimeout: 30000000,
+		},
+	}
+	assert.Equal(t, c.ConnString(), "root@tcp(127.0.0.1:3306)/test?timeout=10ms&readTimeout=20ms&writeTimeout=30ms")
+
+	c.Password = "r007"
+	assert.Equal(t, c.ConnString(), "root:r007@tcp(127.0.0.1:3306)/test?timeout=10ms&readTimeout=20ms&writeTimeout=30ms")
 }
 
 func TestDBConfigConnString_Postgres(t *testing.T) {
