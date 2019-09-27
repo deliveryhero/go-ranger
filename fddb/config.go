@@ -28,6 +28,10 @@ type DBConfig struct {
 	User         string
 	Password     string
 	DB           string
+	MysqlOptions MysqlOptions
+}
+
+type MysqlOptions struct {
 	Timeout      time.Duration
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
@@ -92,18 +96,6 @@ func (c DBConfig) init() DBConfig {
 		}
 	}
 
-	if c.Timeout == 0 {
-		c.Timeout = defaultCfg.Timeout
-	}
-
-	if c.ReadTimeout == 0 {
-		c.ReadTimeout = defaultCfg.ReadTimeout
-	}
-
-	if c.WriteTimeout == 0 {
-		c.WriteTimeout = defaultCfg.WriteTimeout
-	}
-
 	return c
 }
 
@@ -117,19 +109,6 @@ func (c DBConfig) ConnString() string {
 		usrPwd += ":" + c.Password
 	}
 
-	var dsnParams []string
-	if c.Timeout != 0 {
-		dsnParams = append(dsnParams, "timeout="+c.Timeout.String())
-	}
-
-	if c.ReadTimeout != 0 {
-		dsnParams = append(dsnParams, "readTimeout="+c.ReadTimeout.String())
-	}
-
-	if c.WriteTimeout != 0 {
-		dsnParams = append(dsnParams, "writeTimeout="+c.WriteTimeout.String())
-	}
-
 	var host string
 	if c.Host != "" {
 		host = fmt.Sprintf("%s:%s", c.Host, c.Port)
@@ -137,10 +116,7 @@ func (c DBConfig) ConnString() string {
 
 	switch c.Driver {
 	case "mysql":
-		if len(dsnParams) > 0 {
-			return fmt.Sprintf("%s@tcp(%s)/%s?%s", usrPwd, host, c.DB, strings.Join(dsnParams, "&"))
-		}
-		return fmt.Sprintf("%s@tcp(%s)/%s", usrPwd, host, c.DB)
+		return c.mySqlConnString(host, usrPwd)
 	case "redis":
 		return host
 	case "mongodb":
@@ -156,7 +132,25 @@ func (c DBConfig) ConnString() string {
 	default:
 		return fmt.Sprintf("%s://%s@%s/%s", c.Driver, usrPwd, host, c.DB)
 	}
+}
 
-	// should never reach it
-	return ""
+func (c DBConfig) mySqlConnString(host, usrPwd string) string {
+	var dsnParams []string
+	if c.MysqlOptions.Timeout != 0 {
+		dsnParams = append(dsnParams, "timeout="+c.MysqlOptions.Timeout.String())
+	}
+
+	if c.MysqlOptions.ReadTimeout != 0 {
+		dsnParams = append(dsnParams, "readTimeout="+c.MysqlOptions.ReadTimeout.String())
+	}
+
+	if c.MysqlOptions.WriteTimeout != 0 {
+		dsnParams = append(dsnParams, "writeTimeout="+c.MysqlOptions.WriteTimeout.String())
+	}
+
+	if len(dsnParams) > 0 {
+		return fmt.Sprintf("%s@tcp(%s)/%s?%s", usrPwd, host, c.DB, strings.Join(dsnParams, "&"))
+	}
+
+	return fmt.Sprintf("%s@tcp(%s)/%s", usrPwd, host, c.DB)
 }
