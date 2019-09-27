@@ -25,12 +25,12 @@ type DBConfig struct {
 	// to all (host:port and each address informed in Addrs)
 	Addrs []string
 
-	User     string
-	Password string
-	DB       string
-	Timeout  time.Duration
+	User         string
+	Password     string
+	DB           string
+	Timeout      time.Duration
 	ReadTimeout  time.Duration
-	WriteTimeout  time.Duration
+	WriteTimeout time.Duration
 }
 
 var availableDrivers = map[string]DBConfig{
@@ -119,15 +119,15 @@ func (c DBConfig) ConnString() string {
 
 	var dsnParams []string
 	if c.Timeout != 0 {
-		dsnParams = append(dsnParams, "timeout=" + c.Timeout.String())
+		dsnParams = append(dsnParams, "timeout="+c.Timeout.String())
 	}
 
 	if c.ReadTimeout != 0 {
-		dsnParams = append(dsnParams, "readTimeout=" + c.ReadTimeout.String())
+		dsnParams = append(dsnParams, "readTimeout="+c.ReadTimeout.String())
 	}
 
 	if c.WriteTimeout != 0 {
-		dsnParams = append(dsnParams, "writeTimeout=" + c.WriteTimeout.String())
+		dsnParams = append(dsnParams, "writeTimeout="+c.WriteTimeout.String())
 	}
 
 	var host string
