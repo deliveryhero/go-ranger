@@ -3,6 +3,7 @@ package ranger_logger
 import (
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -15,6 +16,8 @@ type Hook logrus.Hook
 
 //LoggerInterface ...
 type LoggerInterface interface {
+	WithData(data LoggerData) LoggerInterface
+	WithPrefix(prefix string) LoggerInterface
 	Info(message string, data LoggerData)
 	Debug(message string, data LoggerData)
 	Warning(message string, data LoggerData)
@@ -77,6 +80,23 @@ func CreateFieldsFromRequest(r *http.Request) LoggerData {
 		"request_uri":    r.RequestURI,
 		"request_host":   r.Host,
 	}
+}
+
+// WithData creates a copy of the wrapper with some additional data
+func (w *Wrapper) WithData(data LoggerData) LoggerInterface {
+	defaultData := LoggerData{}
+	for k, v := range w.DefaultData {
+		defaultData[k] = v
+	}
+	for k, v := range data {
+		defaultData[k] = v
+	}
+	return &Wrapper{w.Logger, defaultData, w.ExtraDataPrefix}
+}
+
+// WithData creates a copy of the wrapper with some additional prefix
+func (w *Wrapper) WithPrefix(prefix string) LoggerInterface {
+	return &Wrapper{w.Logger, w.DefaultData, strings.Join([]string{w.ExtraDataPrefix, prefix}, ".")}
 }
 
 //Info - Wrap Info from logrus logger
