@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -290,4 +291,34 @@ func TestHealthCheck_FailedCheckSpecificService(t *testing.T) {
 	assert.False(t, healthResp.Checks["dummy2"].Status)
 	assert.Equal(t, time.Duration(0), healthResp.Checks["dummy2"].Elapsed)
 	assert.Equal(t, "cannot access remote server", healthResp.Checks["dummy2"].Error)
+}
+
+func TestHealthCheck_WithoutExtra_DoesNotShowExtra(t *testing.T) {
+	h := fdhandler.NewHealthCheck("1", "2")
+	ctx := context.TODO()
+	ctx = fdhttp.SetResponseHeader(ctx, http.Header(map[string][]string{}))
+
+	code, response := h.Get(ctx)
+
+	assert.Equal(t, http.StatusOK, code)
+	hcResponse, ok := response.(*fdhandler.HealthCheckResponse)
+	assert.True(t, ok)
+	assert.Equal(t, 0, len(hcResponse.Extra))
+}
+
+func TestHealthCheck_WithExtra_ShowExtra(t *testing.T) {
+	extra := map[string]string{"param1": "val1", "param2": "val2"}
+	h := fdhandler.NewHealthCheck("1", "2").WithExtraParams(extra)
+	ctx := context.TODO()
+	ctx = fdhttp.SetResponseHeader(ctx, http.Header(map[string][]string{}))
+
+	code, response := h.Get(ctx)
+
+	assert.Equal(t, http.StatusOK, code)
+	hcResponse, ok := response.(*fdhandler.HealthCheckResponse)
+	assert.True(t, ok)
+	assert.Equal(t, len(extra), len(hcResponse.Extra))
+	for k, v := range extra {
+		assert.Equal(t, v, hcResponse.Extra[k], fmt.Sprintf("for %s expected %s, obtained %s", k, v, hcResponse.Extra[k]))
+	}
 }
