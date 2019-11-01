@@ -70,11 +70,10 @@ type HealthCheck struct {
 	// before we get a timeout.
 	ServiceTimeout time.Duration
 
-	tag      string
-	commit   string
-	hostname string
-	services map[string]HealthChecker
-
+	tag         string
+	commit      string
+	hostname    string
+	services    map[string]HealthChecker
 	extraParams map[string]string
 }
 
