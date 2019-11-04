@@ -36,6 +36,7 @@ type HealthCheckResponse struct {
 		TotalAllocBytes uint64 `json:"total_alloc_bytes"`
 		AllocBytes      uint64 `json:"alloc_bytes"`
 	} `json:"system,omitempty"`
+	Extra map[string]string `json:"extra,omitempty"`
 	sync.Mutex
 }
 
@@ -69,10 +70,11 @@ type HealthCheck struct {
 	// before we get a timeout.
 	ServiceTimeout time.Duration
 
-	tag      string
-	commit   string
-	hostname string
-	services map[string]HealthChecker
+	tag         string
+	commit      string
+	hostname    string
+	services    map[string]HealthChecker
+	extraParams map[string]string
 }
 
 // NewHealthCheck create a new healthcheck handler
@@ -86,6 +88,12 @@ func NewHealthCheck(tag, commit string) *HealthCheck {
 		services:       make(map[string]HealthChecker),
 		ServiceTimeout: HealthCheckServiceTimeout,
 	}
+}
+
+// WithExtraParams is for setting extra static params in a form of map of strings
+func (h *HealthCheck) WithExtraParams(extraParams map[string]string) *HealthCheck {
+	h.extraParams = extraParams
+	return h
 }
 
 // Init will be called by fdhttp.Router to register fdhandler.HealthCheckURL
@@ -128,6 +136,10 @@ func (h *HealthCheck) newResponse() *HealthCheckResponse {
 	resp.System.AllocBytes = mem.HeapAlloc
 	resp.System.TotalAllocBytes = mem.TotalAlloc
 	resp.System.NumHeapObjects = mem.HeapObjects
+
+	if len(h.extraParams) > 0 {
+		resp.Extra = h.extraParams
+	}
 
 	return resp
 }
