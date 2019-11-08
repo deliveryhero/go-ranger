@@ -13,7 +13,7 @@ import (
 func NewRelicMiddleware(app newrelic.Application) fdmiddleware.Middleware {
 	return fdmiddleware.MiddlewareFunc(func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, req *http.Request) {
-			txn := app.StartTransaction(req.URL.Path, w, req)
+			txn := newrelic.FromContext(req.Context())
 			defer txn.End()
 
 			ctx := SetNewRelicTransaction(req.Context(), txn)
