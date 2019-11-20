@@ -278,7 +278,6 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 				continue
 			}
 
-			s.Logger.Printf("found %d messages", len(resp.Messages))
 			// for each message, pass to output
 			for _, msg := range resp.Messages {
 				select {
