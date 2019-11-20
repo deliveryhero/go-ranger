@@ -70,11 +70,12 @@ type HealthCheck struct {
 	// before we get a timeout.
 	ServiceTimeout time.Duration
 
-	tag         string
-	commit      string
-	hostname    string
-	services    map[string]HealthChecker
-	extraParams map[string]string
+	tag           string
+	commit        string
+	hostname      string
+	servicesGuard sync.RWMutex
+	services      map[string]HealthChecker
+	extraParams   map[string]string
 }
 
 // NewHealthCheck create a new healthcheck handler
@@ -105,7 +106,9 @@ func (h *HealthCheck) Init(r *fdhttp.Router) {
 
 // Register a new healthcheck Service.
 func (h *HealthCheck) Register(name string, s HealthChecker) {
+	h.servicesGuard.Lock()
 	h.services[name] = s
+	h.servicesGuard.Unlock()
 }
 
 // Handler will return an http.Handler that you can register in your
@@ -154,8 +157,14 @@ func (h *HealthCheck) Get(ctx context.Context) (int, interface{}) {
 
 	resp := h.newResponse()
 
+	h.servicesGuard.RLock()
+	services := make(map[string]HealthChecker, len(h.services))
+	for k, v := range h.services {
+		services[k] = v
+	}
+	h.servicesGuard.RUnlock()
 	var wg sync.WaitGroup
-	for name, svc := range h.services {
+	for name, svc := range services {
 		if svcParam != "" && name != svcParam {
 			continue
 		}
