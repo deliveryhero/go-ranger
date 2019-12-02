@@ -3,6 +3,7 @@ package fdapm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/foodora/go-ranger/fdhttp/fdmiddleware"
@@ -16,7 +17,7 @@ func NewRelicMiddleware(app newrelic.Application) fdmiddleware.Middleware {
 			var txn newrelic.Transaction
 			txn = newrelic.FromContext(req.Context())
 			if txn == nil {
-				txn = app.StartTransaction(req.URL.Path, w, req)
+				txn = app.StartTransaction(fmt.Sprintf("%s %s", req.Method, req.URL.Path), w, req)
 			}
 			defer txn.End()
 
