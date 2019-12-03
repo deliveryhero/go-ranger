@@ -306,15 +306,6 @@ func TestSubRouter_MiddlewareOfParentSubrouterIsCalled(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	//resp, err := http.Get(ts.URL + "/")
-	//assert.NoError(t, err)
-	//
-	//body, _ := ioutil.ReadAll(resp.Body)
-	//assert.Equal(t, "handler", string(body))
-	//resp.Body.Close()
-	//assert.False(t, mCalled)
-	//mCalled = false
-
 	resp, err := http.Get(ts.URL + "/prefix1")
 	assert.NoError(t, err)
 
