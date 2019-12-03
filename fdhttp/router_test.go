@@ -230,6 +230,109 @@ func TestSubRouter_MiddlewareIsCalled(t *testing.T) {
 	assert.True(t, mCalled)
 }
 
+func TestSubRouter_MiddlewareOfParentIsCalled(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	var mCalled bool
+	m := newMiddleware("middleware", &mCalled)
+
+	r.Use(m)
+
+	h := &dummyHandler{
+		initFunc: func(r *fdhttp.Router) {
+			r.StdGET("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.Write([]byte("handler"))
+			}))
+		},
+	}
+
+	sr := r.SubRouter()
+	sr.Prefix = "/prefix"
+
+	sr.Register(h)
+	r.Register(h)
+
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/")
+	assert.NoError(t, err)
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	assert.Equal(t, "handlermiddleware", string(body))
+	resp.Body.Close()
+	assert.True(t, mCalled)
+	mCalled = false
+
+	resp, err = http.Get(ts.URL + "/prefix")
+	assert.NoError(t, err)
+
+	body, _ = ioutil.ReadAll(resp.Body)
+	assert.Equal(t, "handlermiddleware", string(body))
+	resp.Body.Close()
+	assert.True(t, mCalled)
+}
+
+type C struct{}
+
+func (c C) Init(r *fdhttp.Router) {
+	r.GET("/", func(ctx context.Context) (int, interface{}) {
+		return 200, 1
+	})
+}
+
+func TestSubRouter_MiddlewareOfParentSubrouterIsCalled(t *testing.T) {
+	r := fdhttp.NewRouter()
+
+	c := C{}
+
+	var mCalled bool
+	m := newMiddleware("middleware", &mCalled)
+
+	subrouter := r.SubRouter()
+	subrouter.Prefix = "/prefix1"
+	subrouter.Use(m)
+
+	sr2 := subrouter.SubRouter()
+	sr2.Prefix = "/prefix2"
+
+	sr2.Register(c)
+	subrouter.Register(c)
+
+	r.Init()
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	//resp, err := http.Get(ts.URL + "/")
+	//assert.NoError(t, err)
+	//
+	//body, _ := ioutil.ReadAll(resp.Body)
+	//assert.Equal(t, "handler", string(body))
+	//resp.Body.Close()
+	//assert.False(t, mCalled)
+	//mCalled = false
+
+	resp, err := http.Get(ts.URL + "/prefix1")
+	assert.NoError(t, err)
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	assert.Equal(t, "1\nmiddleware", string(body))
+	resp.Body.Close()
+	assert.True(t, mCalled)
+	mCalled = false
+
+	resp, err = http.Get(ts.URL + "/prefix1/prefix2")
+	assert.NoError(t, err)
+
+	body, _ = ioutil.ReadAll(resp.Body)
+	assert.Equal(t, "1\nmiddleware", string(body))
+	resp.Body.Close()
+	assert.True(t, mCalled)
+}
+
 func TestSubRouter_MiddlewareIsCalledWhenNotUseStdHandler(t *testing.T) {
 	r := fdhttp.NewRouter()
 
