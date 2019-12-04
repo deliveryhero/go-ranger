@@ -270,9 +270,11 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 			}
 		})
 
-		if r.parent != nil {
-			// if is a sub router let's wrap middlewares
-			handler = r.wrapMiddlewares(handler)
+		currentRouter := r
+		for currentRouter.parent != nil {
+			// wrap with all middlewares of parents
+			handler = currentRouter.wrapMiddlewares(handler)
+			currentRouter = currentRouter.parent
 		}
 
 		handler.ServeHTTP(w, req)
