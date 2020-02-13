@@ -44,11 +44,24 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 	return p, nil
 }
 
-// Publish send the message to the SNS topic.
+// Publish send the message to the default SNS topic of the publisher.
 // The key will be used as the SNS message subject which is optional.
 func (p *publisher) Publish(ctx context.Context, key string, m string) error {
 	msg := &sns.PublishInput{
 		TopicArn: &p.topic,
+		Subject:  &key, //optional
+		Message:  aws.String(m),
+	}
+
+	_, err := p.sns.Publish(msg)
+	return err
+}
+
+// Publish send the message to the specified SNS topic.
+// The key will be used as the SNS message subject which is optional.
+func (p *publisher) PublishToSNS(ctx context.Context, key string, m string, topic string) error {
+	msg := &sns.PublishInput{
+		TopicArn: &topic,
 		Subject:  &key, //optional
 		Message:  aws.String(m),
 	}
