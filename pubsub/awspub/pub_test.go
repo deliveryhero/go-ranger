@@ -12,9 +12,13 @@ import (
 	"testing"
 )
 
+const DefaultTopic = "default-topic"
+
 func TestPublisher(t *testing.T) {
+
 	snstest := &TestSNSAPI{}
 	pub := &publisher{
+		topic: DefaultTopic,
 		sns:    snstest,
 		Logger: pubsub.DefaultLogger,
 	}
@@ -45,6 +49,11 @@ func TestPublisher(t *testing.T) {
 	if *snstest.Published[0].Subject != subject {
 		t.Errorf("Publish expected subject of \"%s\", actual: \"%s\"", subject, *snstest.Published[0].Subject)
 	}
+
+	if *snstest.Published[0].TopicArn != DefaultTopic {
+		t.Errorf("Publish expected topic of \"%s\", actual: \"%s\"", DefaultTopic, *snstest.Published[0].TopicArn)
+	}
+
 }
 
 func TestPublisherToTopic(t *testing.T) {
