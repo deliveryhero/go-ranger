@@ -47,7 +47,7 @@ func TestPublisher(t *testing.T) {
 	}
 }
 
-func TestPublisherWithSNS(t *testing.T) {
+func TestPublisherToTopic(t *testing.T) {
 	snstest := &TestSNSAPI{}
 	pub := &publisher{
 		sns:    snstest,
@@ -57,7 +57,7 @@ func TestPublisherWithSNS(t *testing.T) {
 	subject := "This is a subject!"
 	expected := "This is a message"
 	topic := "this-is-a-topic"
-	err := pub.PublishToSNS(context.Background(), subject, expected, topic)
+	err := pub.PublishToTopic(context.Background(), subject, expected, topic)
 	if err != nil {
 		t.Error("Publish returned an unexpected error: ", err)
 	}

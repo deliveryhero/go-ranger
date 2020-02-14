@@ -59,7 +59,7 @@ func (p *publisher) Publish(ctx context.Context, key string, m string) error {
 
 // Publish send the message to the specified SNS topic.
 // The key will be used as the SNS message subject which is optional.
-func (p *publisher) PublishToSNS(ctx context.Context, key string, m string, topic string) error {
+func (p *publisher) PublishToTopic(ctx context.Context, key string, m string, topic string) error {
 	msg := &sns.PublishInput{
 		TopicArn: &topic,
 		Subject:  &key, //optional
