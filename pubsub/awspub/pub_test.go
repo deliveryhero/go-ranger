@@ -18,7 +18,7 @@ func TestPublisher(t *testing.T) {
 
 	snstest := &TestSNSAPI{}
 	pub := &publisher{
-		topic: DefaultTopic,
+		topic:  DefaultTopic,
 		sns:    snstest,
 		Logger: pubsub.DefaultLogger,
 	}
