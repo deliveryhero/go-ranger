@@ -9,6 +9,9 @@ import (
 type Publisher interface {
 	// Publish will publish a message with context.
 	Publish(context.Context, string, string) error
+
+	// Publish will publish a message with context.
+	PublishToTopic(ctx context.Context, key string, m string, topic string) error
 }
 
 // Subscriber ...

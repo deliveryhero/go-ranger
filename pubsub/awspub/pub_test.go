@@ -12,9 +12,13 @@ import (
 	"testing"
 )
 
+const DefaultTopic = "default-topic"
+
 func TestPublisher(t *testing.T) {
+
 	snstest := &TestSNSAPI{}
 	pub := &publisher{
+		topic:  DefaultTopic,
 		sns:    snstest,
 		Logger: pubsub.DefaultLogger,
 	}
@@ -44,6 +48,51 @@ func TestPublisher(t *testing.T) {
 
 	if *snstest.Published[0].Subject != subject {
 		t.Errorf("Publish expected subject of \"%s\", actual: \"%s\"", subject, *snstest.Published[0].Subject)
+	}
+
+	if *snstest.Published[0].TopicArn != DefaultTopic {
+		t.Errorf("Publish expected topic of \"%s\", actual: \"%s\"", DefaultTopic, *snstest.Published[0].TopicArn)
+	}
+
+}
+
+func TestPublisherToTopic(t *testing.T) {
+	snstest := &TestSNSAPI{}
+	pub := &publisher{
+		sns:    snstest,
+		Logger: pubsub.DefaultLogger,
+	}
+
+	subject := "This is a subject!"
+	expected := "This is a message"
+	topic := "this-is-a-topic"
+	err := pub.PublishToTopic(context.Background(), subject, expected, topic)
+	if err != nil {
+		t.Error("Publish returned an unexpected error: ", err)
+	}
+
+	if len(snstest.Published) != 1 {
+		t.Error("Publish expected 1 published input, got: ", len(snstest.Published))
+		return
+	}
+
+	var (
+		actual string
+	)
+	actual = *snstest.Published[0].Message
+
+	assert.Equal(t, expected, actual)
+
+	if expected != actual {
+		t.Errorf("Publish expected message of \"%s\", actual: \"%s\"", expected, actual)
+	}
+
+	if *snstest.Published[0].Subject != subject {
+		t.Errorf("Publish expected subject of \"%s\", actual: \"%s\"", subject, *snstest.Published[0].Subject)
+	}
+
+	if *snstest.Published[0].TopicArn != topic {
+		t.Errorf("Publish expected topic of \"%s\", actual: \"%s\"", topic, *snstest.Published[0].TopicArn)
 	}
 }
 

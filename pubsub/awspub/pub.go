@@ -23,9 +23,6 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 	p := &publisher{}
 	p.Logger = pubsub.DefaultLogger
 
-	if cfg.Topic == "" {
-		return p, errors.New("SNS topic name is required")
-	}
 	p.topic = cfg.Topic
 
 	if cfg.Region == nil {
@@ -44,11 +41,29 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 	return p, nil
 }
 
-// Publish send the message to the SNS topic.
+// Publish send the message to the default SNS topic of the publisher.
 // The key will be used as the SNS message subject which is optional.
 func (p *publisher) Publish(ctx context.Context, key string, m string) error {
+
+	if p.topic == "" {
+		return errors.New("default sns topic not configured")
+	}
+
 	msg := &sns.PublishInput{
 		TopicArn: &p.topic,
+		Subject:  &key, //optional
+		Message:  aws.String(m),
+	}
+
+	_, err := p.sns.Publish(msg)
+	return err
+}
+
+// Publish send the message to the specified SNS topic.
+// The key will be used as the SNS message subject which is optional.
+func (p *publisher) PublishToTopic(ctx context.Context, key string, m string, topic string) error {
+	msg := &sns.PublishInput{
+		TopicArn: &topic,
 		Subject:  &key, //optional
 		Message:  aws.String(m),
 	}
