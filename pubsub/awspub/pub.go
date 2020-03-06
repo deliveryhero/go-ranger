@@ -34,10 +34,8 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 		return p, err
 	}
 
-	p.sns = sns.New(sess, &aws.Config{
-		Region:   cfg.Region,
-		Endpoint: cfg.Endpoint, //optional
-	})
+	p.sns = sns.New(sess, &cfg.Config)
+
 	return p, nil
 }
 

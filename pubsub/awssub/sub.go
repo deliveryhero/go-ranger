@@ -154,10 +154,7 @@ func createSqsClient(cfg *SQSConfig) (sqsiface.SQSAPI, error) {
 		return nil, err
 	}
 
-	sqsClient := sqs.New(sess, &aws.Config{
-		Region:   cfg.Region,
-		Endpoint: cfg.Endpoint,
-	})
+	sqsClient := sqs.New(sess, &cfg.Config)
 
 	return sqsClient, nil
 }
