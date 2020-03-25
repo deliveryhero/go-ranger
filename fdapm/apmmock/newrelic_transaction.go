@@ -9,6 +9,8 @@ import (
 	newrelic "github.com/newrelic/go-agent"
 )
 
+var _ newrelic.Transaction = (*NewRelicTransaction)(nil)
+
 type NewRelicTransaction struct {
 	mu sync.Mutex
 
@@ -121,4 +123,19 @@ func (t *NewRelicTransaction) SetWebRequest(req newrelic.WebRequest) error {
 // SetWebResponse ...
 func (t *NewRelicTransaction) SetWebResponse(w http.ResponseWriter) newrelic.Transaction {
 	return nil
+}
+
+// GetTraceMetadata ..
+func (t *NewRelicTransaction) GetTraceMetadata() newrelic.TraceMetadata {
+	return newrelic.TraceMetadata{}
+}
+
+// GetLinkingMetadata ..
+func (t *NewRelicTransaction) GetLinkingMetadata() newrelic.LinkingMetadata {
+	return newrelic.LinkingMetadata{}
+}
+
+// IsSampled ..
+func (t *NewRelicTransaction) IsSampled() bool {
+	return false
 }
