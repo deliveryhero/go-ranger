@@ -49,9 +49,28 @@ func TestHealthCheck(t *testing.T) {
 	assert.Equal(t, "1.0.0", healthResp.Version.Tag)
 	assert.Equal(t, "c6053cf", healthResp.Version.Commit)
 	assert.Equal(t, hostname, healthResp.Hostname)
-	assert.Equal(t, runtime.Version(), healthResp.System.Version)
+	assert.Equal(t, runtime.Version(), *healthResp.System.Version)
 	assert.Equal(t, runtime.NumCPU(), healthResp.System.NumCPU)
 	assert.Equal(t, time.Duration(0), healthResp.Elapsed)
+}
+
+func TestHealthCheckNoSystemVersion(t *testing.T) {
+	h := fdhandler.NewHealthCheck("1.0.0", "c6053cf").DisableSystemVersion()
+
+	router := fdhttp.NewRouter()
+	router.Register(h)
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/health/check")
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var healthResp fdhandler.HealthCheckResponse
+	defer resp.Body.Close()
+
+	assert.Empty(t, healthResp.System.Version)
 }
 
 func TestHealthCheck_WithPrefixAndDifferentURL(t *testing.T) {
