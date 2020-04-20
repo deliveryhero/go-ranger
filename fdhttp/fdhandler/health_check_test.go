@@ -49,7 +49,7 @@ func TestHealthCheck(t *testing.T) {
 	assert.Equal(t, "1.0.0", healthResp.Version.Tag)
 	assert.Equal(t, "c6053cf", healthResp.Version.Commit)
 	assert.Equal(t, hostname, healthResp.Hostname)
-	assert.Equal(t, runtime.Version(), *healthResp.System.Version)
+	assert.Equal(t, runtime.Version(), healthResp.System.Version)
 	assert.Equal(t, runtime.NumCPU(), healthResp.System.NumCPU)
 	assert.Equal(t, time.Duration(0), healthResp.Elapsed)
 }

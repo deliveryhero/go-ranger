@@ -29,12 +29,12 @@ type HealthCheckResponse struct {
 	Hostname string                                 `json:"hostname"`
 	Checks   map[string]*HealthCheckServiceResponse `json:"checks,omitempty"`
 	System   struct {
-		Version         *string `json:"version,omitempty"`
-		NumCPU          int     `json:"num_cpu"`
-		NumGoroutines   int     `json:"num_goroutines"`
-		NumHeapObjects  uint64  `json:"num_heap_objects"`
-		TotalAllocBytes uint64  `json:"total_alloc_bytes"`
-		AllocBytes      uint64  `json:"alloc_bytes"`
+		Version         string `json:"version,omitempty"`
+		NumCPU          int    `json:"num_cpu"`
+		NumGoroutines   int    `json:"num_goroutines"`
+		NumHeapObjects  uint64 `json:"num_heap_objects"`
+		TotalAllocBytes uint64 `json:"total_alloc_bytes"`
+		AllocBytes      uint64 `json:"alloc_bytes"`
 	} `json:"system,omitempty"`
 	Extra map[string]string `json:"extra,omitempty"`
 	sync.Mutex
@@ -138,8 +138,7 @@ func (h *HealthCheck) newResponse() *HealthCheckResponse {
 	resp.Version.Commit = h.commit
 
 	if !h.disableSystemVersion {
-		verOut := runtime.Version()
-		resp.System.Version = &verOut
+		resp.System.Version = runtime.Version()
 	}
 
 	resp.System.NumCPU = runtime.NumCPU()
