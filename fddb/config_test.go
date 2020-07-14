@@ -1,8 +1,9 @@
 package fddb
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDBConfig(t *testing.T) {
