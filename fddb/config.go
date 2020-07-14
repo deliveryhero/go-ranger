@@ -32,9 +32,10 @@ type DBConfig struct {
 }
 
 type MysqlOptions struct {
-	Timeout      time.Duration
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
+	Timeout        time.Duration
+	ReadTimeout    time.Duration
+	WriteTimeout   time.Duration
+	RejectReadOnly bool
 }
 
 var availableDrivers = map[string]DBConfig{
@@ -146,6 +147,10 @@ func (c DBConfig) mySqlConnString(host, usrPwd string) string {
 
 	if c.MysqlOptions.WriteTimeout != 0 {
 		dsnParams = append(dsnParams, "writeTimeout="+c.MysqlOptions.WriteTimeout.String())
+	}
+
+	if c.MysqlOptions.RejectReadOnly {
+		dsnParams = append(dsnParams, "rejectReadOnly=true")
 	}
 
 	if len(dsnParams) > 0 {
