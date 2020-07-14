@@ -14,4 +14,4 @@ See more on ```example.go```
 
 # Libraries used
 
-See ```Gopkg.toml```
+See ```go.mod```
