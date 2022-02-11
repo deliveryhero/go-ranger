@@ -273,7 +273,6 @@ func (s *subscriber) Start() <-chan pubsub.Message {
 
 			// if we didn't get any messages, lets chill out for a sec
 			if len(resp.Messages) == 0 {
-				s.Logger.Printf("no messages found. sleeping for %s", s.cfg.SleepInterval)
 				time.Sleep(s.cfg.SleepInterval)
 				continue
 			}
