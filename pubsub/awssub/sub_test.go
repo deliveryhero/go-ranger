@@ -2,14 +2,15 @@ package awssub
 
 import (
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/foodora/go-ranger/pubsub"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestSubscriberForPositiveCases(t *testing.T) {
@@ -53,7 +54,6 @@ func TestSubscriberForPositiveCases(t *testing.T) {
 		QueueURL: "http://test_queue",
 	}
 	defaultSQSConfig(&cfg)
-	cfg.DeleteBufferSize = aws.Int(2)
 	sub, err := createSubscriber(cfg, sqstest)
 	if err != nil {
 		t.Error(err)
@@ -63,89 +63,42 @@ func TestSubscriberForPositiveCases(t *testing.T) {
 	queue := sub.Start()
 	msq1 := <-queue
 	verifyReceivedMsg(t, msq1, test1)
-	msq1.Done()
-	assert.True(t, len(sqstest.Deleted) == 0, "Message unexpectedly was removed from the delete buffer")
+	assert.Nil(t, msq1.Done())
+	assert.True(t, len(sqstest.Deleted) == 1, "Message was not removed")
+	verifyRemovedMsg(t, sqstest, msq1, 0)
 
 	msq2 := <-queue
 	verifyReceivedMsg(t, msq2, test2)
-	msq2.Done()
-	assert.True(t, len(sqstest.Deleted) == 0, "Message unexpectedly was removed from the delete buffer")
+	assert.Nil(t, msq2.Done())
+	assert.True(t, len(sqstest.Deleted) == 2, "Message was not removed")
+	verifyRemovedMsg(t, sqstest, msq2, 1)
 
 	msq3 := <-queue
 	verifyReceivedMsg(t, msq3, test3)
-	msq3.Done()
-
-	assert.True(t, len(sqstest.Deleted) == 3, "Messages were not removed from the delete buffer")
-	verifyRemovedMsg(t, sqstest, msq1, 0)
-	verifyRemovedMsg(t, sqstest, msq2, 1)
+	assert.Nil(t, msq3.Done())
+	assert.True(t, len(sqstest.Deleted) == 3, "Message was not removed")
 	verifyRemovedMsg(t, sqstest, msq3, 2)
 
 	msq4 := <-queue
 	verifyReceivedMsg(t, msq4, test4)
-	msq4.Done()
+	assert.Nil(t, msq4.Done())
+	assert.Nil(t, sub.Stop())
 
-	sub.Stop()
-
-	assert.True(t, len(sqstest.Deleted) == 4, "The delete buffer was not flushed after the subscriber is stopped")
+	assert.True(t, len(sqstest.Deleted) == 4, "Message was not removed")
+	assert.Nil(t, err, "The delete buffer was not flushed after the subscriber is stopped")
 	verifyRemovedMsg(t, sqstest, msq4, 3)
 
 	sqstest.Offset = 0
 	queue = sub.Start()
 	msq1 = <-queue
 	verifyReceivedMsg(t, msq1, test1)
-	msq1.Done()
+	assert.Nil(t, msq1.Done())
+	assert.Nil(t, sub.Stop())
 
-	sub.Stop()
-
-	assert.True(t, len(sqstest.Deleted) == 5, "The delete buffer was not flushed after the subscriber is stopped")
+	assert.True(t, len(sqstest.Deleted) == 5, "Message was not removed")
+	assert.Nil(t, err, "The delete buffer was not flushed after the subscriber is stopped")
 	verifyRemovedMsg(t, sqstest, msq1, 4)
 
-}
-
-func TestSubscriberStopBetweenBatch(t *testing.T) {
-	test1 := "This is test 1"
-	test2 := "This is test 2"
-	test3 := "This is test 3"
-	sqstest := &TestSQSAPI{
-		Messages: [][]*sqs.Message{
-			{
-				{
-					Body:          &test1,
-					ReceiptHandle: &test1,
-				},
-				{
-					Body:          &test2,
-					ReceiptHandle: &test2,
-				},
-				{
-					Body:          &test3,
-					ReceiptHandle: &test3,
-				},
-			},
-		},
-	}
-
-	cfg := SQSConfig{
-		QueueURL: "http://test_queue",
-	}
-	defaultSQSConfig(&cfg)
-	cfg.DeleteBufferSize = aws.Int(10)
-	sub, err := createSubscriber(cfg, sqstest)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	queue := sub.Start()
-	msq1 := <-queue
-	verifyReceivedMsg(t, msq1, test1)
-	msq1.Done()
-	assert.True(t, len(sqstest.Deleted) == 0, "Message unexpectedly was removed from the delete buffer")
-
-	sub.Stop()
-
-	assert.True(t, len(sqstest.Deleted) == 1, "Messages were not removed from the delete buffer")
-	verifyRemovedMsg(t, sqstest, msq1, 0)
 }
 
 func TestSQSDoneAfterStop(t *testing.T) {
@@ -173,12 +126,9 @@ func TestSQSDoneAfterStop(t *testing.T) {
 	queue := sub.Start()
 	// verify we can receive a message, stop and still mark the message as 'done'
 	gotRaw := <-queue
-	sub.Stop()
-	gotRaw.Done()
-	// do all the other normal verifications
-	if len(sqstest.Deleted) != 1 {
-		t.Errorf("subscriber expected %d deleted message, got: %d", 1, len(sqstest.Deleted))
-	}
+	assert.Nil(t, sub.Stop())
+	assert.Nil(t, gotRaw.Done())
+	assert.True(t, len(sqstest.Deleted) == 1, "Message was not removed")
 
 	if *sqstest.Deleted[0].ReceiptHandle != test {
 		t.Errorf("subscriber expected receipt handle of \"%s\" , got:+ \"%s\"",
@@ -259,7 +209,7 @@ func verifyRemovedMsg(t *testing.T, testsqs *TestSQSAPI, msg pubsub.Message, ind
 type TestSQSAPI struct {
 	Offset   int
 	Messages [][]*sqs.Message
-	Deleted  []*sqs.DeleteMessageBatchRequestEntry
+	Deleted  []*sqs.DeleteMessageInput
 	Extended []*sqs.ChangeMessageVisibilityInput
 	Err      error
 }
@@ -276,13 +226,13 @@ func (s *TestSQSAPI) ReceiveMessage(*sqs.ReceiveMessageInput) (*sqs.ReceiveMessa
 	return &sqs.ReceiveMessageOutput{Messages: out}, s.Err
 }
 
-func (s *TestSQSAPI) DeleteMessageBatch(i *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
-	s.Deleted = append(s.Deleted, i.Entries...)
-	return nil, errNotImpl
-}
-
 func (s *TestSQSAPI) ChangeMessageVisibility(i *sqs.ChangeMessageVisibilityInput) (*sqs.ChangeMessageVisibilityOutput, error) {
 	s.Extended = append(s.Extended, i)
+	return nil, nil
+}
+
+func (s *TestSQSAPI) DeleteMessage(d *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
+	s.Deleted = append(s.Deleted, d)
 	return nil, nil
 }
 
@@ -290,9 +240,10 @@ func (s *TestSQSAPI) ChangeMessageVisibility(i *sqs.ChangeMessageVisibilityInput
 // ALL METHODS BELOW HERE ARE EMPTY AND JUST SATISFYING THE SQSAPI interface
 ///////////
 
-func (s *TestSQSAPI) DeleteMessage(d *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
+func (s *TestSQSAPI) DeleteMessageBatch(i *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
 	return nil, errNotImpl
 }
+
 func (s *TestSQSAPI) DeleteMessageWithContext(aws.Context, *sqs.DeleteMessageInput, ...request.Option) (*sqs.DeleteMessageOutput, error) {
 	return nil, errNotImpl
 }
