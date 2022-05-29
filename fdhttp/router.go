@@ -232,7 +232,7 @@ func (r *Router) Handler(method, path string, fn EndpointFunc) *Endpoint {
 		handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			ctx := req.Context()
 			ctx = SetRouteParams(ctx, convertParams(ps))
-
+			ctx = SetRequest(ctx, req)
 			ctx, err := injectRequestBody(ctx, req)
 			if err != nil {
 				ResponseJSON(w, http.StatusBadRequest, &Error{
@@ -332,7 +332,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	ctx := req.Context()
-	ctx = SetRequest(ctx, req)
 	ctx = SetRequestHeader(ctx, req.Header)
 
 	ctx = SetResponse(ctx, w)
